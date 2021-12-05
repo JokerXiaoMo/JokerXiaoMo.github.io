@@ -1,6 +1,6 @@
-## Welcome to GitHub Pages
+## 股东们看到这儿 说明你已经会科学上网了
 
-You can use the [editor on GitHub](https://github.com/JokerXiaoMo/JokerXiaoMo.github.io/edit/main/README.md) to maintain and preview the content for your website in Markdown files.
+你真的很棒 我说真的这是我的个人博客 [请点击这里](https://weibo.com/u/5536536138) 
 
 Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 

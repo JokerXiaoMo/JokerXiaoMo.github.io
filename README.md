@@ -6,5 +6,5 @@
 ### 目录
 
 没什么别的
- [软件下载](https://xiaomoya.lanzouo.com/b05hiu46b) [密码](qwq://前面是噱头：密码是：杰哥不要/qaq) 
+ [软件下载](https://xiaomoya.lanzouo.com/b05hiu46b) [密码](https:QAQ//前面是噱头：密码是：杰哥不要/qaq) 
 

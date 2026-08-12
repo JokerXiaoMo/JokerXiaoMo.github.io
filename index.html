@@ -1,617 +1,115 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>樱花树下软件库</title>
-<!-- Stylesheets -->
-<link href="css/bootstrap.css" rel="stylesheet">
-<link href="css/style.css" rel="stylesheet">
-<link href="css/responsive.css" rel="stylesheet">
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Celestial Sakura · 月下花信：一座关于星夜、樱花与角色叙事的静态个人花园。" />
+    <meta name="theme-color" content="#101328" />
+    <title>Celestial Sakura · 月下花信</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true"></div>
+    <div id="petal-field" class="petal-field" aria-hidden="true"></div>
 
-<!--Favicon-->
-<link rel="shortcut icon" href="images/favicon.png" type="image/x-icon">
-<link rel="icon" href="images/favicon.png" type="image/x-icon">
-<!-- Responsive -->
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<!--[if lt IE 9]><script src="js/html5shiv.js"></script><![endif]-->
-<!--[if lt IE 9]><script src="js/respond.js"></script><![endif]-->
-</head>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="回到月下花信首页">
+        <span class="brand-orbit">☾</span>
+        <span><b>Celestial Sakura</b><small>MOONLIT NOTES</small></span>
+      </a>
+      <nav aria-label="主要导航">
+        <a href="#notes">月下手记</a>
+        <a href="#constellation">角色星图</a>
+        <a href="#about">静态花园</a>
+      </nav>
+      <a class="garden-link" href="#notes">进入花园 <span>↗</span></a>
+    </header>
 
-<body>
-
-<div class="page-wrapper default-version">
- 	
-    <!-- Preloader -->
-    <div class="preloader"></div>
-
-    <div class="page-background">
-        <div class="image-1"><img src="images/icons/shape/icon-1.png" alt=""></div>
-        <div class="image-7"><img src="images/icons/shape/icon-7.png" alt=""></div>
-        <canvas id="canvas"></canvas>
-    </div>
-    
-    <!-- Mobile menu -->
-    <div class="mobile-menu">
-        <div class="container">
-            <!--Nav Outer-->
-            <div class="nav-outer clearfix">
-                <div class="logo"><a href="index.html"><img src="images/logo.png" alt=""></a></div>
-                <!-- Main Menu -->
-                <nav class="main-menu">
-                    <div class="navbar-header">
-                        <!-- Toggle Button -->      
-                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                    </div>
-                    
-                    <div class="navbar-collapse collapse scroll-nav clearfix">
-                        <ul class="navigation clearfix">
-                            
-                            <li class="current"><a href="#home">Home</a></li>
-                            <li><a href="#about">个人</a></li>
-                            <li><a href="#resume">历史</a></li>
-                            <li><a href="#services">菜单</a></li>
-                            <li><a href="#work">分享</a></li>
-                            <li><a href="#blog">博客</a></li>
-                            <li><a href="#contact">联系我</a></li>
-
-                         </ul>
-                    </div>
-                </nav>
-                <!-- Main Menu End-->                        
-            </div>
-            <!--Nav Outer End-->            
+    <main>
+      <section id="home" class="hero section-shell">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">PERSONAL BLOG · 2026</p>
+          <p class="kicker">月下花信</p>
+          <h1>将星夜折进<br /><em>一页樱花</em></h1>
+          <p class="lede">这里收藏角色、书影与无人知晓的深夜随笔。让花瓣落得慢一点，让每一束微光都有被读到的时间。</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#notes">读今夜手记 <span>↘</span></a>
+            <a class="text-link" href="#constellation">认识她们 <span>⌄</span></a>
+          </div>
         </div>
-    </div>
- 	
-    <div class="card-outer">
-        <div class="scroll-box">
-            <div class="container" data-animation-in="fadeInLeft" data-animation-out="fadeOutLeft">
-                <div class="card-wrapper">
-                    <div class="author-info" style="background-image:url(images/background/3.jpg)">
-                        <div class="image"><img src="images/resource/user.png" alt=""></div>
-                        <div class="author">
-                            <h3>樱花树下科技所</h3>
-                            <div class="designation">
-                                嗨!我是
-                                <div class="typing-title">
-                                    <p> <strong>番茄</strong></p>
-                                    <p> <strong>薛民谣</strong></p>
-                                    <p> <strong>笑默哦不笑染默</strong></p>
-                                </div>
-                                <span class="typed-title"></span>
-                            </div>
-                        </div>
-                        <div class="link-btn">
-                            <a href="https://space.bilibili.com/10900729" class="theme-btn btn-style-one">个人B站</a>
-                        </div>
-                        <ul class="social-icon-two">
-                            <li><a href="#"><span class="fa fa-facebook"></span></a></li>
-                            <li><a href="#"><span class="fa fa-twitter"></span></a></li>
-                            <li><a href="#"><span class="fa fa-google-plus"></span></a></li>
-                            <li><a href="#"><span class="fa fa-pinterest"></span></a></li>
-                        </ul>
-                    </div>
-                    <div class="card-inner-box">
-                        <header class="header wow fadeInLeft" data-wow-duration="1.5s">
-                            <ul class="main-menu">
-                                <li class="active home"><a class="logo" href="#home"><img src="images/logo.png" alt=""></a></li>
-                                <li><a href="#about"><i class="flaticon-social"></i>个人</a></li>
-                                <li><a href="#resume"><i class="flaticon-curriculum"></i>历史</a></li>
-                                <li><a href="#services"><i class="flaticon-layers-1"></i>菜单</a></li>
-                                <li><a href="#work"><i class="flaticon-tools"></i>分享</a></li>
-                                <li><a href="#blog"><i class="flaticon-blog"></i>博客</a></li>
-                                <li><a href="#contact"><i class="flaticon-send-mail"></i>联系我</a></li>
-                            </ul>
-                        </header>
-
-                        <!-- card item -->
-                        <div class="card-home card-item active" id="home" style="background-image:url(images/background/1.jpg)">
-
-                            <div class="card-inner wow fadeInUp" data-wow-duration="2s">
-                                <div class="image"><img src="images/resource/user.png" alt=""></div>
-                                <div class="author">
-                                    <h3>樱花树下科技所</h3>
-                                    <div class="designation">
-                                        嗨!我是
-                                        <div class="typing-title">
-                                            <p> <strong>魔术师</strong></p>
-                                            <p> <strong>技术达人</strong></p>
-                                            <p> <strong>科技魔头</strong></p>
-                                        </div>
-                                        <span class="typed-title"></span>
-                                    </div>
-                                </div>
-                                <div class="text">Hi,您发现了我，您好我是樱花树下软件库代理人：薛民谣。这个网站我耗时三天完成，希望你能看的舒服和喜欢。欢迎留言这里有最好的科技，随时更新哟~</div>
-                                <div class="link-btn">
-                                    <a href="https://space.bilibili.com/10900729" class="theme-btn btn-style-one">个人B站</a>
-                                    <a href="#" class="theme-btn btn-style-two">还没想好</a>
-                                </div>
-                                <ul class="social-icon-two">
-                                    <li><a href="#"><span class="fa fa-facebook"></span></a></li>
-                                    <li><a href="#"><span class="fa fa-twitter"></span></a></li>
-                                    <li><a href="#"><span class="fa fa-google-plus"></span></a></li>
-                                    <li><a href="#"><span class="fa fa-pinterest"></span></a></li>
-                                    <li><a href="#"><span class="fa fa-dribbble"></span></a></li>
-                                </ul>
-                            </div>
-                            
-                        </div>
-                        <!-- end item -->
-
-                        <!-- card item -->
-                        <div class="card-about card-item" id="about" style="background-image:url(images/background/2.jpg)">
-                            <div class="card-inner">
-                                <h4 class="title">个人</h4>
-                                <div class="text">Hi,您发现了我，您好我是樱花树下软件库代理人：薛民谣。这个网站我耗时三天完成，希望你能看的舒服和喜欢。欢迎留言这里有最好的科技，随时更新哟~</div>
-                                <div class="info-list">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <ul class="list-style-one">
-                                                <li><strong>名字:</strong>  樱花树下科技所</li>
-                                                <li><strong>VX</strong> XueMYao1221</li>
-                                                <li><strong>地址:</strong> 二次元世界</li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <ul class="list-style-one">
-                                                <li><strong>邮箱:</strong>  2268078104@qq.com</li>
-                                                <li><strong>公众号:</strong>  番茄的软件站</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>                                    
-                                <h4 class="title">技能</h4>
-                                <div class="row">
-                                    <!-- About Block -->
-                                    <div class="skill-block col-md-3 col-sm-4 col-xs-6">
-                                        <div class="inner-box">
-                                            <div class="graph-outer">
-                                                <input type="text" class="dial" data-fgColor="#9147ff" data-bgColor="#f5f5f5" data-width="90" data-height="90" data-linecap="normal"  value="75">
-                                                <div class="inner-text count-box"><span class="count-text" data-stop="99" data-speed="2000"></span>%</div>
-                                            </div>
-                                            <h3>科技树</h3>
-                                        </div>
-                                    </div>
-
-                                    <!-- About Block -->
-                                    <div class="skill-block col-md-3 col-sm-4 col-xs-6">
-                                        <div class="inner-box">
-                                            <div class="graph-outer">
-                                                <input type="text" class="dial" data-fgColor="#ff5e7e" data-bgColor="#f5f5f5" data-width="90" data-height="90" data-linecap="normal"  value="75">
-                                                <div class="inner-text count-box"><span class="count-text" data-stop="100" data-speed="2000"></span>%</div>
-                                            </div>
-                                            <h3>科学上网</h3>
-                                        </div>
-                                    </div>
-
-                                    <!-- About Block -->
-                                    <div class="skill-block col-md-3 col-sm-4 col-xs-6">
-                                        <div class="inner-box">
-                                            <div class="graph-outer">
-                                                <input type="text" class="dial" data-fgColor="#ffc713" data-bgColor="#f5f5f5" data-width="90" data-height="90" data-linecap="normal"  value="75">
-                                                <div class="inner-text count-box"><span class="count-text" data-stop="85" data-speed="2000"></span>%</div>
-                                            </div>
-                                            <h3>服务器 </h3>
-                                        </div>
-                                    </div>
-
-                                    <!-- About Block -->
-                                    <div class="skill-block col-md-3 col-sm-4 col-xs-6">
-                                        <div class="inner-box">
-                                            <div class="graph-outer">
-                                                <input type="text" class="dial" data-fgColor="#51dbc3" data-bgColor="#f5f5f5" data-width="90" data-height="90" data-linecap="normal"  value="75">
-                                                <div class="inner-text count-box"><span class="count-text" data-stop="1" data-speed="2000"></span>%</div>
-                                            </div>
-                                            <h3>文化课 </h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                        
-                            </div>
-                        </div>
-                        <!-- end item -->
-
-                        <!-- card item -->
-                        <div class="card-resume card-item" id="resume" style="background-image:url(images/background/2.jpg)">
-                            <div class="card-inner">
-                                <h4 class="title">服务器建立与成就</h4>
-                                <div class="row clearfix">
-                                    <!--Column-->
-                                    <div class="timeline-column col-md-6 col-sm-12 col-xs-12">
-                                        <div class="inner">
-                                            <div class="col-header"><div class="icon-box"><div class="icon-inner"><div class="icon"><span class="flaticon-book"></span></div></div></div> <h2>服务器历史</h2></div>
-                                            
-                                            <!--Timeline Block-->
-                                            <div class="timeline-block">
-                                                <div class="inner-box">
-                                                    <h4>MC 1.7.10空岛生存服</h4>
-                                                    <div class="date"><span>2017-2019</span> </div>
-                                                    <div class="text">这是利于自身的电脑，开启的服务器，三年之久，玩家少是我们的痛点</div>
-                                                </div>
-                                            </div>
-
-                                            <!--Timeline Block-->
-                                            <div class="timeline-block">
-                                                <div class="inner-box">
-                                                    <h4>未转变者服</h4>
-                                                    <div class="date"><span>2019-2020</span> </div>
-                                                    <div class="text">一年，这是新的尝试 </div>
-                                                </div>
-                                            </div>
-
-                                            <!--Timeline Block-->
-                                            <div class="timeline-block">
-                                                <div class="inner-box">
-                                                    <h4>森林和原神私服</h4>
-                                                    <div class="date"><span>2021-至今</span> </div>
-                                                    <div class="text">如果你感兴趣欢迎给我们留言，我们期待你的加入 </div>
-                                                </div>
-                                            </div>
-                                            
-                                        </div>
-                                    </div>
-                                    
-                                    <!--Column-->
-                                    <div class="timeline-column col-md-6 col-sm-12 col-xs-12">
-                                        <div class="inner">
-                                            <div class="col-header"><div class="icon-box"><div class="icon-inner"><div class="icon"><span class="flaticon-case"></span></div></div></div> <h2>成就</h2></div>
-                                            
-                                            <!--Timeline Block-->
-                                            <div class="timeline-block">
-                                                <div class="inner-box">
-                                                    <h4>MC开服</h4>
-                                                    <div class="date"><span>初级腐竹</span> </div>
-                                                    <div class="text">初次尝试 </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="timeline-block">
-                                                <div class="inner-box">
-                                                    <h4>未转变者</h4>
-                                                    <div class="date"><span>科技新手 </span> </div>
-                                                    <div class="text">一些科技研发 </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="timeline-block">
-                                                <div class="inner-box">
-                                                    <h4>原神私服</h4>
-                                                    <div class="date"><span>色批 </span>  </div>
-                                                    <div class="text">懂得都得懂</div>
-                                                </div>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                    
-                                </div>
-                            </div>
-                        </div>
-                        <!-- end item -->
-                        <!-- card item -->
-                        <div class="card-services card-item" id="services" style="background-image:url(images/background/2.jpg)">
-                            <div class="card-inner">
-                                <h4 class="title">菜单</h4>
-                                <div class="row">
-                                    <div class="services-block col-md-6">
-                                        <div class="inner-box">
-                                            <div class="icon-box"><span class="icon flaticon-pen-tool"></span></div>
-                                            <h4><a href="blog-single.html">博客</a></h4>
-                                            <div class="text">希望对你能产生帮助 </div>
-                                        </div> 
-                                    </div>
-                                    <div class="services-block col-md-6">
-                                        <div class="inner-box">
-                                            <div class="icon-box"><span class="icon flaticon-folder"></span></div>
-                                            <h4><a href="blog-single.html">个人</a></h4>
-                                            <div class="text">一份努力，一份坚持 </div>
-                                        </div> 
-                                    </div>
-                                    <div class="services-block col-md-6">
-                                        <div class="inner-box">
-                                            <div class="icon-box"><span class="icon flaticon-computer"></span></div>
-                                            <h4><a href="blog-single.html">热爱</a></h4>
-                                            <div class="text">游鱼得水般 </div>
-                                        </div> 
-                                    </div>
-                                    <div class="services-block col-md-6">
-                                        <div class="inner-box">
-                                            <div class="icon-box"><span class="icon flaticon-layers-1"></span></div>
-                                            <h4><a href="blog-single.html">标志</a></h4>
-                                            <div class="text">这不是东风标致，是你的个人特点 </div>
-                                        </div> 
-                                    </div>
-                                    <div class="services-block col-md-6">
-                                        <div class="inner-box">
-                                            <div class="icon-box"><span class="icon flaticon-web-design"></span></div>
-                                            <h4><a href="blog-single.html">科技</a></h4>
-                                            <div class="text">我相信美好的事情即将发生 </div>
-                                        </div> 
-                                    </div>
-                                    <div class="services-block col-md-6">
-                                        <div class="inner-box">
-                                            <div class="icon-box"><span class="icon flaticon-photo-camera"></span></div>
-                                            <h4><a href="blog-single.html">人文学家</a></h4>
-                                            <div class="text">一些批话语录 </div>
-                                        </div> 
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- end item -->
-                        <!-- card item -->
-                        <div class="card-projects card-item" id="work" style="background-image:url(images/background/2.jpg)">
-                            <div class="card-inner">
-                                <h4 class="title">色图</h4>
-                                <div class="row">
-                                    <div class="projects-block col-md-6">
-                                        <div class="inner-box">
-                                            <figure class="image">
-                                                <img src="images/gallery/1.jpg" alt="image">
-                                                <div class="overlay">
-                                                    <a class="lightbox-image option-btn" title="Image Caption Here" data-fancybox-group="example-gallery" href="images/gallery/1.jpg">
-                                                        <i class="fa fa-search"></i>
-                                                    </a>                                
-                                                </div>
-                                            </figure>
-                                            <div class="caption-title">
-                                                <h3><a href="#">让我逮到</a></h3>
-                                                <span>你小子</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="projects-block col-md-6">
-                                        <div class="inner-box">
-                                            <figure class="image">
-                                                <img src="images/gallery/2.jpg" alt="image">
-                                                <div class="overlay">
-                                                    <a class="lightbox-image option-btn" title="Image Caption Here" data-fancybox-group="example-gallery" href="images/gallery/2.jpg">
-                                                        <i class="fa fa-search"></i>
-                                                    </a>                                
-                                                </div>
-                                            </figure>
-                                            <div class="caption-title">
-                                                <h3><a href="#">让我逮到</a></h3>
-                                                <span>你小子</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="projects-block col-md-6">
-                                        <div class="inner-box">
-                                            <figure class="image">
-                                                <img src="images/gallery/3.jpg" alt="image">
-                                                <div class="overlay">
-                                                    <a class="lightbox-image option-btn" title="Image Caption Here" data-fancybox-group="example-gallery" href="images/gallery/3.jpg">
-                                                        <i class="fa fa-search"></i>
-                                                    </a>                                
-                                                </div>
-                                            </figure>
-                                            <div class="caption-title">
-                                                <h3><a href="#">让我逮到</a></h3>
-                                                <span>你小子</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="projects-block col-md-6">
-                                        <div class="inner-box">
-                                            <figure class="image">
-                                                <img src="images/gallery/4.jpg" alt="image">
-                                                <div class="overlay">
-                                                    <a class="lightbox-image option-btn" title="Image Caption Here" data-fancybox-group="example-gallery" href="images/gallery/4.jpg">
-                                                        <i class="fa fa-search"></i>
-                                                    </a>                                
-                                                </div>
-                                            </figure>
-                                            <div class="caption-title">
-                                                <h3><a href="#">让我逮到</a></h3>
-                                                <span>你小子</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="projects-block col-sm-6">
-                                        <div class="inner-box">
-                                            <figure class="image">
-                                                <img src="images/gallery/5.jpg" alt="image">
-                                                <div class="overlay">
-                                                    <a class="lightbox-image option-btn" title="Image Caption Here" data-fancybox-group="example-gallery" href="images/gallery/5.jpg">
-                                                        <i class="fa fa-search"></i>
-                                                    </a>                                
-                                                </div>
-                                            </figure>
-                                            <div class="caption-title">
-                                                <h3><a href="#">让我逮到</a></h3>
-                                                <span>你小子</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="projects-block col-sm-6">
-                                        <div class="inner-box">
-                                            <figure class="image">
-                                                <img src="images/gallery/6.jpg" alt="image">
-                                                <div class="overlay">
-                                                    <a class="lightbox-image option-btn" title="Image Caption Here" data-fancybox-group="example-gallery" href="images/gallery/6.jpg">
-                                                        <i class="fa fa-search"></i>
-                                                    </a>                                
-                                                </div>
-                                            </figure>
-                                            <div class="caption-title">
-                                                <h3><a href="#">让我逮到</a></h3>
-                                                <span>你小子</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- end item -->
-                        <!-- card item -->
-                        <div class="card-blog card-item" id="blog" style="background-image:url(images/background/2.jpg)">
-                            <div class="card-inner">
-                                <h4 class="title">博客</h4>
-                                <div class="news-block">
-                                    <div class="inner-box">
-                                        <div class="image">
-                                            <img src="images/resource/blog-1.jpg" alt="">
-                                            <div class="overlay">
-                                                <a class="link-btn" href="blog-single.html">
-                                                    <i class="fa fa-link"></i>
-                                                </a>                                
-                                            </div>
-                                        </div>
-                                        <div class="date"><strong>02</strong> <br>Sep</div>
-                                        <div class="lower-content">
-                                            <h4><a href="blog-single.html">Let’s Talk About Design</a></h4>
-                                            <div class="post-meta">by admin  /  <span>Design</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="news-block">
-                                    <div class="inner-box">
-                                        <div class="image">
-                                            <img src="images/resource/blog-2.jpg" alt="">
-                                            <div class="overlay">
-                                                <a class="link-btn" href="blog-single.html">
-                                                    <i class="fa fa-link"></i>
-                                                </a>                                
-                                            </div>
-                                        </div>
-                                        <div class="date"><strong>04</strong> <br>Sep</div>
-                                        <div class="lower-content">
-                                            <h4><a href="blog-single.html">Let’s Talk About Design</a></h4>
-                                            <div class="post-meta">by admin  /  <span>Design</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="news-block">
-                                    <div class="inner-box">
-                                        <div class="image">
-                                            <img src="images/resource/blog-3.jpg" alt="">
-                                            <div class="overlay">
-                                                <a class="link-btn" href="blog-single.html">
-                                                    <i class="fa fa-link"></i>
-                                                </a>                                
-                                            </div>
-                                        </div>
-                                        <div class="date"><strong>06</strong> <br>Sep</div>
-                                        <div class="lower-content">
-                                            <h4><a href="blog-single.html">Let’s Talk About Design</a></h4>
-                                            <div class="post-meta">by admin  /  <span>Design</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- end item -->
-                        <!-- card item -->
-                        <div class="card-contact card-item" id="contact" style="background-image:url(images/background/2.jpg)">
-                            <div class="card-inner">
-                                <h3 class="title">联系我</h3>
-                                <h4>方式和留言</h4>
-                                <div class="row clearfix">
-                                    <div class="col-md-6">
-                                        <ul class="list-style-two">
-                                            <li><span class="icon flaticon-signs"></span>二次元 Collins Street <br> 世界 </li>
-                                            <li><span class="icon flaticon-smartphone"></span>VX <br>XueMYao1221</li>
-                                            <li><span class="icon flaticon-note-1"></span>2268078104@qq.com <br>daimaowang12@outlook.com</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="map-section">
-                                            <div class="home-google-map">
-                                                <div 
-                                                    class="google-map" 
-                                                    id="contact-google-map" 
-                                                    data-map-lat="40.700843" 
-                                                    data-map-lng="-74.004012" 
-                                                    data-icon-path="images/icons/map-marker.png"
-                                                    data-map-title="Chester"
-                                                    data-map-zoom="11" >
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <h4>留言给我们</h4>
-                                <!-- Contact Form -->
-                                <div class="contact-form">
-                                    <!--Comment Form-->
-                                    <form method="post" action="sendemail.php" id="contact-form">
-                                        <div class="row clearfix">
-                                            
-                                            <div class="col-md-6 form-group">
-                                                <input type="text" name="username" placeholder="名字" required>
-                                            </div>
-                                            
-                                            <div class="col-md-6 form-group">
-                                                <input type="email" name="email" placeholder="邮件" required>
-                                            </div>
-                                            
-                                            <div class="col-md-6 form-group">
-                                                <input type="text" name="subject" placeholder="标题" required>
-                                            </div>
-
-                                            <div class="col-md-6 form-group">
-                                                <input type="text" name="phone" placeholder="电话或者微信" required>
-                                            </div>
-
-                                            <div class="col-lg-12 col-md-12 form-group">
-                                                <textarea name="message" placeholder="信息"></textarea>
-                                            </div>
-                                            
-                                            <div class="col-lg-12 col-md-12 form-group">
-                                                <button class="theme-btn btn-style-two" type="submit" name="submit-form">提交 </button>
-                                            </div>
-                                            
-                                        </div>
-                                    </form>
-                                        
-                                </div>
-                                <!--End Contact Form -->
-                                        
-                            </div>
-                        </div>
-                        <!-- end item -->
-
-                    </div>
-                </div>
-                    
-            </div>
+        <div class="portrait-stage reveal" aria-label="Aurelia · 月弧主理人">
+          <div class="moon-arc"></div>
+          <div class="portrait-glow"></div>
+          <div class="portrait-figure" aria-hidden="true">
+            <span class="figure-hair"></span><span class="figure-face"></span><span class="figure-kimono"></span>
+          </div>
+          <div class="portrait-caption"><span>月</span><p><small>EDITOR IN ORBIT</small><b>Aurelia · 月弧主理人</b></p></div>
+          <div class="portrait-tag">AURELIA ORBIT</div>
         </div>
-            
-    </div>
+      </section>
 
-</div>
-<!--End pagewrapper-->
+      <section id="notes" class="notes section-shell">
+        <div class="section-heading reveal">
+          <div><p class="eyebrow">01 · LATEST LETTERS</p><h2>月下手记</h2></div>
+          <p>从星尘、书页与漫长的夜里，挑选三封值得打开的来信。</p>
+        </div>
+        <div class="note-grid">
+          <article class="note-card featured reveal">
+            <div class="note-meta"><span>08.12</span><span>月轨工具</span></div>
+            <div class="card-symbol">⌁</div>
+            <h3>科技云梯：沿月轨越过数据云层</h3>
+            <p>一枚通往云端秘境的科技云梯软件入口；让需要抵达的文件，沿着星光阶梯安静启程。</p>
+            <a href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">沿星阶前往 <span>↗</span></a>
+          </article>
+          <article class="note-card reveal">
+            <div class="note-meta"><span>08.03</span><span>角色档案</span></div>
+            <div class="card-symbol">☾</div>
+            <h3>Aurelia：月弧下的第一封来信</h3>
+            <p>她相信每一个沉默的瞬间，都有自己的轨道。</p>
+            <a href="#constellation">阅读来信 <span>↘</span></a>
+          </article>
+          <article class="note-card reveal">
+            <div class="note-meta"><span>07.27</span><span>书与影</span></div>
+            <div class="card-symbol">✦</div>
+            <h3>看完一部电影后，星光没有立即熄灭</h3>
+            <p>把不愿忘记的镜头，悄悄夹进这一页。</p>
+            <a href="#about">走进花园 <span>↘</span></a>
+          </article>
+        </div>
+      </section>
 
+      <section id="constellation" class="constellation section-shell">
+        <div class="section-heading reveal">
+          <div><p class="eyebrow">02 · CHARACTER CONSTELLATION</p><h2>五位来访者，<br />五种夜色。</h2></div>
+          <p>她们是这座花园的叙事坐标。选择一枚星印，读一段只属于她的月下旁白。</p>
+        </div>
+        <div class="character-layout reveal">
+          <div class="character-list" role="tablist" aria-label="角色档案">
+            <button class="character-button active" data-character="aurelia" role="tab" aria-selected="true"><span>月</span><i><small>核心角色 · 01</small><b>Aurelia</b><em>月弧主理人</em></i></button>
+            <button class="character-button" data-character="lyra" role="tab" aria-selected="false"><span>星</span><i><small>核心角色 · 02</small><b>Lyra</b><em>书页观测者</em></i></button>
+            <button class="character-button" data-character="noctis" role="tab" aria-selected="false"><span>夜</span><i><small>核心角色 · 03</small><b>Noctis</b><em>深夜执笔者</em></i></button>
+            <button class="character-button" data-character="seraphine" role="tab" aria-selected="false"><span>羽</span><i><small>特别来访 · 天使</small><b>Seraphine</b><em>月羽天使</em></i></button>
+            <button class="character-button" data-character="velvet" role="tab" aria-selected="false"><span>薇</span><i><small>特别来访 · 小恶魔</small><b>Velvet</b><em>蔷薇小恶魔</em></i></button>
+          </div>
+          <aside class="character-profile" aria-live="polite">
+            <div id="profile-sigil" class="profile-sigil">月</div>
+            <p id="profile-kind" class="eyebrow">核心角色 · 01</p>
+            <h3 id="profile-name">Aurelia · 月弧主理人</h3>
+            <blockquote id="profile-quote">“把夜色折进字句。”</blockquote>
+            <p id="profile-copy">她在月弧最亮的地方整理来信，让每一页叙事都找到归航的方向。</p>
+          </aside>
+        </div>
+      </section>
 
-<script src="js/jquery.js"></script> 
+      <section id="about" class="archive section-shell reveal">
+        <div class="archive-mark">✦</div>
+        <p class="eyebrow">STATIC GARDEN · ARCHIVE EDITION</p>
+        <h2>花信留在这里，<br /><em>安静地被阅读。</em></h2>
+        <p>本版本已迁移为纯静态花园：不收集访客数据，也不提供留言或图片投递入口。所有页面内容都只在浏览器中呈现，让这座夜色花园保持轻盈而私密。</p>
+      </section>
+    </main>
 
-<script src="js/bootstrap.min.js"></script>
-<script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
-<script src="js/owl.js"></script>
-<script src="js/wow.js"></script>
-<script src="js/appear.js"></script>
-<script src="js/jquery.fancybox.js"></script>
-<script src="js/element-in-view.js"></script>
-<script src="js/knob.js"></script>
-<script src="js/validate.js"></script>
-<script src="js/mousemoveparallax.js"></script>
-<script src="js/pagenav.js"></script>
-<script src="js/jquery-type.js"></script>
-<script src="js/jquery.nicescroll.min.js"></script>
-<script src="js/particle-alone.js"></script>
-<script src="js/script.js"></script>
-
-<!--Google Map APi Key-->
-<script src="http://ditu.google.cn/maps/api/js?key=AIzaSyATY4Rxc8jNvDpsK8ZetC7JyN4PFVYGCGM"></script>
-<script src="js/gmaps.js"></script>
-<script src="js/map-script.js"></script>
-<!--End Google Map APi-->
-
-</body>
+    <footer><p>© 2026 <span>✦</span> 樱花树下·科技工作室</p><p>我们坚信美好的事情即将发生</p></footer>
+    <script src="script.js"></script>
+  </body>
 </html>

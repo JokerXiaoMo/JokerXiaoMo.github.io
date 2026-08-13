@@ -7,13 +7,22 @@
     <meta name="theme-color" content="#101328" />
     <title>Celestial Sakura · 月下花信</title>
     <link rel="stylesheet" href="styles.css" />
-    <style>
-      .profile-portrait { position: relative; margin: -3rem -2rem 2.2rem; height: 245px; overflow: hidden; border-bottom: 1px solid rgba(237,214,220,.2); background: #11142b; }
-      .profile-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; filter: saturate(.92) contrast(1.04); }
-      .profile-portrait::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(21,20,44,.94), transparent 54%); pointer-events: none; }
-      .profile-portrait[hidden] { display: none; }
-      @media (max-width:900px) { .profile-portrait { height: 285px; margin: -3rem -2rem 2.2rem; } }
-    </style>
+      <style>
+        .profile-portrait { position: relative; margin: -3rem -2rem 2.2rem; height: 245px; overflow: hidden; border-bottom: 1px solid rgba(237,214,220,.2); background: #11142b; }
+        .profile-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; filter: saturate(.92) contrast(1.04); }
+        .profile-portrait::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(21,20,44,.94), transparent 54%); pointer-events: none; }
+        .profile-portrait[hidden] { display: none; }
+        .hero-portrait { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: 68% center; filter: saturate(.9) contrast(1.04) brightness(.9); }
+        .portrait-stage::before { z-index: 1; }
+        .portrait-stage::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(9,12,29,.58), transparent 53%), linear-gradient(0deg, rgba(9,12,29,.62), transparent 45%); }
+        .portrait-stage .moon-arc, .portrait-stage .portrait-glow, .portrait-stage .portrait-caption, .portrait-stage .portrait-tag { z-index: 2; }
+        .portrait-stage .portrait-figure { display: none; }
+        .note-card.featured { padding-bottom: 5.2rem; }
+        .note-card .note-action--external { left: auto; right: 1.65rem; display: inline-flex; align-items: center; gap: .65rem; border: 1px solid rgba(241,165,188,.5); border-radius: 999px; background: rgba(16,19,40,.68); padding: .6rem .85rem; backdrop-filter: blur(10px); transition: color .2s, background .2s, border-color .2s, transform .2s; }
+        .note-card .note-action--external:hover { border-color: var(--pink); background: var(--pink); color: #30172c; transform: translateY(-2px); }
+        @media (max-width:900px) { .profile-portrait { height: 285px; margin: -3rem -2rem 2.2rem; } }
+        @media (max-width:560px) { .note-card .note-action--external { right: 1.3rem; bottom: 1.3rem; } }
+      </style>
   </head>
   <body>
     <div class="aurora" aria-hidden="true"></div>
@@ -45,6 +54,7 @@
           </div>
         </div>
         <div class="portrait-stage reveal" aria-label="Aurelia · 月弧主理人">
+          <img class="hero-portrait" src="assets/characters/aurelia.png" alt="Aurelia 月弧主理人的原创立绘：月弧与樱花夜色中的成年女性角色" />
           <div class="moon-arc"></div>
           <div class="portrait-glow"></div>
           <div class="portrait-figure" aria-hidden="true">
@@ -66,7 +76,7 @@
             <div class="card-symbol">⌁</div>
             <h3>科技云梯：沿月轨越过数据云层</h3>
             <p>一枚通往云端秘境的科技云梯软件入口；让需要抵达的文件，沿着星光阶梯安静启程。</p>
-            <a href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">沿星阶前往 <span>↗</span></a>
+            <a class="note-action--external" href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">沿星阶前往 <span>↗</span></a>
           </article>
           <article class="note-card reveal">
             <div class="note-meta"><span>08.03</span><span>角色档案</span></div>

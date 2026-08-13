@@ -13,13 +13,13 @@
 
 ## 导入方式
 
-在 FlClash 的「配置 → 覆写脚本」中新建脚本，选择 URL 并填入以下地址，保存后再将该脚本关联至目标订阅并刷新。若使用本仓库的默认分支，地址为：
+在 FlClash 的「配置 → 覆写脚本」中新建脚本后，请点击编辑器右上角的**向下箭头**，选择「导入 URL」，并填入以下地址：
 
 ```text
 https://raw.githubusercontent.com/JokerXiaoMo/JokerXiaoMo.github.io/main/flclash/SakuraLite.js
 ```
 
-也可直接复制 [`SakuraLite.js`](./SakuraLite.js) 的完整内容粘贴。建议先在一个测试订阅中验证，再替换日常使用的覆写脚本。
+导入完成后，务必点击顶部的「未命名」并填写名称，例如 `Sakura Lite`。保存图标只有在内容或名称发生变更时才会启用；填写名称后点击磁盘图标保存，再将该脚本关联至目标订阅并刷新。也可直接复制 [`SakuraLite.js`](./SakuraLite.js) 的完整内容粘贴，但移动端优先推荐「导入 URL」。建议先在一个测试订阅中验证，再替换日常使用的覆写脚本。
 
 | 策略组 | 用途 | 默认候选顺序 |
 |---|---|---|

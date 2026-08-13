@@ -1,4 +1,4 @@
-// FlClash 覆写脚本：Sakura Route · 樱语分流
+// FlClash 覆写脚本：山海行 · 国风分流
 // 适用：FlClash v0.8.85+（标准 Mihomo 内核）
 // 设计：动态节点分组 + 少量常用业务策略 + 三个远程规则集；不接管订阅节点与 DNS 服务器。
 
@@ -8,22 +8,22 @@ var TEST_INTERVAL = 600
 var TEST_TOLERANCE = 50
 
 var NAME = {
-  MAIN: '🌸 代理选择',
-  ALL: '🌌 全部节点',
-  HK: '🏮 香港结界',
-  TW: '🪭 台湾结界',
-  JP: '🎐 日本结界',
-  SG: '🦁 狮城结界',
-  US: '🗽 北美结界',
-  OTHER: '🌙 其他次元',
-  AI: '🤖 AI 魔法工坊',
-  MEDIA: '📺 追番放映室',
-  GOOGLE: '🔍 Google 魔导书',
-  DEV: '🧰 开发者工坊',
-  GLOBAL: '🌐 异界漫游',
-  CN: '🏯 国风直连',
-  FINAL: '✨ 漏网之鱼',
-  AD: '🛡️ 广告退散'
+  MAIN: '🌺 代理选择',
+  ALL: '☁️ 万象节点',
+  HK: '🏮 香江灯影',
+  TW: '🪭 宝岛团扇',
+  JP: '🍑 东海桃影',
+  SG: '🪷 南洋莲舟',
+  US: '⛵ 北美远航',
+  OTHER: '⛰️ 四海云游',
+  AI: '📜 灵枢智算',
+  MEDIA: '🎭 梨园影音',
+  GOOGLE: '🔭 云台观星',
+  DEV: '🧰 百工工坊',
+  GLOBAL: '🗺️ 山海行旅',
+  CN: '🧧 神州直连',
+  FINAL: '🌺 桃源归途',
+  AD: '🛡️ 清风拂尘'
 }
 
 var REGIONS = [
@@ -37,7 +37,7 @@ var REGIONS = [
 var INFO_NODE = /剩余|流量|到期|重置|官网|订阅|网址|套餐|邮箱|\b(?:total|used|expire|email|website|channel)\b/i
 
 function log(message) {
-  if (typeof console !== 'undefined' && console.log) console.log('[SakuraRoute ' + VERSION + '] ' + message)
+  if (typeof console !== 'undefined' && console.log) console.log('[山海行 ' + VERSION + '] ' + message)
 }
 
 function unique(list) {
@@ -116,7 +116,9 @@ function selectCandidates(regions, directFirst) {
 
 function buildGroups(buckets) {
   var regions = activeRegionNames(buckets)
-  var groups = [newUrlTest(NAME.ALL, buckets.ALL)]
+  // 总开关置顶，便于在 FlClash 代理页首项直接切换。
+  var groups = [newSelect(NAME.MAIN, selectCandidates(regions, false))]
+  groups.push(newUrlTest(NAME.ALL, buckets.ALL))
 
   for (var i = 0; i < REGIONS.length; i += 1) {
     var region = REGIONS[i]
@@ -124,7 +126,6 @@ function buildGroups(buckets) {
   }
   if (buckets.OTHER.length > 0) groups.push(newUrlTest(NAME.OTHER, buckets.OTHER))
 
-  groups.push(newSelect(NAME.MAIN, selectCandidates(regions, false)))
   groups.push(newSelect(NAME.AI, selectCandidates([NAME.US, NAME.SG, NAME.JP, NAME.ALL], false)))
   groups.push(newSelect(NAME.MEDIA, selectCandidates([NAME.HK, NAME.TW, NAME.JP, NAME.US, NAME.SG, NAME.ALL], false)))
   groups.push(newSelect(NAME.GOOGLE, selectCandidates([NAME.US, NAME.JP, NAME.SG, NAME.ALL], false)))
@@ -142,16 +143,16 @@ function provider(path, localPath) {
     behavior: 'classical',
     format: 'yaml',
     url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/' + path,
-    path: './ruleset/sakura-route/' + localPath,
+    path: './ruleset/shanhai-xing/' + localPath,
     interval: 86400
   }
 }
 
 function installRules(config) {
   config['rule-providers'] = {
-    'sakura-ad': provider('rule/Clash/AdvertisingLite/AdvertisingLite_Classical.yaml', 'advertising-lite.yaml'),
-    'sakura-cn': provider('rule/Clash/ChinaMax/ChinaMax_Classical.yaml', 'china-max.yaml'),
-    'sakura-global': provider('rule/Clash/Global/Global_Classical.yaml', 'global.yaml')
+    'shanhai-ad': provider('rule/Clash/AdvertisingLite/AdvertisingLite_Classical.yaml', 'advertising-lite.yaml'),
+    'shanhai-cn': provider('rule/Clash/ChinaMax/ChinaMax_Classical.yaml', 'china-max.yaml'),
+    'shanhai-global': provider('rule/Clash/Global/Global_Classical.yaml', 'global.yaml')
   }
 
   var rules = [
@@ -160,7 +161,7 @@ function installRules(config) {
     'IP-CIDR,10.0.0.0/8,DIRECT,no-resolve',
     'IP-CIDR,172.16.0.0/12,DIRECT,no-resolve',
     'IP-CIDR,192.168.0.0/16,DIRECT,no-resolve',
-    'RULE-SET,sakura-ad,' + NAME.AD,
+    'RULE-SET,shanhai-ad,' + NAME.AD,
     'DOMAIN-SUFFIX,openai.com,' + NAME.AI,
     'DOMAIN-SUFFIX,chatgpt.com,' + NAME.AI,
     'DOMAIN-SUFFIX,claude.ai,' + NAME.AI,
@@ -177,9 +178,9 @@ function installRules(config) {
     'DOMAIN-SUFFIX,githubusercontent.com,' + NAME.DEV,
     'DOMAIN-SUFFIX,githubassets.com,' + NAME.DEV,
     'DOMAIN-SUFFIX,gitlab.com,' + NAME.DEV,
-    'RULE-SET,sakura-cn,' + NAME.CN,
+    'RULE-SET,shanhai-cn,' + NAME.CN,
     'GEOIP,CN,' + NAME.CN + ',no-resolve',
-    'RULE-SET,sakura-global,' + NAME.GLOBAL,
+    'RULE-SET,shanhai-global,' + NAME.GLOBAL,
     'MATCH,' + NAME.FINAL
   ]
   replaceArray(ensureArray(config, 'rules'), rules)

@@ -3,131 +3,116 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Celestial Sakura · 月下花信：一座关于星夜、樱花与角色叙事的静态个人花园。" />
+    <meta name="description" content="绛阙画境：一卷关于山河、丹青与五灵使者的中式动漫静态图鉴。" />
     <meta name="theme-color" content="#101328" />
-    <title>Celestial Sakura · 月下花信</title>
+    <title>绛阙画境 · 五灵图鉴</title>
     <link rel="stylesheet" href="styles.css" />
-      <style>
-        .profile-portrait { position: relative; margin: -3rem -2rem 2.2rem; height: 245px; overflow: hidden; border-bottom: 1px solid rgba(237,214,220,.2); background: #11142b; }
-        .profile-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; filter: saturate(.92) contrast(1.04); }
-        .profile-portrait::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(21,20,44,.94), transparent 54%); pointer-events: none; }
-        .profile-portrait[hidden] { display: none; }
-        .hero-portrait { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: 68% center; filter: saturate(.9) contrast(1.04) brightness(.9); }
-        .portrait-stage::before { z-index: 1; }
-        .portrait-stage::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(9,12,29,.58), transparent 53%), linear-gradient(0deg, rgba(9,12,29,.62), transparent 45%); }
-        .portrait-stage .moon-arc, .portrait-stage .portrait-glow, .portrait-stage .portrait-caption, .portrait-stage .portrait-tag { z-index: 2; }
-        .portrait-stage .portrait-figure { display: none; }
-        .note-card { padding-bottom: 5.2rem; }
-        .note-card .note-action { left: auto; right: 1.65rem; display: inline-flex; align-items: center; gap: .65rem; border: 1px solid rgba(241,165,188,.5); border-radius: 999px; background: rgba(16,19,40,.68); padding: .6rem .85rem; color: #f4c5d2; backdrop-filter: blur(10px); transition: color .2s, background .2s, border-color .2s, transform .2s; }
-        .note-card .note-action:hover { border-color: var(--pink); background: var(--pink); color: #30172c; transform: translateY(-2px); }
-        @media (max-width:900px) { .profile-portrait { height: 285px; margin: -3rem -2rem 2.2rem; } }
-        @media (max-width:560px) { .note-card .note-action { right: 1.3rem; bottom: 1.3rem; } }
-      </style>
+    <link rel="stylesheet" href="han-override.css" />
   </head>
   <body>
     <div class="aurora" aria-hidden="true"></div>
     <div id="petal-field" class="petal-field" aria-hidden="true"></div>
 
     <header class="site-header">
-      <a class="brand" href="#home" aria-label="回到月下花信首页">
-        <span class="brand-orbit">☾</span>
-        <span><b>Celestial Sakura</b><small>MOONLIT NOTES</small></span>
+      <a class="brand" href="#home" aria-label="回到绛阙画境首页">
+        <span class="brand-orbit">印</span>
+        <span><b>绛阙画境</b><small>SCROLLS OF THE PAINTED REALM</small></span>
       </a>
       <nav aria-label="主要导航">
-        <a href="#notes">月下手记</a>
-        <a href="#constellation">角色星图</a>
-        <a href="#about">静态花园</a>
+        <a href="#notes">卷中札记</a>
+        <a href="#constellation">五灵图鉴</a>
+        <a href="#about">画境藏卷</a>
       </nav>
-      <a class="garden-link" href="#notes">进入花园 <span>↗</span></a>
+      <a class="garden-link" href="#notes">展开长卷 <span>↗</span></a>
     </header>
 
     <main>
       <section id="home" class="hero section-shell">
         <div class="hero-copy reveal">
-          <p class="eyebrow">PERSONAL BLOG · 2026</p>
-          <p class="kicker">月下花信</p>
-          <h1>将星夜折进<br /><em>一页樱花</em></h1>
-          <p class="lede">这里收藏角色、书影与无人知晓的深夜随笔。让花瓣落得慢一点，让每一束微光都有被读到的时间。</p>
+          <p class="eyebrow">PAINTED REALM · 2026</p>
+          <p class="kicker">绛阙画境</p>
+          <h1>将山河绘进<br /><em>一卷长夜</em></h1>
+          <p class="lede">这里收存山河、人物与志怪的来处。让每一笔丹青，都有被细细端详的余地。</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#notes">读今夜手记 <span>↘</span></a>
-            <a class="text-link" href="#constellation">认识她们 <span>⌄</span></a>
+            <a class="button button-primary" href="#notes">展开长卷 <span>↘</span></a>
+            <a class="text-link" href="#constellation">拜访诸君 <span>⌄</span></a>
           </div>
         </div>
-        <div class="portrait-stage reveal" aria-label="Aurelia · 月城·澄璃">
-          <img class="hero-portrait" src="assets/characters/aurelia.png" alt="Aurelia 月城·澄璃的原创立绘：月弧与樱花夜色中的成年女性角色" />
+        <div class="portrait-stage reveal" aria-label="沈昭绫 · 玄阙执灯人">
+          <img class="hero-portrait" src="assets/characters/aurelia.png" alt="沈昭绫的原创立绘：执灯守望的画境司使者" />
           <div class="moon-arc"></div>
           <div class="portrait-glow"></div>
           <div class="portrait-figure" aria-hidden="true">
             <span class="figure-hair"></span><span class="figure-face"></span><span class="figure-kimono"></span>
           </div>
-          <div class="portrait-caption"><span>月</span><p><small>MOON ARC MESSENGER</small><b>Aurelia · 月城·澄璃</b></p></div>
-          <div class="portrait-tag">AURELIA ORBIT</div>
+          <div class="portrait-caption"><span>灯</span><p><small>玄阙执灯人</small><b>沈昭绫</b></p></div>
+          <div class="portrait-tag">ZHAXIAO ILLUMINATOR</div>
         </div>
       </section>
 
       <section id="notes" class="notes section-shell">
         <div class="section-heading reveal">
-          <div><p class="eyebrow">01 · LATEST LETTERS</p><h2>月下手记</h2></div>
-          <p>从星尘、书页与漫长的夜里，挑选三封值得打开的来信。</p>
+          <div><p class="eyebrow">壹 · SCROLLS FROM THE REALM</p><h2>卷中札记</h2></div>
+          <p>从云海、旧卷与山河余响里，择三篇值得展开的记事。</p>
         </div>
         <div class="note-grid">
           <article class="note-card featured reveal">
-            <div class="note-meta"><span>08.12</span><span>月轨工具</span></div>
-            <div class="card-symbol">⌁</div>
-            <h3>科技云梯：沿月轨越过数据云层</h3>
-            <p>一枚通往云端秘境的科技云梯软件入口；让需要抵达的文件，沿着星光阶梯安静启程。</p>
-            <a class="note-action" href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">沿星阶前往 <span>↗</span></a>
+            <div class="note-meta"><span>08.12</span><span>云上行箧</span></div>
+            <div class="card-symbol">云</div>
+            <h3>科技云梯：越过云海的行箧</h3>
+            <p>一枚通向云上库藏的行箧入口；让待抵达的文件，随长风越过万重山。</p>
+            <a class="note-action" href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">入云上行箧 <span>↗</span></a>
           </article>
           <article class="note-card reveal">
-            <div class="note-meta"><span>08.03</span><span>角色档案</span></div>
-            <div class="card-symbol">☾</div>
-            <h3>Aurelia：月弧下的第一封来信</h3>
-            <p>她相信每一个沉默的瞬间，都有自己的轨道。</p>
-            <a class="note-action" href="#constellation">阅读来信 <span>↘</span></a>
+            <div class="note-meta"><span>08.03</span><span>人物图鉴</span></div>
+            <div class="card-symbol">灯</div>
+            <h3>沈昭绫：玄阙灯下的来客</h3>
+            <p>她守着画境最北的一盏灯，也守着每一段未抵达的归途。</p>
+            <a class="note-action" href="#constellation">展开图鉴 <span>↘</span></a>
           </article>
           <article class="note-card reveal">
-            <div class="note-meta"><span>07.27</span><span>书与影</span></div>
-            <div class="card-symbol">✦</div>
-            <h3>看完一部电影后，星光没有立即熄灭</h3>
-            <p>把不愿忘记的镜头，悄悄夹进这一页。</p>
-            <a class="note-action" href="#about">走进花园 <span>↘</span></a>
+            <div class="note-meta"><span>07.27</span><span>卷中观影</span></div>
+            <div class="card-symbol">卷</div>
+            <h3>戏散之后，山河仍在银幕里回响</h3>
+            <p>把不愿遗忘的一瞬，题在长卷余白。</p>
+            <a class="note-action" href="#about">读画境藏卷 <span>↘</span></a>
           </article>
         </div>
       </section>
 
       <section id="constellation" class="constellation section-shell">
         <div class="section-heading reveal">
-          <div><p class="eyebrow">02 · CHARACTER CONSTELLATION</p><h2>五位来访者，<br />五种夜色。</h2></div>
-          <p>她们是这座花园的叙事坐标。选择一枚星印，读一段只属于她的月下旁白。</p>
+          <div><p class="eyebrow">贰 · FIVE SPIRIT GAZETTEER</p><h2>五灵守卷，<br />各镇一方。</h2></div>
+          <p>她们是画境司的五位使者。选择一枚印鉴，读一段关于山河与归途的注脚。</p>
         </div>
         <div class="character-layout reveal">
           <div class="character-list" role="tablist" aria-label="角色档案">
-            <button class="character-button active" data-character="aurelia" role="tab" aria-selected="true"><span>月</span><i><small>月弧信使</small><b>Aurelia</b><em>月城·澄璃</em></i></button>
-            <button class="character-button" data-character="lyra" role="tab" aria-selected="false"><span>星</span><i><small>星页藏书人</small><b>Lyra</b><em>雾岛·诗织</em></i></button>
-            <button class="character-button" data-character="noctis" role="tab" aria-selected="false"><span>夜</span><i><small>静夜书写者</small><b>Noctis</b><em>夜凪·墨澜</em></i></button>
-            <button class="character-button" data-character="seraphine" role="tab" aria-selected="false"><span>羽</span><i><small>月羽引航者</small><b>Seraphine</b><em>星羽·祈璃</em></i></button>
-            <button class="character-button" data-character="velvet" role="tab" aria-selected="false"><span>薇</span><i><small>蔷薇夜巡人</small><b>Velvet</b><em>绯棘·薇尔</em></i></button>
+            <button class="character-button active" data-character="aurelia" role="tab" aria-selected="true"><span>灯</span><i><small>玄阙执灯人</small><b>沈昭绫</b><em>照夜金灯</em></i></button>
+            <button class="character-button" data-character="lyra" role="tab" aria-selected="false"><span>卷</span><i><small>青瓷司卷官</small><b>陆青梧</b><em>青瓷卷轴</em></i></button>
+            <button class="character-button" data-character="noctis" role="tab" aria-selected="false"><span>砚</span><i><small>墨渊执笔使</small><b>顾砚秋</b><em>玄墨长笔</em></i></button>
+            <button class="character-button" data-character="seraphine" role="tab" aria-selected="false"><span>羽</span><i><small>九霄羽卫</small><b>云栖梧</b><em>云羽铃</em></i></button>
+            <button class="character-button" data-character="velvet" role="tab" aria-selected="false"><span>绫</span><i><small>赤绫巡使</small><b>苏绯棠</b><em>朱砂绫印</em></i></button>
           </div>
           <aside class="character-profile" aria-live="polite">
             <div id="profile-portrait" class="profile-portrait" hidden><img id="profile-image" alt="" /></div>
-            <div id="profile-sigil" class="profile-sigil">月</div>
-            <p id="profile-kind" class="eyebrow">月弧信使</p>
-            <h3 id="profile-name">Aurelia · 月城·澄璃</h3>
-            <blockquote id="profile-quote">“月弧会替未写完的信，留一盏灯。”</blockquote>
-            <p id="profile-copy">她在月弧最亮的地方整理来信，让每一页叙事都找到归航的方向。</p>
+            <div id="profile-sigil" class="profile-sigil">灯</div>
+            <p id="profile-kind" class="eyebrow">玄阙执灯人</p>
+            <h3 id="profile-name">沈昭绫</h3>
+            <blockquote id="profile-quote">“灯火不问来路，只照愿意前行的人。”</blockquote>
+            <p id="profile-copy">她守在玄阙最高的风口，以照夜金灯为迷途人留下一条可归的路。</p>
           </aside>
         </div>
       </section>
 
       <section id="about" class="archive section-shell reveal">
         <div class="archive-mark">✦</div>
-        <p class="eyebrow">STATIC GARDEN · ARCHIVE EDITION</p>
-        <h2>花信留在这里，<br /><em>安静地被阅读。</em></h2>
-        <p>本版本已迁移为纯静态花园：不收集访客数据，也不提供留言或图片投递入口。所有页面内容都只在浏览器中呈现，让这座夜色花园保持轻盈而私密。</p>
+        <p class="eyebrow">STATIC SCROLL · ARCHIVE EDITION</p>
+        <h2>画境藏在这里，<br /><em>静候有缘人展卷。</em></h2>
+        <p>此版本是纯静态的画境藏卷：不收集访客数据，也不提供留笺或丹青投递入口。所有故事都在浏览器中展开，让这方山河保持轻盈而私密。</p>
       </section>
     </main>
 
-    <footer><p>© 2026 <span>✦</span> 樱花树下·科技工作室</p><p>我们坚信美好的事情即将发生</p></footer>
+    <footer><p>© 2026 <span>印</span> 绛阙画境·科技工作室</p><p>愿每一笔丹青，皆照见来处</p></footer>
     <script src="script.js"></script>
   </body>
 </html>

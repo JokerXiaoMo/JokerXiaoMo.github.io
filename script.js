@@ -1,9 +1,9 @@
 const characters = {
-  aurelia: { sigil: "月", kind: "月弧信使", name: "Aurelia · 月城·澄璃", quote: "“月弧会替未写完的信，留一盏灯。”", copy: "她在月弧最亮的地方整理来信，让每一页叙事都找到归航的方向。", image: "assets/characters/aurelia.png" },
-  lyra: { sigil: "星", kind: "星页藏书人", name: "Lyra · 雾岛·诗织", quote: "“每一页沉默，都藏着一颗星。”", copy: "她在无声书页之间记录光的走向，把遥远的夜写成近处的低语。", image: "assets/characters/lyra.webp" },
-  noctis: { sigil: "夜", kind: "静夜书写者", name: "Noctis · 夜凪·墨澜", quote: "“夜色最深处，文字开始发亮。”", copy: "她把失眠的余温收进墨色，让每一次停顿都变成值得留存的句子。", image: "assets/characters/noctis.webp" },
-  seraphine: { sigil: "羽", kind: "月羽引航者", name: "Seraphine · 星羽·祈璃", quote: "“愿所有抵达，都有羽翼相送。”", copy: "她守望那些尚未抵达的愿望，用柔软的光替花园留一盏灯。", image: "assets/characters/seraphine.webp" },
-  velvet: { sigil: "薇", kind: "蔷薇夜巡人", name: "Velvet · 绯棘·薇尔", quote: "“玫瑰会带刺，也会为你开花。”", copy: "她将蔷薇藏进晚风，也把最不驯服的笑意留给星光。", image: "assets/characters/velvet.webp" }
+  aurelia: { sigil: "灯", kind: "玄阙执灯人", name: "沈昭绫", quote: "“灯火不问来路，只照愿意前行的人。”", copy: "她守在玄阙最高的风口，以照夜金灯为迷途人留下一条可归的路。", image: "assets/characters/aurelia.png" },
+  lyra: { sigil: "卷", kind: "青瓷司卷官", name: "陆青梧", quote: "“山河未必言语，落在纸上便有回音。”", copy: "她在青瓷司整理万卷山河，把沉默的地名写成可以抵达的回声。", image: "assets/characters/lyra.webp" },
+  noctis: { sigil: "砚", kind: "墨渊执笔使", name: "顾砚秋", quote: "“墨色最深时，恰能写下最明亮的心事。”", copy: "她以玄墨长笔收住人间余温，让每一次停顿都成为山水的留白。", image: "assets/characters/noctis.webp" },
+  seraphine: { sigil: "羽", kind: "九霄羽卫", name: "云栖梧", quote: "“风会替远行的人，将平安带回檐下。”", copy: "她守望云海尽头的归雁，以云羽铃为每位远行者报一声平安。", image: "assets/characters/seraphine.webp" },
+  velvet: { sigil: "绫", kind: "赤绫巡使", name: "苏绯棠", quote: "“锋芒是护身的花刺，不是拒人千里的墙。”", copy: "她循朱砂绫印巡过长街与山隘，把最锋利的笑意留给不义之事。", image: "assets/characters/velvet.webp" }
 };
 
 document.querySelectorAll('.character-button').forEach(button => {

@@ -27,7 +27,7 @@ var NAME = {
 }
 
 var REGIONS = [
-  { key: 'HK', name: NAME.HK, pattern: /香港|hong\s?-?\s?kong|\bhkg?\b/i },
+  { key: 'HK', name: NAME.HK, pattern: /香港|澳门|澳門|hong\s?-?\s?kong|maca[ou]|\bhkg?\b|\bmo[\s_#-]*\d/i },
   { key: 'TW', name: NAME.TW, pattern: /台湾|台北|taiwan|taipei|\btwn?\b/i },
   { key: 'JP', name: NAME.JP, pattern: /日本|东京|大阪|japan|tokyo|osaka|\bjpn?\b/i },
   { key: 'SG', name: NAME.SG, pattern: /新加坡|singapore|\bsgp?\b/i },

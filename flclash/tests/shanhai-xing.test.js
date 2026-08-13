@@ -13,6 +13,10 @@ assert.equal(typeof sandbox.main, 'function', '覆写入口 main(config) 必须�
 const config = {
   proxies: [
     { name: '🇭🇰 香港 01' },
+    { name: '🇲🇴 澳门 MO-01' },
+    { name: 'Macau 02' },
+    { name: 'Macao-MO03' },
+    { name: 'MO_04' },
     { name: 'Taiwan-TW-02' },
     { name: 'Tokyo JP 03' },
     { name: 'Singapore SG 04' },
@@ -39,8 +43,24 @@ assert.equal(config['proxy-groups'][0].name, '🌺 代理选择', '代理选择�
 assert.equal(config['proxy-groups'][1].name, '☁️ 万象节点')
 assert.equal(config['proxy-groups'][2].name, '🏮 香江灯影')
 assert.equal(config['proxy-groups'][7].name, '⛰️ 四海云游')
+
+const allGroup = config['proxy-groups'][1]
+const hongKongGroup = config['proxy-groups'][2]
+assert.equal(allGroup.type, 'url-test')
+assert.equal(allGroup.url, 'https://www.gstatic.com/generate_204')
+assert.equal(allGroup.interval, 600)
+assert.equal(allGroup.tolerance, 50)
+assert.equal(allGroup.lazy, true)
+;['🇲🇴 澳门 MO-01', 'Macau 02', 'Macao-MO03', 'MO_04'].forEach((node) => {
+  assert.ok(hongKongGroup.proxies.includes(node), node + ' 必须归入香江灯影')
+})
+assert.ok(config['proxy-groups'][0].proxies.includes('🏮 香江灯影'), '代理选择应可直接选择香江灯影')
 assert.ok(config['proxy-groups'].some((group) => group.name === '📜 灵枢智算'))
 assert.ok(config['proxy-groups'].some((group) => group.name === '🛡️ 清风拂尘'))
+assert.ok(config.rules.includes('DOMAIN-SUFFIX,openai.com,📜 灵枢智算'))
+assert.ok(config.rules.includes('DOMAIN-SUFFIX,youtube.com,🎭 梨园影音'))
+assert.ok(config.rules.includes('DOMAIN-SUFFIX,github.com,🧰 百工工坊'))
+assert.ok(config.rules.includes('GEOIP,CN,🧧 神州直连,no-resolve'))
 assert.ok(config.rules.includes('MATCH,🌺 桃源归途'))
 assert.ok(!config['proxy-groups'].some((group) => group.name === '机场旧组'))
 assert.ok(!config.rules.includes('MATCH,DIRECT'))

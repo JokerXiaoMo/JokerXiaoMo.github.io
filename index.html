@@ -7,6 +7,13 @@
     <meta name="theme-color" content="#101328" />
     <title>Celestial Sakura · 月下花信</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      .profile-portrait { position: relative; margin: -3rem -2rem 2.2rem; height: 245px; overflow: hidden; border-bottom: 1px solid rgba(237,214,220,.2); background: #11142b; }
+      .profile-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; filter: saturate(.92) contrast(1.04); }
+      .profile-portrait::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(21,20,44,.94), transparent 54%); pointer-events: none; }
+      .profile-portrait[hidden] { display: none; }
+      @media (max-width:900px) { .profile-portrait { height: 285px; margin: -3rem -2rem 2.2rem; } }
+    </style>
   </head>
   <body>
     <div class="aurora" aria-hidden="true"></div>
@@ -92,6 +99,7 @@
             <button class="character-button" data-character="velvet" role="tab" aria-selected="false"><span>薇</span><i><small>特别来访 · 小恶魔</small><b>Velvet</b><em>蔷薇小恶魔</em></i></button>
           </div>
           <aside class="character-profile" aria-live="polite">
+            <div id="profile-portrait" class="profile-portrait" hidden><img id="profile-image" alt="" /></div>
             <div id="profile-sigil" class="profile-sigil">月</div>
             <p id="profile-kind" class="eyebrow">核心角色 · 01</p>
             <h3 id="profile-name">Aurelia · 月弧主理人</h3>

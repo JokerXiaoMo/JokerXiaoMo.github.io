@@ -1,10 +1,10 @@
-# Sakura Lite · 樱语分流
+# Sakura Route · 樱语分流
 
-`SakuraLite.js` 是一份为 **FlClash 覆写脚本**设计的轻量分流方案。它不复制大型脚本中数十个策略组、上百个规则提供者或复杂 DNS 接管逻辑，而是以动态节点分类、10 个清晰的二次元 Emoji 策略组和 3 份常用规则集覆盖日常使用场景。FlClash 是基于 Mihomo 的跨平台代理客户端；本脚本遵循其 JavaScript 覆写入口，对订阅配置对象进行原地重建。[1]
+`SakuraRoute.js` 是一份为 **FlClash 覆写脚本**设计的分流方案。它不复制大型脚本中数十个策略组、上百个规则提供者或复杂 DNS 接管逻辑，而是以动态节点分类、10 个清晰的二次元 Emoji 策略组和 3 份常用规则集覆盖日常使用场景。FlClash 是基于 Mihomo 的跨平台代理客户端；本脚本遵循其 JavaScript 覆写入口，对订阅配置对象进行原地重建。[1]
 
 > **设计原则：少即是多。** 节点交由订阅维护，DNS 服务器仍由用户或订阅自行管理；脚本只重建策略组、规则和规则提供者，从而降低维护成本与订阅兼容风险。
 
-| 范畴 | Sakura Lite 的处理方式 | 刻意不做的事情 |
+| 范畴 | Sakura Route 的处理方式 | 刻意不做的事情 |
 |---|---|---|
 | 节点 | 自动识别香港、台湾、日本、新加坡、美国与其他节点；跳过流量/到期等信息行 | 不修改、删除或补全订阅节点 |
 | 策略组 | `url-test` 动态区域组加 10 个手动选择组 | 不生成空分组、不建立家宽组、不引入 30+ 业务组 |
@@ -16,10 +16,10 @@
 在 FlClash 的「配置 → 覆写脚本」中新建脚本后，请点击编辑器右上角的**向下箭头**，选择「导入 URL」，并填入以下地址：
 
 ```text
-https://raw.githubusercontent.com/JokerXiaoMo/JokerXiaoMo.github.io/main/flclash/SakuraLite.js
+https://raw.githubusercontent.com/JokerXiaoMo/JokerXiaoMo.github.io/main/flclash/SakuraRoute.js
 ```
 
-导入完成后，务必点击顶部的「未命名」并填写名称，例如 `Sakura Lite`。保存图标只有在内容或名称发生变更时才会启用；填写名称后点击磁盘图标保存，再将该脚本关联至目标订阅并刷新。也可直接复制 [`SakuraLite.js`](./SakuraLite.js) 的完整内容粘贴，但移动端优先推荐「导入 URL」。建议先在一个测试订阅中验证，再替换日常使用的覆写脚本。
+导入完成后，务必点击顶部的「未命名」并填写名称，例如 `Sakura Route`。保存图标只有在内容或名称发生变更时才会启用；填写名称后点击磁盘图标保存，再将该脚本关联至目标订阅并刷新。也可直接复制 [`SakuraRoute.js`](./SakuraRoute.js) 的完整内容粘贴，但移动端优先推荐「导入 URL」。建议先在一个测试订阅中验证，再替换日常使用的覆写脚本。
 
 | 策略组 | 用途 | 默认候选顺序 |
 |---|---|---|
@@ -43,7 +43,7 @@ https://raw.githubusercontent.com/JokerXiaoMo/JokerXiaoMo.github.io/main/flclash
 | `sakura-cn` | `🏯 国风直连` | 常用中国大陆站点直连 |
 | `sakura-global` | `🌐 异界漫游` | 常用全球站点代理 |
 
-Sakura Lite 还内置少量明确域名规则，将常用 AI、视频、Google 与开发服务送入相应的 Emoji 策略组。较完整的 FlClash 分流项目通常会引入大量地区、业务策略组和远程规则提供者；本版仅借鉴其“动态节点分类 + 规则提供者”的架构，而未复制其代码或规则清单。[3]
+Sakura Route 还内置少量明确域名规则，将常用 AI、视频、Google 与开发服务送入相应的 Emoji 策略组。较完整的 FlClash 分流项目通常会引入大量地区、业务策略组和远程规则提供者；本版仅借鉴其“动态节点分类 + 规则提供者”的架构，而未复制其代码或规则清单。[3]
 
 ## 兼容性与边界
 

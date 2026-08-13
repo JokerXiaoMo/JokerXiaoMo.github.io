@@ -3,10 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const vm = require('node:vm')
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'SakuraLite.js'), 'utf8')
+const source = fs.readFileSync(path.join(__dirname, '..', 'SakuraRoute.js'), 'utf8')
 const sandbox = { console: { log() {} } }
 vm.createContext(sandbox)
-vm.runInContext(source, sandbox, { filename: 'SakuraLite.js' })
+vm.runInContext(source, sandbox, { filename: 'SakuraRoute.js' })
 
 assert.equal(typeof sandbox.main, 'function', '覆写入口 main(config) 必须存在')
 
@@ -48,4 +48,4 @@ const noNodes = { proxies: [{ name: '套餐到期：2026-12-31' }], rules: ['MAT
 assert.equal(sandbox.main(noNodes), noNodes)
 assert.deepEqual(noNodes.rules, ['MATCH,DIRECT'], '信息行不能触发配置重建')
 
-console.log('SakuraLite tests passed')
+console.log('SakuraRoute tests passed')

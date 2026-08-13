@@ -1,4 +1,4 @@
-// FlClash 覆写脚本：Sakura Lite · 樱语分流
+// FlClash 覆写脚本：Sakura Route · 樱语分流
 // 适用：FlClash v0.8.85+（标准 Mihomo 内核）
 // 设计：动态节点分组 + 少量常用业务策略 + 三个远程规则集；不接管订阅节点与 DNS 服务器。
 
@@ -37,7 +37,7 @@ var REGIONS = [
 var INFO_NODE = /剩余|流量|到期|重置|官网|订阅|网址|套餐|邮箱|\b(?:total|used|expire|email|website|channel)\b/i
 
 function log(message) {
-  if (typeof console !== 'undefined' && console.log) console.log('[SakuraLite ' + VERSION + '] ' + message)
+  if (typeof console !== 'undefined' && console.log) console.log('[SakuraRoute ' + VERSION + '] ' + message)
 }
 
 function unique(list) {
@@ -142,7 +142,7 @@ function provider(path, localPath) {
     behavior: 'classical',
     format: 'yaml',
     url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/' + path,
-    path: './ruleset/sakura-lite/' + localPath,
+    path: './ruleset/sakura-route/' + localPath,
     interval: 86400
   }
 }

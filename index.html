@@ -17,11 +17,11 @@
         .portrait-stage::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(9,12,29,.58), transparent 53%), linear-gradient(0deg, rgba(9,12,29,.62), transparent 45%); }
         .portrait-stage .moon-arc, .portrait-stage .portrait-glow, .portrait-stage .portrait-caption, .portrait-stage .portrait-tag { z-index: 2; }
         .portrait-stage .portrait-figure { display: none; }
-        .note-card.featured { padding-bottom: 5.2rem; }
-        .note-card .note-action--external { left: auto; right: 1.65rem; display: inline-flex; align-items: center; gap: .65rem; border: 1px solid rgba(241,165,188,.5); border-radius: 999px; background: rgba(16,19,40,.68); padding: .6rem .85rem; backdrop-filter: blur(10px); transition: color .2s, background .2s, border-color .2s, transform .2s; }
-        .note-card .note-action--external:hover { border-color: var(--pink); background: var(--pink); color: #30172c; transform: translateY(-2px); }
+        .note-card { padding-bottom: 5.2rem; }
+        .note-card .note-action { left: auto; right: 1.65rem; display: inline-flex; align-items: center; gap: .65rem; border: 1px solid rgba(241,165,188,.5); border-radius: 999px; background: rgba(16,19,40,.68); padding: .6rem .85rem; color: #f4c5d2; backdrop-filter: blur(10px); transition: color .2s, background .2s, border-color .2s, transform .2s; }
+        .note-card .note-action:hover { border-color: var(--pink); background: var(--pink); color: #30172c; transform: translateY(-2px); }
         @media (max-width:900px) { .profile-portrait { height: 285px; margin: -3rem -2rem 2.2rem; } }
-        @media (max-width:560px) { .note-card .note-action--external { right: 1.3rem; bottom: 1.3rem; } }
+        @media (max-width:560px) { .note-card .note-action { right: 1.3rem; bottom: 1.3rem; } }
       </style>
   </head>
   <body>
@@ -76,21 +76,21 @@
             <div class="card-symbol">⌁</div>
             <h3>科技云梯：沿月轨越过数据云层</h3>
             <p>一枚通往云端秘境的科技云梯软件入口；让需要抵达的文件，沿着星光阶梯安静启程。</p>
-            <a class="note-action--external" href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">沿星阶前往 <span>↗</span></a>
+            <a class="note-action" href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">沿星阶前往 <span>↗</span></a>
           </article>
           <article class="note-card reveal">
             <div class="note-meta"><span>08.03</span><span>角色档案</span></div>
             <div class="card-symbol">☾</div>
             <h3>Aurelia：月弧下的第一封来信</h3>
             <p>她相信每一个沉默的瞬间，都有自己的轨道。</p>
-            <a href="#constellation">阅读来信 <span>↘</span></a>
+            <a class="note-action" href="#constellation">阅读来信 <span>↘</span></a>
           </article>
           <article class="note-card reveal">
             <div class="note-meta"><span>07.27</span><span>书与影</span></div>
             <div class="card-symbol">✦</div>
             <h3>看完一部电影后，星光没有立即熄灭</h3>
             <p>把不愿忘记的镜头，悄悄夹进这一页。</p>
-            <a href="#about">走进花园 <span>↘</span></a>
+            <a class="note-action" href="#about">走进花园 <span>↘</span></a>
           </article>
         </div>
       </section>

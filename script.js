@@ -32,6 +32,30 @@ document.querySelectorAll('.character-button').forEach(button => {
   });
 });
 
+const shanhaiModal = document.querySelector('#shanhai-modal');
+const shanhaiOpen = document.querySelector('#open-shanhai-modal');
+const shanhaiClose = document.querySelector('#close-shanhai-modal');
+
+const closeShanhaiModal = () => {
+  shanhaiModal.hidden = true;
+  document.body.classList.remove('shanhai-modal-open');
+  shanhaiOpen.focus();
+};
+
+shanhaiOpen.addEventListener('click', () => {
+  shanhaiModal.hidden = false;
+  document.body.classList.add('shanhai-modal-open');
+  shanhaiClose.focus();
+});
+
+shanhaiClose.addEventListener('click', closeShanhaiModal);
+shanhaiModal.addEventListener('click', event => {
+  if (event.target === shanhaiModal) closeShanhaiModal();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !shanhaiModal.hidden) closeShanhaiModal();
+});
+
 const field = document.querySelector('#petal-field');
 for (let index = 0; index < 24; index += 1) {
   const petal = document.createElement('i');

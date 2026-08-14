@@ -1,0 +1,28 @@
+.shanhai-modal[hidden] { display: none; }
+.shanhai-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem; background: rgba(5, 19, 26, .76); backdrop-filter: blur(9px); }
+.shanhai-modal-open { overflow: hidden; }
+.shanhai-modal__panel { width: min(860px, 100%); max-height: calc(100vh - 2rem); overflow: hidden; border: 1px solid rgba(196,154,81,.48); border-radius: 18px; background: #102a36; box-shadow: 0 24px 90px rgba(3,14,20,.72); }
+.shanhai-modal__header { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.4rem 1.5rem; border-bottom: 1px solid rgba(196,154,81,.28); background: linear-gradient(135deg, rgba(183,67,53,.34), #102a36); }
+.shanhai-modal__header p { margin: 0; color: #f2b29d; font-size: .68rem; letter-spacing: .16em; }
+.shanhai-modal__header h2 { margin: .45rem 0; font: 600 1.5rem var(--serif); color: #fff4e1; }
+.shanhai-modal__header span { color: #d6dfd5; font-size: .85rem; line-height: 1.6; }
+.shanhai-modal__close { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; flex: 0 0 auto; border: 1px solid rgba(242,178,157,.45); border-radius: 50%; background: rgba(11,32,42,.65); color: #fff4e1; font-size: 1.5rem; cursor: pointer; transition: background .18s; }
+.shanhai-modal__close:hover, .shanhai-modal__close:focus-visible { background: #b74335; outline: none; }
+.shanhai-modal__scroll { max-height: calc(100vh - 12.4rem); overflow-y: auto; padding: 1.5rem; color: #d5ddd5; }
+.shanhai-modal__scroll section { margin-bottom: 1.2rem; padding: 1.2rem; border: 1px solid rgba(196,154,81,.22); border-radius: 14px; background: rgba(11,32,42,.45); }
+.shanhai-modal__scroll h3 { margin: 0 0 .65rem; color: #fff4e1; font: 600 1.08rem var(--serif); }
+.shanhai-modal__scroll p { margin: 0; font-size: .9rem; line-height: 1.8; }
+.shanhai-modal__scroll code { color: #f2d694; }
+.shanhai-modal__facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .7rem; margin-top: 1rem; }
+.shanhai-modal__facts p { padding: .75rem; border-radius: 10px; background: rgba(255,255,255,.045); font-size: .8rem; }
+.shanhai-modal__facts b { display: block; margin-bottom: .3rem; color: #f2d694; }
+.shanhai-modal__strategies { overflow: hidden; border: 1px solid rgba(196,154,81,.22); border-radius: 12px; }
+.shanhai-modal__strategies p { display: grid; grid-template-columns: .9fr 1.1fr; gap: 1rem; padding: .75rem .9rem; border-bottom: 1px solid rgba(196,154,81,.14); }
+.shanhai-modal__strategies p:last-child { border-bottom: 0; }
+.shanhai-modal__strategies b { color: #f2d694; }
+.shanhai-modal__url { display: block; overflow-x: auto; margin-top: 1rem; padding: .8rem; border: 1px solid rgba(196,154,81,.2); border-radius: 10px; background: #07171d; font-size: .76rem; line-height: 1.6; white-space: nowrap; }
+.shanhai-modal__actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.shanhai-modal__actions a { padding: .72rem 1rem; border: 1px solid rgba(196,154,81,.45); border-radius: 999px; color: #f2d694; font-size: .85rem; text-decoration: none; transition: background .18s; }
+.shanhai-modal__actions a:first-child { border-color: #b74335; background: #b74335; color: #fff4e1; }
+.shanhai-modal__actions a:hover { background: rgba(255,255,255,.1); }
+@media (max-width: 560px) { .shanhai-modal { padding: .65rem; } .shanhai-modal__header, .shanhai-modal__scroll { padding: 1rem; } .shanhai-modal__header h2 { font-size: 1.2rem; } .shanhai-modal__facts, .shanhai-modal__strategies p { grid-template-columns: 1fr; gap: .35rem; } .shanhai-modal__scroll { max-height: calc(100vh - 10.8rem); } }

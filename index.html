@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="han-override.css" />
     <link rel="stylesheet" href="hires.css" />
     <link rel="stylesheet" href="taobai-brand.css" />
+    <link rel="stylesheet" href="shanhai-modal.css" />
   </head>
   <body>
     <div class="aurora" aria-hidden="true"></div>
@@ -60,18 +61,18 @@
         </div>
         <div class="note-grid">
           <article class="note-card featured reveal">
-            <div class="note-meta"><span>08.12</span><span>云上行箧</span></div>
+            <div class="note-meta"><span>08.12</span><span>桃白行箧</span></div>
             <div class="card-symbol">云</div>
-            <h3>科技云梯：越过云海的行箧</h3>
-            <p>一枚通向云上库藏的行箧入口；让待抵达的文件，随长风越过万重山。</p>
-            <a class="note-action" href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">入云上行箧 <span>↗</span></a>
+            <h3>桃枝云梯：寄往云上的一封行箧</h3>
+            <p>把待抵达的文件系在桃枝上，循着一枚白桃的月光，越过云海交到远方。</p>
+            <a class="note-action" href="https://ug.link/xueminyaoyun/filemgr/share-download/?id=63d78a8f1eb749d99872f6798422f498" target="_blank" rel="noreferrer">入桃枝云梯 <span>↗</span></a>
           </article>
           <article class="note-card reveal">
-            <div class="note-meta"><span>08.03</span><span>人物图鉴</span></div>
-            <div class="card-symbol">灯</div>
-            <h3>沈昭绫：玄阙灯下的来客</h3>
-            <p>她守着桃白书庭最北的一盏灯，也守着每一段未抵达的归途。</p>
-            <a class="note-action" href="#constellation">展开图鉴 <span>↘</span></a>
+            <div class="note-meta"><span>08.03</span><span>山海行箧</span></div>
+            <div class="card-symbol">行</div>
+            <h3>番小绯的国风脚本：山海行</h3>
+            <p>把节点、服务与路由的去处题在山海长卷上；国风命名之下，每一条分流都有可解释的归途。</p>
+            <button class="note-action" id="open-shanhai-modal" type="button" aria-haspopup="dialog">启封山海行 <span>↗</span></button>
           </article>
           <article class="note-card reveal">
             <div class="note-meta"><span>07.27</span><span>卷中观影</span></div>
@@ -116,6 +117,19 @@
         <p>此版本是纯静态的簪花藏卷：不收集访客数据，也不提供留笺或丹青投递入口。所有故事都在浏览器中展开，让这枝桃花与白桃的长卷保持轻盈而私密。</p>
       </section>
     </main>
+
+    <div id="shanhai-modal" class="shanhai-modal" role="dialog" aria-modal="true" aria-labelledby="shanhai-modal-title" aria-describedby="shanhai-modal-desc" hidden>
+      <div class="shanhai-modal__panel" role="document">
+        <header class="shanhai-modal__header"><div><p>山海行箧 · 开源长卷</p><h2 id="shanhai-modal-title">番小绯的国风脚本 · 山海行</h2><span id="shanhai-modal-desc">让代理策略像山海长卷一样清晰；国风命名之下，每一条分流都保留可解释的技术归途。</span></div><button id="close-shanhai-modal" class="shanhai-modal__close" type="button" aria-label="关闭山海行项目介绍">×</button></header>
+        <div class="shanhai-modal__scroll" tabindex="0">
+          <section><h3>这只行箧里装着什么</h3><p>“山海行”是面向 FlClash 的 JavaScript 覆写脚本，以 <code>function main(config)</code> 为入口，为已聚合为 Mihomo 配置的订阅动态分类节点、生成区域测速组和业务策略组。</p><div class="shanhai-modal__facts"><p><b>节点归类</b>港澳、台湾、日本、新加坡、美国与其他节点分池。</p><p><b>测速机制</b>区域组采用 url-test，600 秒复测、50ms 容差并按需启动。</p></div></section>
+          <section><h3>长卷上的策略名</h3><div class="shanhai-modal__strategies"><p><b>🌺 代理选择</b><span>全局总开关，始终置于第一位。</span></p><p><b>☁️ 万象节点</b><span>全部有效节点的自动测速池。</span></p><p><b>🏮 香江灯影 / 🍑 东海桃影</b><span>港澳与日本等区域节点的自动择优。</span></p><p><b>📜 灵枢智算 / 🧰 百工工坊</b><span>AI 服务与开发者服务的手动策略入口。</span></p><p><b>🧧 神州直连 / 🌺 桃源归途</b><span>大陆服务优先直连与最终兜底策略。</span></p></div></section>
+          <section><h3>分流与使用一览</h3><p>规则会依次处理局域网、广告、AI、影音、Google、开发平台、中国大陆、通用海外服务与最终兜底。使用时，在 FlClash 的“配置 → 覆写脚本”创建脚本后选择“导入 URL”，保存并关联订阅；刷新后确认“🌺 代理选择”位于第一项。</p><code class="shanhai-modal__url">https://raw.githubusercontent.com/JokerXiaoMo/fanxiaofei-guofeng-script/main/ShanHaiXing-Adaptive.js</code></section>
+          <section><h3>开源与素材边界</h3><p>仓库原创脚本、测试与文档使用 MIT License；展示插画不随该许可自动授权。真实延迟取决于订阅、当地网络与设备，请以 FlClash 实际结果为准。</p></section>
+          <div class="shanhai-modal__actions"><a href="https://github.com/JokerXiaoMo/fanxiaofei-guofeng-script" target="_blank" rel="noreferrer">前往项目主页 ↗</a><a href="https://raw.githubusercontent.com/JokerXiaoMo/fanxiaofei-guofeng-script/main/ShanHaiXing-Adaptive.js" target="_blank" rel="noreferrer">打开 Raw 脚本 ↗</a></div>
+        </div>
+      </div>
+    </div>
 
     <footer><p>© 2026 <span>桃白簪花</span> · 半纸桃花半纸砚科技工作室</p><p>一枝桃花，一枚白桃，簪进人间长卷。</p></footer>
     <script src="script.js"></script>

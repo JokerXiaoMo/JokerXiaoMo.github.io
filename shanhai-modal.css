@@ -69,5 +69,7 @@
 .character-portrait-modal__header p { margin: 0; color: #f2b29d; font-size: .68rem; letter-spacing: .16em; }
 .character-portrait-modal__header h2 { margin: .35rem 0; color: #fff4e1; font: 600 1.35rem var(--serif); }
 .character-portrait-modal__header span { color: #d6dfd5; font-size: .8rem; line-height: 1.55; }
+.character-portrait-modal__art { position: relative; overflow: hidden; background: #07171d; }
 .character-portrait-modal__image { display: block; width: 100%; max-height: calc(100vh - 10.4rem); object-fit: contain; object-position: center top; background: #07171d; }
+.character-portrait-modal__watermark { position: absolute; right: 1.15rem; bottom: 1.1rem; border: 1px solid rgba(255,244,225,.5); background: rgba(7,23,29,.62); padding: .45rem .65rem; color: #fff4e1; font-size: .68rem; letter-spacing: .13em; pointer-events: none; transform: rotate(-4deg); }
 @media (max-width: 560px) { .character-portrait-modal { padding: .65rem; } .character-portrait-modal__header { padding: 1rem; } .character-portrait-modal__header h2 { font-size: 1.15rem; } .character-portrait-modal__image { max-height: calc(100vh - 9.8rem); } }

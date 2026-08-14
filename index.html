@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="桃白簪花·执子之手：以中国桃花与白桃为印，收存山河、人物与相守心事的中式动漫长卷。" />
+    <meta name="robots" content="index,follow,noimageindex,noarchive" />
     <meta name="theme-color" content="#101328" />
     <link rel="icon" type="image/png" href="assets/brand/taobai-zanhua-seal-logo.png" />
     <title>桃白簪花 · 执子之手</title>
@@ -43,7 +44,7 @@
           </div>
         </div>
         <div class="portrait-stage reveal" aria-label="沈昭绫 · 玄阙执灯人">
-          <img class="hero-portrait" src="assets/characters/shen-zhaoling-v2.png" alt="沈昭绫的古风动漫立绘：执灯守望的玄阙使者" />
+          <img class="hero-portrait copyright-portrait" src="assets/characters/shen-zhaoling-v2.png" alt="沈昭绫的古风动漫立绘：执灯守望的玄阙使者" draggable="false" />
           <div class="moon-arc"></div>
           <div class="portrait-glow"></div>
           <div class="portrait-figure" aria-hidden="true">
@@ -98,7 +99,7 @@
             <button class="character-button" data-character="velvet" role="tab" aria-selected="false"><span>绫</span><i><small>赤绫巡使</small><b>苏绯棠</b><em>朱砂绫印</em></i></button>
           </div>
           <aside class="character-profile" aria-live="polite">
-            <div id="profile-portrait" class="profile-portrait" hidden><img id="profile-image" alt="" /></div>
+            <div id="profile-portrait" class="profile-portrait" hidden><img id="profile-image" class="copyright-portrait" alt="" draggable="false" /></div>
             <div id="profile-sigil" class="profile-sigil">灯</div>
             <p id="profile-kind" class="eyebrow">玄阙执灯人</p>
             <h3 id="profile-name">沈昭绫</h3>
@@ -151,11 +152,11 @@
     <div id="character-portrait-modal" class="character-portrait-modal" role="dialog" aria-modal="true" aria-labelledby="character-portrait-modal-title" aria-describedby="character-portrait-modal-desc" hidden>
       <div class="character-portrait-modal__panel" role="document">
         <header class="character-portrait-modal__header"><div><p>五灵图鉴 · 人物长卷</p><h2 id="character-portrait-modal-title">沈昭绫 · 玄阙执灯人</h2><span id="character-portrait-modal-desc">展开一卷人物立绘，细看她的信物与行装。</span></div><button id="close-character-portrait-modal" class="shanhai-modal__close" type="button" aria-label="关闭人物立绘大图">×</button></header>
-        <img id="character-portrait-modal-image" class="character-portrait-modal__image" src="assets/characters/shen-zhaoling-v2.png" alt="沈昭绫的古风动漫立绘" />
+        <div class="character-portrait-modal__art"><img id="character-portrait-modal-image" class="character-portrait-modal__image copyright-portrait" src="assets/characters/shen-zhaoling-v2.png" alt="沈昭绫的古风动漫立绘" draggable="false" /><span class="character-portrait-modal__watermark" aria-hidden="true">桃白簪花 · 原创立绘</span></div>
       </div>
     </div>
 
-    <footer><p>© 2026 <span>桃白簪花</span> · 半纸桃花半纸砚科技工作室</p><p>一枝桃花，一枚白桃，簪进人间长卷。</p></footer>
+    <footer><p>© 2026 <span>桃白簪花</span> · 半纸桃花半纸砚科技工作室</p><p>一枝桃花，一枚白桃，簪进人间长卷。</p><p class="portrait-copyright-notice">角色立绘为原创展示素材，未经授权请勿下载、转载、训练或二次分发。本站已限制常规保存与图片索引；公开静态资源仍无法完全阻止截图或恶意爬取。</p></footer>
     <script src="script.js"></script>
   </body>
 </html>

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Request that cooperative image crawlers do not index original character portraits.
+User-agent: Googlebot-Image
+Disallow: /assets/characters/
+
+User-agent: Bingbot
+Disallow: /assets/characters/
+
+# Original character illustration copyright: 桃白簪花 · 半纸桃花半纸砚科技工作室.
+# This policy cannot technically prevent screenshots or non-cooperative crawlers.

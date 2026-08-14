@@ -26,6 +26,7 @@ document.querySelectorAll('.character-button').forEach(button => {
     if (character.image) {
       image.src = character.image;
       image.alt = `${character.name} · ${character.name.split(' · ')[1]} 立绘`;
+      image.setAttribute('draggable', 'false');
       portrait.hidden = false;
     } else {
       image.removeAttribute('src');
@@ -159,6 +160,20 @@ characterPortraitModal.addEventListener('click', event => {
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !characterPortraitModal.hidden) closeCharacterPortraitModal();
+});
+
+const isProtectedPortrait = target => target instanceof Element && Boolean(target.closest('.copyright-portrait'));
+document.addEventListener('contextmenu', event => {
+  if (!isProtectedPortrait(event.target)) return;
+  event.preventDefault();
+});
+document.addEventListener('dragstart', event => {
+  if (!isProtectedPortrait(event.target)) return;
+  event.preventDefault();
+});
+document.addEventListener('selectstart', event => {
+  if (!isProtectedPortrait(event.target)) return;
+  event.preventDefault();
 });
 
 const field = document.querySelector('#petal-field');

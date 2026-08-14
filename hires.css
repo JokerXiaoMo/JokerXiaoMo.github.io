@@ -41,3 +41,16 @@ body { font-kerning: normal; text-rendering: optimizeLegibility; -webkit-font-sm
   .portrait-caption small { font-size: 16px; }
   .section-seal { width: 2.35rem; height: 2.35rem; font-size: 1.35rem; }
 }
+
+@media (min-width: 6000px) {
+  .site-header { max-width: 6500px; height: 132px; padding-left: 7rem; padding-right: 7rem; }
+  .section-shell, footer { max-width: 6500px; }
+  .site-header nav a, .garden-link { font-size: 25px; }
+  .eyebrow { font-size: 22px; }
+  .note-meta { font-size: 22px; }
+  .note-card p, .section-heading > p, .character-profile > p { font-size: 25px; }
+  .character-button small, .character-button em { font-size: 21px; }
+  .character-button b { font-size: 34px; }
+  .portrait-caption small { font-size: 19px; }
+  .section-seal { width: 2.85rem; height: 2.85rem; font-size: 1.6rem; }
+}

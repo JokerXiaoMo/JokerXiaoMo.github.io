@@ -33,7 +33,7 @@ document.querySelectorAll('.character-button').forEach(button => {
       image.alt = '';
       portrait.hidden = true;
     }
-    profilePortraitOpen.textContent = `查看 ${character.name} 立绘 ↗`;
+    profilePortraitOpen.textContent = `查看 ${character.name} 立绘`;
     profilePortraitOpen.setAttribute('aria-label', `查看${character.name}立绘`);
   });
 });

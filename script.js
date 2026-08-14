@@ -56,6 +56,32 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !shanhaiModal.hidden) closeShanhaiModal();
 });
 
+const taozhiVoidModal = document.querySelector('#taozhi-void-modal');
+const taozhiVoidOpen = document.querySelector('#open-taozhi-void-modal');
+const taozhiVoidClose = document.querySelector('#close-taozhi-void-modal');
+const taozhiVoidDismiss = document.querySelector('#dismiss-taozhi-void-modal');
+
+const closeTaozhiVoidModal = () => {
+  taozhiVoidModal.hidden = true;
+  document.body.classList.remove('shanhai-modal-open');
+  taozhiVoidOpen.focus();
+};
+
+taozhiVoidOpen.addEventListener('click', () => {
+  taozhiVoidModal.hidden = false;
+  document.body.classList.add('shanhai-modal-open');
+  taozhiVoidClose.focus();
+});
+
+taozhiVoidClose.addEventListener('click', closeTaozhiVoidModal);
+taozhiVoidDismiss.addEventListener('click', closeTaozhiVoidModal);
+taozhiVoidModal.addEventListener('click', event => {
+  if (event.target === taozhiVoidModal) closeTaozhiVoidModal();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !taozhiVoidModal.hidden) closeTaozhiVoidModal();
+});
+
 const field = document.querySelector('#petal-field');
 for (let index = 0; index < 24; index += 1) {
   const petal = document.createElement('i');

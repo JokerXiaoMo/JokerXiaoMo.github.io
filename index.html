@@ -72,7 +72,7 @@
             <div class="card-symbol">云</div>
             <h3>桃枝云梯：寄往云上的一封行箧</h3>
             <p>把待抵达的文件系在桃枝上，循着一枚白桃的月光，越过云海交到远方。</p>
-            <a class="note-action" href="已遁入虚空" target="_blank" rel="noreferrer">入桃枝云梯 <span>↗</span></a>
+            <button class="note-action" id="open-taozhi-void-modal" type="button" aria-haspopup="dialog" aria-label="打开桃枝云梯遁空提示">入桃枝云梯 <span aria-hidden="true">↗</span></button>
           </article>
           <article class="note-card reveal">
             <div class="note-meta"><span>07.27</span><span>卷中观影</span></div>
@@ -128,6 +128,17 @@
           <section><h3>开源与素材边界</h3><p>仓库原创脚本、测试与文档使用 MIT License；展示插画不随该许可自动授权。真实延迟取决于订阅、当地网络与设备，请以 FlClash 实际结果为准。</p></section>
           <div class="shanhai-modal__actions"><a href="https://github.com/JokerXiaoMo/fanxiaofei-guofeng-script" target="_blank" rel="noreferrer">前往项目主页 ↗</a><a href="https://raw.githubusercontent.com/JokerXiaoMo/fanxiaofei-guofeng-script/main/ShanHaiXing-Adaptive.js" target="_blank" rel="noreferrer">打开 Raw 脚本 ↗</a></div>
         </div>
+      </div>
+    </div>
+
+    <div id="taozhi-void-modal" class="taozhi-void-modal" role="dialog" aria-modal="true" aria-labelledby="taozhi-void-title" aria-describedby="taozhi-void-desc" hidden>
+      <div class="taozhi-void-modal__panel" role="document">
+        <button id="close-taozhi-void-modal" class="taozhi-void-modal__close" type="button" aria-label="关闭桃枝云梯遁空提示">×</button>
+        <p class="taozhi-void-modal__eyebrow">桃枝云梯 · 行箧回音</p>
+        <div class="taozhi-void-modal__emoji" aria-hidden="true">🍑 🫧</div>
+        <h2 id="taozhi-void-title">已遁入虚空</h2>
+        <p id="taozhi-void-desc">这一枝桃枝暂时隐入云海，待行箧再度落下时，方可循白桃月光抵达。</p>
+        <button id="dismiss-taozhi-void-modal" class="taozhi-void-modal__dismiss" type="button">收起浮光</button>
       </div>
     </div>
 

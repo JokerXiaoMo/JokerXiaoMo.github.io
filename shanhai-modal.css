@@ -26,3 +26,16 @@
 .shanhai-modal__actions a:first-child { border-color: #b74335; background: #b74335; color: #fff4e1; }
 .shanhai-modal__actions a:hover { background: rgba(255,255,255,.1); }
 @media (max-width: 560px) { .shanhai-modal { padding: .65rem; } .shanhai-modal__header, .shanhai-modal__scroll { padding: 1rem; } .shanhai-modal__header h2 { font-size: 1.2rem; } .shanhai-modal__facts, .shanhai-modal__strategies p { grid-template-columns: 1fr; gap: .35rem; } .shanhai-modal__scroll { max-height: calc(100vh - 10.8rem); } }
+
+.taozhi-void-modal[hidden] { display: none; }
+.taozhi-void-modal { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 1rem; background: rgba(5, 19, 26, .78); backdrop-filter: blur(10px); }
+.taozhi-void-modal__panel { position: relative; width: min(430px, 100%); overflow: hidden; padding: 2.25rem 2rem 2rem; border: 1px solid rgba(242, 214, 148, .52); border-radius: 20px; background: radial-gradient(circle at 18% 13%, rgba(207, 104, 83, .38), transparent 38%), linear-gradient(145deg, #183b44, #0b202a); box-shadow: 0 26px 80px rgba(3, 14, 20, .75); color: #d5ddd5; text-align: center; }
+.taozhi-void-modal__eyebrow { margin: 0; color: #f2b29d; font-size: .7rem; letter-spacing: .16em; }
+.taozhi-void-modal__emoji { margin: 1.15rem 0 .75rem; font-size: 2.55rem; letter-spacing: .25em; filter: drop-shadow(0 5px 10px rgba(0, 0, 0, .22)); }
+.taozhi-void-modal h2 { margin: 0; color: #fff4e1; font: 600 1.75rem var(--serif); }
+.taozhi-void-modal__panel > p:not(.taozhi-void-modal__eyebrow) { margin: .8rem auto 1.35rem; max-width: 26rem; font-size: .92rem; line-height: 1.85; }
+.taozhi-void-modal__close { position: absolute; top: .8rem; right: .8rem; display: grid; place-items: center; width: 2.35rem; height: 2.35rem; border: 1px solid rgba(242, 178, 157, .45); border-radius: 50%; background: rgba(11, 32, 42, .68); color: #fff4e1; font-size: 1.4rem; cursor: pointer; }
+.taozhi-void-modal__dismiss { min-height: 2.8rem; padding: .65rem 1rem; border: 1px solid rgba(242, 214, 148, .56); border-radius: 999px; background: #b74335; color: #fff4e1; font: 600 .86rem var(--serif); letter-spacing: .08em; cursor: pointer; transition: transform .18s, background .18s; }
+.taozhi-void-modal__close:hover,.taozhi-void-modal__close:focus-visible,.taozhi-void-modal__dismiss:hover,.taozhi-void-modal__dismiss:focus-visible { background: #cf6853; outline: none; }
+.taozhi-void-modal__dismiss:active { transform: scale(.97); }
+@media (max-width: 560px) { .taozhi-void-modal { padding: .8rem; } .taozhi-void-modal__panel { padding: 2.05rem 1.3rem 1.45rem; } }

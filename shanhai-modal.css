@@ -43,6 +43,7 @@
 .taozhi-void-modal__dismiss { min-height: 2.8rem; padding: .65rem 1rem; border: 1px solid rgba(242, 214, 148, .56); border-radius: 999px; background: #b74335; color: #fff4e1; font: 600 .86rem var(--serif); letter-spacing: .08em; cursor: pointer; transition: transform .18s, background .18s; }
 .taozhi-void-modal__close:hover,.taozhi-void-modal__close:focus-visible,.taozhi-void-modal__dismiss:hover,.taozhi-void-modal__dismiss:focus-visible { background: #cf6853; outline: none; }
 .taozhi-void-modal__dismiss:active { transform: scale(.97); }
+.note-card > .note-action { position: absolute !important; top: auto !important; right: 1.65rem !important; bottom: 1.65rem !important; left: auto !important; }
 @media (prefers-reduced-motion: no-preference) {
   .note-card .note-action { isolation: isolate; overflow: hidden; }
   .note-card .note-action::after { content: ""; position: absolute; z-index: 0; inset: -55% auto -55% -55%; width: 26%; background: linear-gradient(90deg, transparent, rgba(255, 244, 225, .48), transparent); opacity: .8; transform: skewX(-22deg); animation: note-action-sheen 7.2s linear infinite; pointer-events: none; }
@@ -59,4 +60,4 @@
   @keyframes taozhi-countdown-glow { 0%, 100% { opacity: .82; } 50% { opacity: 1; } }
 }
 @media (prefers-reduced-motion: reduce) { .note-card .note-action::after, .taozhi-void-modal__panel::before, .taozhi-void-modal__emoji, .taozhi-void-modal__countdown { animation: none !important; transition: none !important; } }
-@media (max-width: 560px) { .taozhi-void-modal { padding: .8rem; } .taozhi-void-modal__panel { padding: 2.05rem 1.3rem 1.45rem; } }
+@media (max-width: 560px) { .taozhi-void-modal { padding: .8rem; } .taozhi-void-modal__panel { padding: 2.05rem 1.3rem 1.45rem; } .note-card > .note-action { right: 1.3rem !important; bottom: 1.3rem !important; } }

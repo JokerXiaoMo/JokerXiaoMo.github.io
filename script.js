@@ -60,8 +60,48 @@ const taozhiVoidModal = document.querySelector('#taozhi-void-modal');
 const taozhiVoidOpen = document.querySelector('#open-taozhi-void-modal');
 const taozhiVoidClose = document.querySelector('#close-taozhi-void-modal');
 const taozhiVoidDismiss = document.querySelector('#dismiss-taozhi-void-modal');
+const taozhiReturnCountdown = document.querySelector('#taozhi-return-countdown');
+const taozhiReturnTarget = document.querySelector('#taozhi-return-target');
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const taozhiReturnAt = new Date();
+taozhiReturnAt.setFullYear(taozhiReturnAt.getFullYear() + 1);
+let taozhiCountdownTimer;
+
+const formatTaozhiCountdown = remainingMs => {
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${days} 日 ${String(hours).padStart(2, '0')} 时 ${String(minutes).padStart(2, '0')} 分 ${String(seconds).padStart(2, '0')} 秒`;
+};
+
+const updateTaozhiCountdown = () => {
+  const remainingMs = taozhiReturnAt.getTime() - Date.now();
+  taozhiReturnCountdown.textContent = remainingMs > 0 ? formatTaozhiCountdown(remainingMs) : '云梯正在回归';
+  taozhiReturnCountdown.dateTime = taozhiReturnAt.toISOString();
+};
+
+const startTaozhiCountdown = () => {
+  updateTaozhiCountdown();
+  if (!prefersReducedMotion.matches && !taozhiCountdownTimer) {
+    taozhiCountdownTimer = window.setInterval(updateTaozhiCountdown, 1000);
+  }
+};
+
+const stopTaozhiCountdown = () => {
+  if (taozhiCountdownTimer) window.clearInterval(taozhiCountdownTimer);
+  taozhiCountdownTimer = undefined;
+};
+
+const formattedTaozhiReturnAt = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+}).format(taozhiReturnAt);
+taozhiReturnTarget.textContent = `回归时刻 · ${formattedTaozhiReturnAt}`;
 
 const closeTaozhiVoidModal = () => {
+  stopTaozhiCountdown();
+  taozhiVoidModal.classList.remove('is-open');
   taozhiVoidModal.hidden = true;
   document.body.classList.remove('shanhai-modal-open');
   taozhiVoidOpen.focus();
@@ -70,6 +110,8 @@ const closeTaozhiVoidModal = () => {
 taozhiVoidOpen.addEventListener('click', () => {
   taozhiVoidModal.hidden = false;
   document.body.classList.add('shanhai-modal-open');
+  window.requestAnimationFrame(() => taozhiVoidModal.classList.add('is-open'));
+  startTaozhiCountdown();
   taozhiVoidClose.focus();
 });
 
@@ -80,6 +122,10 @@ taozhiVoidModal.addEventListener('click', event => {
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !taozhiVoidModal.hidden) closeTaozhiVoidModal();
+});
+prefersReducedMotion.addEventListener('change', event => {
+  if (event.matches) stopTaozhiCountdown();
+  else if (!taozhiVoidModal.hidden) startTaozhiCountdown();
 });
 
 const field = document.querySelector('#petal-field');

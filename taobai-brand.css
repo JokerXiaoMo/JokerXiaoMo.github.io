@@ -1,0 +1,24 @@
+.brand-orbit {
+  overflow: hidden;
+  background: linear-gradient(145deg, #b74335, #7d2729);
+}
+
+.brand-orbit img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.section-seal {
+  background: linear-gradient(145deg, #b74335, #8a302d);
+  color: #fff4e1;
+  overflow: hidden;
+}
+
+.section-seal img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

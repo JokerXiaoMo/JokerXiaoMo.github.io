@@ -1,6 +1,6 @@
-# 绛阙画境 · 五灵图鉴
+# 桃白簪花 · 五灵图鉴
 
-这是「绛阙画境」的 GitHub Pages 纯静态版本。它以黛青、宣纸、朱砂、鎏金与青瓷构成中式动漫长卷，发布目标为 `https://jokerxiaomo.github.io/`。
+这是「桃白簪花」的 GitHub Pages 纯静态版本。它以中国桃花、白桃、朱砂、鎏金与枝墨构成中式动漫长卷，发布目标为 `https://jokerxiaomo.github.io/`。
 
 ## 静态版本边界
 

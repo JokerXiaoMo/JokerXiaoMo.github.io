@@ -44,17 +44,19 @@
 .taozhi-void-modal__close:hover,.taozhi-void-modal__close:focus-visible,.taozhi-void-modal__dismiss:hover,.taozhi-void-modal__dismiss:focus-visible { background: #cf6853; outline: none; }
 .taozhi-void-modal__dismiss:active { transform: scale(.97); }
 @media (prefers-reduced-motion: no-preference) {
-  #open-taozhi-void-modal { position: relative; isolation: isolate; overflow: hidden; }
-  #open-taozhi-void-modal::after { content: ""; position: absolute; z-index: -1; inset: -55% auto -55% -55%; width: 26%; background: linear-gradient(90deg, transparent, rgba(255, 244, 225, .55), transparent); transform: skewX(-22deg); animation: taozhi-trigger-sheen 4.8s linear infinite; pointer-events: none; }
+  .note-card .note-action { isolation: isolate; overflow: hidden; }
+  .note-card .note-action::after { content: ""; position: absolute; z-index: 0; inset: -55% auto -55% -55%; width: 26%; background: linear-gradient(90deg, transparent, rgba(255, 244, 225, .48), transparent); opacity: .8; transform: skewX(-22deg); animation: note-action-sheen 7.2s linear infinite; pointer-events: none; }
+  .note-card:nth-child(2) .note-action::after { animation-delay: -2.4s; }
+  .note-card:nth-child(3) .note-action::after { animation-delay: -4.8s; }
   .taozhi-void-modal.is-open .taozhi-void-modal__panel { animation: taozhi-panel-arrive .28s cubic-bezier(.23, 1, .32, 1) both; }
   .taozhi-void-modal.is-open .taozhi-void-modal__panel::before { animation: taozhi-panel-sheen 4.2s linear .14s infinite; }
   .taozhi-void-modal.is-open .taozhi-void-modal__emoji { animation: taozhi-emoji-drift 3.8s linear infinite alternate; }
   .taozhi-void-modal.is-open .taozhi-void-modal__countdown { animation: taozhi-countdown-glow 4s linear infinite; }
-  @keyframes taozhi-trigger-sheen { 0%, 48% { transform: translateX(-170%) skewX(-22deg); } 72%, 100% { transform: translateX(570%) skewX(-22deg); } }
+  @keyframes note-action-sheen { 0%, 48% { transform: translateX(-170%) skewX(-22deg); } 72%, 100% { transform: translateX(570%) skewX(-22deg); } }
   @keyframes taozhi-panel-arrive { from { opacity: 0; transform: translateY(13px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes taozhi-panel-sheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(680%) skewX(-20deg); } }
   @keyframes taozhi-emoji-drift { from { transform: translateY(-2px) rotate(-2deg); } to { transform: translateY(3px) rotate(2deg); } }
   @keyframes taozhi-countdown-glow { 0%, 100% { opacity: .82; } 50% { opacity: 1; } }
 }
-@media (prefers-reduced-motion: reduce) { #open-taozhi-void-modal::after, .taozhi-void-modal__panel::before, .taozhi-void-modal__emoji, .taozhi-void-modal__countdown { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .note-card .note-action::after, .taozhi-void-modal__panel::before, .taozhi-void-modal__emoji, .taozhi-void-modal__countdown { animation: none !important; transition: none !important; } }
 @media (max-width: 560px) { .taozhi-void-modal { padding: .8rem; } .taozhi-void-modal__panel { padding: 2.05rem 1.3rem 1.45rem; } }

@@ -5,10 +5,13 @@ const characters = {
   seraphine: { sigil: "羽", kind: "九霄羽卫", name: "云栖梧", temperament: "温柔果决，守望每一位远行者。", relic: "云羽铃", quote: "“风会替远行的人，将平安带回檐下。”", copy: "她守望云海尽头的归雁，以云羽铃为每位远行者报一声平安。", image: "assets/characters/yun-qiwu-v2.png" },
   velvet: { sigil: "绫", kind: "赤绫巡使", name: "苏绯棠", temperament: "明艳不驯，却把软肋藏得很深。", relic: "朱砂绫印", quote: "“锋芒是护身的花刺，不是拒人千里的墙。”", copy: "她循朱砂绫印巡过长街与山隘，把最锋利的笑意留给不义之事。", image: "assets/characters/su-feitang-v2.png" }
 };
+let selectedCharacter = characters.aurelia;
+const profilePortraitOpen = document.querySelector('#open-character-portrait-modal');
 
 document.querySelectorAll('.character-button').forEach(button => {
   button.addEventListener('click', () => {
     const character = characters[button.dataset.character];
+    selectedCharacter = character;
     document.querySelectorAll('.character-button').forEach(item => { item.classList.remove('active'); item.setAttribute('aria-selected', 'false'); });
     button.classList.add('active'); button.setAttribute('aria-selected', 'true');
     document.querySelector('#profile-sigil').textContent = character.sigil;
@@ -29,6 +32,8 @@ document.querySelectorAll('.character-button').forEach(button => {
       image.alt = '';
       portrait.hidden = true;
     }
+    profilePortraitOpen.textContent = `查看 ${character.name} 立绘 ↗`;
+    profilePortraitOpen.setAttribute('aria-label', `查看${character.name}立绘`);
   });
 });
 
@@ -126,6 +131,34 @@ document.addEventListener('keydown', event => {
 prefersReducedMotion.addEventListener('change', event => {
   if (event.matches) stopTaozhiCountdown();
   else if (!taozhiVoidModal.hidden) startTaozhiCountdown();
+});
+
+const characterPortraitModal = document.querySelector('#character-portrait-modal');
+const characterPortraitClose = document.querySelector('#close-character-portrait-modal');
+const characterPortraitTitle = document.querySelector('#character-portrait-modal-title');
+const characterPortraitImage = document.querySelector('#character-portrait-modal-image');
+
+const closeCharacterPortraitModal = () => {
+  characterPortraitModal.hidden = true;
+  document.body.classList.remove('shanhai-modal-open');
+  profilePortraitOpen.focus();
+};
+
+profilePortraitOpen.addEventListener('click', () => {
+  characterPortraitTitle.textContent = `${selectedCharacter.name} · ${selectedCharacter.kind}`;
+  characterPortraitImage.src = selectedCharacter.image;
+  characterPortraitImage.alt = `${selectedCharacter.name}的古风动漫立绘`;
+  characterPortraitModal.hidden = false;
+  document.body.classList.add('shanhai-modal-open');
+  characterPortraitClose.focus();
+});
+
+characterPortraitClose.addEventListener('click', closeCharacterPortraitModal);
+characterPortraitModal.addEventListener('click', event => {
+  if (event.target === characterPortraitModal) closeCharacterPortraitModal();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !characterPortraitModal.hidden) closeCharacterPortraitModal();
 });
 
 const field = document.querySelector('#petal-field');

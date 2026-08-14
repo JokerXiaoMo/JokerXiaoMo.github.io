@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="han-override.css?v=portrait-focus-20260814" />
     <link rel="stylesheet" href="hires.css" />
     <link rel="stylesheet" href="taobai-brand.css" />
-    <link rel="stylesheet" href="shanhai-modal.css?v=a582b0b" />
+    <link rel="stylesheet" href="shanhai-modal.css?v=character-viewer-20260814" />
   </head>
   <body>
     <div class="aurora" aria-hidden="true"></div>
@@ -106,6 +106,7 @@
             <p id="profile-copy">她守在玄阙最高的风口，以照夜金灯为迷途人留下一条可归的路。</p>
             <p id="profile-temperament">性情：沉静笃定，愿以微光守住归途。</p>
             <p id="profile-relic">信物 · 照夜金灯</p>
+            <button id="open-character-portrait-modal" class="profile-portrait-action" type="button" aria-haspopup="dialog" aria-label="查看沈昭绫立绘">查看立绘 <span aria-hidden="true">↗</span></button>
           </aside>
         </div>
       </section>
@@ -144,6 +145,13 @@
           <small id="taozhi-return-target">回归时刻 · 明年同日此刻</small>
         </section>
         <button id="dismiss-taozhi-void-modal" class="taozhi-void-modal__dismiss" type="button">收起浮光</button>
+      </div>
+    </div>
+
+    <div id="character-portrait-modal" class="character-portrait-modal" role="dialog" aria-modal="true" aria-labelledby="character-portrait-modal-title" aria-describedby="character-portrait-modal-desc" hidden>
+      <div class="character-portrait-modal__panel" role="document">
+        <header class="character-portrait-modal__header"><div><p>五灵图鉴 · 人物长卷</p><h2 id="character-portrait-modal-title">沈昭绫 · 玄阙执灯人</h2><span id="character-portrait-modal-desc">展开一卷人物立绘，细看她的信物与行装。</span></div><button id="close-character-portrait-modal" class="shanhai-modal__close" type="button" aria-label="关闭人物立绘大图">×</button></header>
+        <img id="character-portrait-modal-image" class="character-portrait-modal__image" src="assets/characters/shen-zhaoling-v2.png" alt="沈昭绫的古风动漫立绘" />
       </div>
     </div>
 

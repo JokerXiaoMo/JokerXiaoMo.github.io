@@ -61,3 +61,13 @@
 }
 @media (prefers-reduced-motion: reduce) { .note-card .note-action::after, .taozhi-void-modal__panel::before, .taozhi-void-modal__emoji, .taozhi-void-modal__countdown { animation: none !important; transition: none !important; } }
 @media (max-width: 560px) { .taozhi-void-modal { padding: .8rem; } .taozhi-void-modal__panel { padding: 2.05rem 1.3rem 1.45rem; } .note-card > .note-action { right: 1.3rem !important; bottom: 1.3rem !important; } }
+
+.character-portrait-modal[hidden] { display: none; }
+.character-portrait-modal { position: fixed; inset: 0; z-index: 58; display: grid; place-items: center; padding: 1rem; background: rgba(5, 19, 26, .8); backdrop-filter: blur(10px); }
+.character-portrait-modal__panel { width: min(720px, 100%); max-height: calc(100vh - 2rem); overflow: hidden; border: 1px solid rgba(196,154,81,.5); border-radius: 18px; background: #102a36; box-shadow: 0 24px 90px rgba(3,14,20,.78); }
+.character-portrait-modal__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.15rem 1.35rem; border-bottom: 1px solid rgba(196,154,81,.28); background: linear-gradient(135deg, rgba(183,67,53,.33), #102a36); }
+.character-portrait-modal__header p { margin: 0; color: #f2b29d; font-size: .68rem; letter-spacing: .16em; }
+.character-portrait-modal__header h2 { margin: .35rem 0; color: #fff4e1; font: 600 1.35rem var(--serif); }
+.character-portrait-modal__header span { color: #d6dfd5; font-size: .8rem; line-height: 1.55; }
+.character-portrait-modal__image { display: block; width: 100%; max-height: calc(100vh - 10.4rem); object-fit: contain; object-position: center top; background: #07171d; }
+@media (max-width: 560px) { .character-portrait-modal { padding: .65rem; } .character-portrait-modal__header { padding: 1rem; } .character-portrait-modal__header h2 { font-size: 1.15rem; } .character-portrait-modal__image { max-height: calc(100vh - 9.8rem); } }

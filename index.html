@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="hires.css" />
     <link rel="stylesheet" href="taobai-brand.css" />
     <link rel="stylesheet" href="shanhai-modal.css?v=character-viewer-20260814" />
+    <link rel="stylesheet" href="articles.css?v=text-scroll-20260817" />
   </head>
   <body>
     <div class="aurora" aria-hidden="true"></div>
@@ -58,7 +59,7 @@
       <section id="notes" class="notes section-shell">
         <div class="section-heading reveal">
           <div><p class="eyebrow"><span class="section-seal" aria-hidden="true"><img src="assets/brand/taobai-zanhua-seal-logo.png" alt="" /></span> 簪花札记</p><h2>卷中札记</h2></div>
-          <p>从云海、旧卷与山河余响里，择三篇值得展开的记事。</p>
+          <p>从云海、旧卷与山河余响里，择几页值得展开的记事。</p>
         </div>
         <div class="note-grid">
           <article class="note-card featured reveal">
@@ -75,14 +76,15 @@
             <p>把待抵达的文件系在桃枝上，循着一枚白桃的月光，越过云海交到远方。</p>
             <button class="note-action" id="open-taozhi-void-modal" type="button" aria-haspopup="dialog" aria-label="打开桃枝云梯遁空提示">入桃枝云梯</button>
           </article>
-          <article class="note-card reveal">
-            <div class="note-meta"><span>07.27</span><span>卷中观影</span></div>
-            <div class="card-symbol">卷</div>
-            <h3>戏散之后，山河仍在银幕里回响</h3>
-            <p>把不愿遗忘的一瞬，题在长卷余白。</p>
-            <a class="note-action" href="#about">读簪花藏卷</a>
-          </article>
         </div>
+      </section>
+
+      <section id="articles" class="articles-section section-shell" hidden aria-labelledby="articles-title">
+        <div class="section-heading reveal">
+          <div><p class="eyebrow"><span class="section-seal" aria-hidden="true"><img src="assets/brand/taobai-zanhua-seal-logo.png" alt="" /></span> 书庭新卷</p><h2 id="articles-title">新近落笔</h2></div>
+          <p>每一页文字，都在桃白书庭里静候展开。</p>
+        </div>
+        <div id="article-grid" class="article-grid" aria-live="polite"></div>
       </section>
 
       <section id="constellation" class="constellation section-shell">
@@ -156,7 +158,15 @@
       </div>
     </div>
 
+    <div id="article-modal" class="article-modal" role="dialog" aria-modal="true" aria-labelledby="article-modal-title" aria-describedby="article-modal-meta" hidden>
+      <article class="article-modal__panel" role="document">
+        <header class="article-modal__header"><div><p id="article-modal-meta" class="article-modal__eyebrow">书庭新卷</p><h2 id="article-modal-title">文章标题</h2></div><button id="close-article-modal" class="article-modal__close" type="button" aria-label="关闭文字长卷">×</button></header>
+        <div id="article-modal-body" class="article-modal__body" tabindex="0"></div>
+      </article>
+    </div>
+
     <footer><p>© 2026 <span>桃白簪花</span> · 半纸桃花半纸砚科技工作室</p><p>一枝桃花，一枚白桃，簪进人间长卷。</p><p class="portrait-copyright-notice">角色立绘为原创展示素材，未经授权请勿下载、转载、训练或二次分发。本站已限制常规保存与图片索引；公开静态资源仍无法完全阻止截图或恶意爬取。</p></footer>
+    <script src="articles.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

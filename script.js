@@ -176,6 +176,70 @@ document.addEventListener('selectstart', event => {
   event.preventDefault();
 });
 
+const articleSection = document.querySelector('#articles');
+const articleGrid = document.querySelector('#article-grid');
+const articleModal = document.querySelector('#article-modal');
+const articleModalTitle = document.querySelector('#article-modal-title');
+const articleModalMeta = document.querySelector('#article-modal-meta');
+const articleModalBody = document.querySelector('#article-modal-body');
+const articleModalClose = document.querySelector('#close-article-modal');
+const staticArticles = Array.isArray(window.TAOBEI_ARTICLES) ? window.TAOBEI_ARTICLES : [];
+let lastArticleTrigger;
+
+const closeArticleModal = () => {
+  articleModal.hidden = true;
+  document.body.classList.remove('shanhai-modal-open');
+  lastArticleTrigger?.focus();
+};
+
+const openArticleModal = (article, trigger) => {
+  lastArticleTrigger = trigger;
+  articleModalTitle.textContent = article.title;
+  articleModalMeta.textContent = `${article.date} · ${article.category}`;
+  articleModalBody.replaceChildren(...article.paragraphs.map(paragraph => {
+    const node = document.createElement('p');
+    node.textContent = paragraph;
+    return node;
+  }));
+  articleModal.hidden = false;
+  document.body.classList.add('shanhai-modal-open');
+  articleModalClose.focus();
+};
+
+if (staticArticles.length) {
+  articleSection.hidden = false;
+  staticArticles.forEach(article => {
+    if (!article || !article.id || !article.title || !Array.isArray(article.paragraphs)) return;
+    const card = document.createElement('article');
+    card.className = 'article-card reveal';
+    const meta = document.createElement('p');
+    meta.className = 'article-card__meta';
+    meta.innerHTML = `<span></span><span></span>`;
+    meta.children[0].textContent = article.date || '书庭新卷';
+    meta.children[1].textContent = article.category || '书庭新卷';
+    const title = document.createElement('h3');
+    title.textContent = article.title;
+    const summary = document.createElement('p');
+    summary.textContent = article.summary || article.paragraphs[0] || '';
+    const openButton = document.createElement('button');
+    openButton.className = 'article-card__open';
+    openButton.type = 'button';
+    openButton.textContent = '展开文字长卷';
+    openButton.setAttribute('aria-label', `展开文章：${article.title}`);
+    openButton.addEventListener('click', () => openArticleModal(article, openButton));
+    card.append(meta, title, summary, openButton);
+    articleGrid.append(card);
+  });
+}
+
+articleModalClose.addEventListener('click', closeArticleModal);
+articleModal.addEventListener('click', event => {
+  if (event.target === articleModal) closeArticleModal();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !articleModal.hidden) closeArticleModal();
+});
+
 const field = document.querySelector('#petal-field');
 for (let index = 0; index < 24; index += 1) {
   const petal = document.createElement('i');

@@ -3,10 +3,14 @@
 #define NTDDI_VERSION 0x06010000
 
 #include <winsock2.h>
+#include <ws2ipdef.h>
 #include <windows.h>
 #include <commctrl.h>
 #include <iphlpapi.h>
 #include <wlanapi.h>
+#include <netioapi.h>
+#include <winspool.h>
+#include <winsvc.h>
 #include <objbase.h>
 #include <shellapi.h>
 
@@ -20,7 +24,7 @@ namespace {
 
 constexpr wchar_t kAppTitle[] = L"系统维护工具箱 mini";
 constexpr int kWindowWidth = 720;
-constexpr int kWindowHeight = 480;
+constexpr int kWindowHeight = 520;
 
 constexpr int IDC_WIFI_COMBO = 1001;
 constexpr int IDC_WIFI_REFRESH = 1002;
@@ -31,6 +35,7 @@ constexpr int IDC_QUEUE_CLEAR = 1006;
 constexpr int IDC_STATUS = 1007;
 constexpr int IDC_PROGRESS = 1008;
 constexpr int IDC_ABOUT = 1009;
+constexpr int IDC_PRINTER_REFRESH = 1010;
 constexpr int IDI_APP = 101;
 constexpr int IDB_LOGO = 102;
 constexpr UINT_PTR kProgressHideTimer = 1;
@@ -51,6 +56,7 @@ HWND g_wifiFrame = nullptr;
 HWND g_wifiTitle = nullptr;
 HWND g_wifiLabel = nullptr;
 HWND g_wifiFormat = nullptr;
+HWND g_wifiState = nullptr;
 HWND g_wifiCombo = nullptr;
 HWND g_wifiRefresh = nullptr;
 HWND g_wifiEnable = nullptr;
@@ -58,6 +64,8 @@ HWND g_wifiDisable = nullptr;
 HWND g_printerFrame = nullptr;
 HWND g_printerTitle = nullptr;
 HWND g_printerHint = nullptr;
+HWND g_printerState = nullptr;
+HWND g_printerRefresh = nullptr;
 HWND g_spoolerRestart = nullptr;
 HWND g_queueClear = nullptr;
 HWND g_statusFrame = nullptr;
@@ -380,6 +388,53 @@ WifiAdapter SelectedAdapter() {
     return {};
 }
 
+std::wstring GetWifiStatusText(const WifiAdapter& adapter) {
+    if (adapter.interfaceName.empty()) {
+        return L"未选择设备";
+    }
+
+    NET_LUID interfaceLuid{};
+    if (ConvertInterfaceAliasToLuid(adapter.interfaceName.c_str(), &interfaceLuid) != NO_ERROR) {
+        return L"未知（无法读取接口）";
+    }
+
+    MIB_IF_ROW2 row{};
+    row.InterfaceLuid = interfaceLuid;
+    if (GetIfEntry2(&row) != NO_ERROR) {
+        return L"未知（无法读取接口状态）";
+    }
+    if (row.AdminStatus != NET_IF_ADMIN_STATUS_UP) {
+        return L"已禁用";
+    }
+    switch (row.OperStatus) {
+        case IfOperStatusUp:
+            return L"已启用 · 已连接";
+        case IfOperStatusDormant:
+        case IfOperStatusLowerLayerDown:
+        case IfOperStatusDown:
+            return L"已启用 · 未连接";
+        case IfOperStatusNotPresent:
+            return L"设备未就绪";
+        default:
+            return L"已启用 · 状态检测中";
+    }
+}
+
+void RefreshSelectedWifiStatus() {
+    if (g_wifiState == nullptr) {
+        return;
+    }
+    const WifiAdapter adapter = SelectedAdapter();
+    if (adapter.interfaceName.empty()) {
+        SetWindowTextW(g_wifiState, L"");
+        ShowWindow(g_wifiState, SW_HIDE);
+        return;
+    }
+    const std::wstring text = L"当前状态：" + GetWifiStatusText(adapter);
+    SetWindowTextW(g_wifiState, text.c_str());
+    ShowWindow(g_wifiState, SW_SHOW);
+}
+
 void RefreshWifiInterfaces() {
     BeginProgress(L"正在读取物理无线网卡设备信息…", 15);
     g_wifiAdapters = FindWifiAdapters();
@@ -392,6 +447,7 @@ void RefreshWifiInterfaces() {
 
     g_wifiPickerVisible = true;
     g_wifiAdapterSelected = false;
+    ShowWindow(g_wifiState, SW_HIDE);
     SendMessageW(g_wifiCombo, CB_SETCURSEL, static_cast<WPARAM>(-1), 0);
     ShowWindow(g_wifiLabel, SW_SHOW);
     ShowWindow(g_wifiCombo, SW_SHOW);
@@ -419,10 +475,114 @@ void SetWifiEnabled(bool enabled) {
     const std::wstring command = L"netsh interface set interface name=\"" + adapter.interfaceName + L"\" admin=" + (enabled ? L"enabled" : L"disabled");
     if (RunHiddenCommand(command, &output, &exitCode) && exitCode == 0) {
         UpdateProgress(L"正在确认 Wi-Fi 接口状态…", 85);
+        RefreshSelectedWifiStatus();
         FinishProgress(true, action + L"成功：" + adapter.displayName);
     } else {
         ShowFailure(action + L"失败。", L"系统未能执行该操作。请确认所选设备可用，并以管理员身份运行本程序。错误代码：" + std::to_wstring(exitCode));
     }
+}
+
+std::wstring GetSpoolerServiceStatusText() {
+    SC_HANDLE manager = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
+    if (manager == nullptr) {
+        return L"服务：未知";
+    }
+    SC_HANDLE service = OpenServiceW(manager, L"Spooler", SERVICE_QUERY_STATUS);
+    if (service == nullptr) {
+        CloseServiceHandle(manager);
+        return L"服务：不可用";
+    }
+
+    SERVICE_STATUS_PROCESS status{};
+    DWORD bytesNeeded = 0;
+    const BOOL queried = QueryServiceStatusEx(service, SC_STATUS_PROCESS_INFO,
+                                                reinterpret_cast<LPBYTE>(&status), sizeof(status), &bytesNeeded);
+    CloseServiceHandle(service);
+    CloseServiceHandle(manager);
+    if (!queried) {
+        return L"服务：未知";
+    }
+    switch (status.dwCurrentState) {
+        case SERVICE_RUNNING:
+            return L"服务：运行中";
+        case SERVICE_STOPPED:
+            return L"服务：已停止";
+        case SERVICE_START_PENDING:
+            return L"服务：启动中";
+        case SERVICE_STOP_PENDING:
+            return L"服务：停止中";
+        default:
+            return L"服务：转换中";
+    }
+}
+
+std::wstring GetPrintJobsStatusText() {
+    DWORD bytesNeeded = 0;
+    DWORD printerCount = 0;
+    EnumPrintersW(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, nullptr, 2, nullptr, 0, &bytesNeeded, &printerCount);
+    if (bytesNeeded == 0 || printerCount == 0) {
+        return L"作业：0 个\n状态：无打印机";
+    }
+
+    std::vector<BYTE> printerBuffer(bytesNeeded);
+    if (!EnumPrintersW(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, nullptr, 2, printerBuffer.data(),
+                       static_cast<DWORD>(printerBuffer.size()), &bytesNeeded, &printerCount)) {
+        return L"作业：未知\n状态：无法读取";
+    }
+
+    auto* printers = reinterpret_cast<PRINTER_INFO_2W*>(printerBuffer.data());
+    DWORD jobs = 0;
+    DWORD printing = 0;
+    DWORD waiting = 0;
+    DWORD paused = 0;
+    DWORD errors = 0;
+    for (DWORD printerIndex = 0; printerIndex < printerCount; ++printerIndex) {
+        HANDLE printer = nullptr;
+        if (!OpenPrinterW(printers[printerIndex].pPrinterName, &printer, nullptr)) {
+            continue;
+        }
+        DWORD jobBytes = 0;
+        DWORD jobCount = 0;
+        EnumJobsW(printer, 0, 0xFFFFFFFF, 1, nullptr, 0, &jobBytes, &jobCount);
+        if (jobBytes > 0 && jobCount > 0) {
+            std::vector<BYTE> jobBuffer(jobBytes);
+            if (EnumJobsW(printer, 0, 0xFFFFFFFF, 1, jobBuffer.data(), static_cast<DWORD>(jobBuffer.size()), &jobBytes, &jobCount)) {
+                auto* jobInfo = reinterpret_cast<JOB_INFO_1W*>(jobBuffer.data());
+                for (DWORD jobIndex = 0; jobIndex < jobCount; ++jobIndex) {
+                    ++jobs;
+                    const DWORD state = jobInfo[jobIndex].Status;
+                    if (state & JOB_STATUS_ERROR) {
+                        ++errors;
+                    } else if (state & JOB_STATUS_PAUSED) {
+                        ++paused;
+                    } else if (state & JOB_STATUS_PRINTING) {
+                        ++printing;
+                    } else {
+                        ++waiting;
+                    }
+                }
+            }
+        }
+        ClosePrinter(printer);
+    }
+
+    if (jobs == 0) {
+        return L"作业：0 个\n状态：空闲";
+    }
+    std::wstring result = L"作业：" + std::to_wstring(jobs) + L" 个\n状态：";
+    if (printing > 0) result += L"打印 " + std::to_wstring(printing) + L" ";
+    if (waiting > 0) result += L"等待 " + std::to_wstring(waiting) + L" ";
+    if (paused > 0) result += L"暂停 " + std::to_wstring(paused) + L" ";
+    if (errors > 0) result += L"异常 " + std::to_wstring(errors) + L" ";
+    return Trim(result);
+}
+
+void RefreshPrinterStatus() {
+    if (g_printerState == nullptr) {
+        return;
+    }
+    const std::wstring summary = GetSpoolerServiceStatusText() + L"\n" + GetPrintJobsStatusText();
+    SetWindowTextW(g_printerState, summary.c_str());
 }
 
 void RestartPrintSpooler() {
@@ -434,6 +594,7 @@ void RestartPrintSpooler() {
     RunHiddenCommand(L"net stop spooler /y", &stopOutput, &stopCode);
     UpdateProgress(L"正在启动打印后台服务…", 65);
     RunHiddenCommand(L"net start spooler", &startOutput, &startCode);
+    RefreshPrinterStatus();
 
     if (startCode == 0) {
         FinishProgress(true, stopCode == 0 ? L"打印后台服务已重启。" : L"打印后台服务已启动。" );
@@ -507,6 +668,7 @@ void ClearPrintQueue() {
     std::wstring startOutput;
     DWORD startCode = 1;
     RunHiddenCommand(L"net start spooler", &startOutput, &startCode);
+    RefreshPrinterStatus();
 
     if (startCode != 0) {
         ShowFailure(L"打印队列已处理，但后台服务未能重新启动。", L"请手动检查 Print Spooler 服务状态。错误代码：" + std::to_wstring(startCode));
@@ -667,11 +829,11 @@ void LayoutInterface(int clientWidth, int clientHeight) {
     const int right = std::max(margin + 650, clientWidth - margin);
     const int contentWidth = right - margin;
     const int wifiTop = 108;
-    const int wifiHeight = 158;
+    const int wifiHeight = 182;
     const int printerTop = wifiTop + wifiHeight + 18;
     const int statusHeight = 58;
-    const int statusTop = std::max(printerTop + 136, clientHeight - margin - statusHeight);
-    const int printerHeight = std::max(118, statusTop - printerTop - 18);
+    const int statusTop = std::max(printerTop + 146, clientHeight - margin - statusHeight);
+    const int printerHeight = std::max(128, statusTop - printerTop - 18);
     const int controlLeft = margin + 128;
     const int refreshWidth = 128;
     const int refreshLeft = right - inner - refreshWidth;
@@ -691,13 +853,18 @@ void LayoutInterface(int clientWidth, int clientHeight) {
     PlaceControl(g_wifiCombo, controlLeft, wifiTop + 48, comboWidth, 250);
     PlaceControl(g_wifiRefresh, refreshLeft, wifiTop + 48, refreshWidth, 32);
     PlaceControl(g_wifiFormat, controlLeft, wifiTop + 84, std::max(200, right - inner - controlLeft), 22);
-    PlaceControl(g_wifiEnable, controlLeft, wifiTop + 114, 160, 34);
-    PlaceControl(g_wifiDisable, controlLeft + 176, wifiTop + 114, 160, 34);
+    PlaceControl(g_wifiState, controlLeft, wifiTop + 108, std::max(260, right - inner - controlLeft), 22);
+    PlaceControl(g_wifiEnable, controlLeft, wifiTop + 140, 160, 34);
+    PlaceControl(g_wifiDisable, controlLeft + 176, wifiTop + 140, 160, 34);
 
+    const int printerStateWidth = 220;
+    const int printerStateLeft = right - inner - printerStateWidth;
     PlaceControl(g_printerTitle, margin + inner, printerTop + 14, 180, 24);
-    PlaceControl(g_printerHint, margin + inner, printerTop + 46, std::max(280, contentWidth - inner * 2), 25);
-    PlaceControl(g_spoolerRestart, margin + inner, printerTop + 76, 190, 32);
-    PlaceControl(g_queueClear, margin + inner + 206, printerTop + 76, 170, 32);
+    PlaceControl(g_printerHint, margin + inner, printerTop + 46, std::max(250, printerStateLeft - 14 - (margin + inner)), 25);
+    PlaceControl(g_spoolerRestart, margin + inner, printerTop + 82, 190, 32);
+    PlaceControl(g_queueClear, margin + inner + 206, printerTop + 82, 170, 32);
+    PlaceControl(g_printerState, printerStateLeft, printerTop + 10, printerStateWidth, 72);
+    PlaceControl(g_printerRefresh, printerStateLeft, printerTop + 94, 108, 26);
 
     PlaceControl(g_statusCaption, margin + inner, statusTop + 18, 72, 22);
     const int progressWidth = 164;
@@ -742,11 +909,14 @@ void BuildInterface(HWND window) {
     SendMessageW(g_wifiCombo, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
     g_wifiRefresh = CreateButton(L"选择无线网卡", IDC_WIFI_REFRESH, 0, 0, 1, 1, window);
     g_wifiFormat = CreateControl(0, 0, L"显示格式：网卡设备名称 [Windows 接口名称]", 0, 0, 1, 1, window);
+    g_wifiState = CreateControl(0, 0, L"", 0, 0, 1, 1, window);
     g_wifiEnable = CreateButton(L"启用 Wi-Fi", IDC_WIFI_ENABLE, 0, 0, 1, 1, window);
     g_wifiDisable = CreateButton(L"禁用 Wi-Fi", IDC_WIFI_DISABLE, 0, 0, 1, 1, window);
 
     g_printerTitle = CreateControl(0, 0, L"打印维护", 0, 0, 1, 1, window);
     g_printerHint = CreateControl(0, 0, L"用于处理打印任务卡住、打印服务异常等问题。", 0, 0, 1, 1, window);
+    g_printerState = CreateControl(0, 0, L"", 0, 0, 1, 1, window);
+    g_printerRefresh = CreateButton(L"刷新状态", IDC_PRINTER_REFRESH, 0, 0, 1, 1, window);
     g_spoolerRestart = CreateButton(L"重启打印机服务", IDC_SPOOLER_RESTART, 0, 0, 1, 1, window);
     g_queueClear = CreateButton(L"清空打印列表", IDC_QUEUE_CLEAR, 0, 0, 1, 1, window);
 
@@ -765,7 +935,9 @@ void BuildInterface(HWND window) {
     ShowWindow(g_wifiLabel, SW_HIDE);
     ShowWindow(g_wifiCombo, SW_HIDE);
     ShowWindow(g_wifiFormat, SW_HIDE);
+    ShowWindow(g_wifiState, SW_HIDE);
     ClearProgressArea();
+    RefreshPrinterStatus();
     SetActionsEnabled(true);
 }
 
@@ -803,6 +975,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
                     if (HIWORD(wParam) == CBN_SELCHANGE) {
                         const int index = static_cast<int>(SendMessageW(g_wifiCombo, CB_GETCURSEL, 0, 0));
                         g_wifiAdapterSelected = index >= 0 && static_cast<size_t>(index) < g_wifiAdapters.size();
+                        RefreshSelectedWifiStatus();
                         SetActionsEnabled(true);
                     }
                     return 0;
@@ -817,6 +990,9 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
                     return 0;
                 case IDC_WIFI_DISABLE:
                     SetWifiEnabled(false);
+                    return 0;
+                case IDC_PRINTER_REFRESH:
+                    RefreshPrinterStatus();
                     return 0;
                 case IDC_SPOOLER_RESTART:
                     RestartPrintSpooler();

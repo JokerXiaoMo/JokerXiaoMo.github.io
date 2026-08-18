@@ -1,0 +1,4 @@
+#include <windows.h>
+
+IDI_APP ICON "../assets/app.ico"
+1 RT_MANIFEST "app.manifest"

@@ -2,6 +2,8 @@
 
 **系统维护工具箱 mini** 是一个面向 Windows 7、Windows 10 与 Windows 11 的轻量级桌面维护工具。它使用本仓库 `assets/source-icon.png` 中的用户提供图片作为应用图标，并提供 Wi‑Fi 开关、打印后台服务重启以及本地打印队列清空功能。
 
+> **直接运行：** 请在 `release` 文件夹中选择与你的系统相符的 `.exe`，双击即可运行。无需安装 Python、无需执行 `build_windows.bat`、无需打开命令提示符。Windows 10/11 通常选择 `系统维护工具箱 mini（64位）.exe`。
+
 > 本工具需要以管理员身份运行。它只在本机调用 Windows 的网络接口与打印后台服务，不会收集或上传设备、网络或打印内容。
 
 | 功能 | 实际操作 | 使用提示 |
@@ -21,17 +23,13 @@
 | 权限 | 启动后需在 UAC 提示中选择“是”。 |
 | 打包工具 | PyInstaller，版本已固定在 `requirements.txt`。 |
 
-## Windows 一键打包
+## 直接运行的程序
 
-请在 **Windows** 电脑上操作。Windows 7 建议使用 Python 3.8.10；安装时请启用 `py` 启动器与“Add Python to PATH”。随后双击仓库根目录中的 `build_windows.bat`。
+`release` 文件夹已包含可直接运行的原生 Windows 程序。64 位 Windows 7、Windows 10 与 Windows 11 使用 `系统维护工具箱 mini（64位）.exe`；32 位 Windows 7 使用 `系统维护工具箱 mini（32位）.exe`。这两个版本均已嵌入应用图标和管理员权限清单。
 
-脚本会自动安装 `requirements.txt` 中的依赖并生成：
+## Python 版一键打包（仅供开发）
 
-```text
-dist\系统维护工具箱 mini.exe
-```
-
-生成的程序已包含应用图标与界面所用图片；启动时会申请管理员权限。
+仓库根目录保留 `build_windows.bat` 与 Python 版源代码，供后续需要自行修改界面的人使用；普通使用者不需要运行它。
 
 ## 开发目录
 
@@ -40,12 +38,19 @@ system-maintenance-toolbox-mini/
 ├── assets/
 │   ├── app.ico                 # 由原图生成的多尺寸 Windows 图标
 │   └── source-icon.png         # 用户提供的原始图标图片
+├── native/
+│   ├── main.cpp                # 无依赖原生 Windows 界面主体
+│   ├── app.rc                  # 图标与清单资源定义
+│   └── app.manifest            # 管理员权限清单
+├── release/
+│   ├── 系统维护工具箱 mini（64位）.exe
+│   └── 系统维护工具箱 mini（32位）.exe
 ├── src/
-│   └── main.py                 # 桌面应用主体
+│   └── main.py                 # 保留的 Python 开发版
 ├── tests/
-│   └── test_core.py            # 关键命令与状态识别测试
-├── build_windows.bat           # Windows 一键打包脚本
-├── requirements.txt            # 固定依赖版本
+│   └── test_core.py            # Python 版关键命令与状态识别测试
+├── build_windows.bat           # Python 开发版的一键打包脚本
+├── requirements.txt            # Python 开发版依赖
 └── tools_make_icon.py          # 图标转换脚本
 ```
 

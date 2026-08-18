@@ -955,6 +955,11 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
                 return 0;
             }
             break;
+        case WM_NCLBUTTONDBLCLK:
+            if (wParam == HTSYSMENU) {
+                return 0;
+            }
+            break;
         case WM_SYSCOMMAND:
             switch (wParam & 0xFFF0) {
                 case SC_SIZE:

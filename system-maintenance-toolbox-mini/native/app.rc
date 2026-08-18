@@ -1,6 +1,7 @@
 #include <windows.h>
 
 101 ICON "../assets/app.ico"
+102 BITMAP "../assets/logo.bmp"
 1 RT_MANIFEST "app.manifest"
 
 VS_VERSION_INFO VERSIONINFO

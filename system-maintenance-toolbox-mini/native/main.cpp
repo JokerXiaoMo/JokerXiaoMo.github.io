@@ -32,6 +32,7 @@ constexpr int IDC_STATUS = 1007;
 constexpr int IDC_PROGRESS = 1008;
 constexpr int IDC_ABOUT = 1009;
 constexpr int IDI_APP = 101;
+constexpr int IDB_LOGO = 102;
 constexpr UINT_PTR kProgressHideTimer = 1;
 constexpr UINT_PTR kProgressAnimationTimer = 2;
 
@@ -66,6 +67,9 @@ HWND g_progress = nullptr;
 HWND g_progressPercent = nullptr;
 HFONT g_titleFont = nullptr;
 HFONT g_regularFont = nullptr;
+RECT g_wifiPanelRect{};
+RECT g_printerPanelRect{};
+RECT g_statusPanelRect{};
 std::vector<HWND> g_actionControls;
 std::vector<WifiAdapter> g_wifiAdapters;
 int g_progressValue = 0;
@@ -528,22 +532,49 @@ HWND CreateButton(const wchar_t* text, int id, int x, int y, int width, int heig
 
 void PlaceControl(HWND control, int x, int y, int width, int height) {
     if (control != nullptr) {
-        MoveWindow(control, x, y, std::max(1, width), std::max(1, height), TRUE);
+        SetWindowPos(control, nullptr, x, y, std::max(1, width), std::max(1, height),
+                     SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOREDRAW);
     }
+}
+
+void DrawPanel(HDC hdc, const RECT& rect) {
+    HBRUSH fill = CreateSolidBrush(RGB(255, 255, 255));
+    HPEN border = CreatePen(PS_SOLID, 1, RGB(207, 215, 224));
+    HGDIOBJ previousBrush = SelectObject(hdc, fill);
+    HGDIOBJ previousPen = SelectObject(hdc, border);
+    RoundRect(hdc, rect.left, rect.top, rect.right, rect.bottom, 10, 10);
+    SelectObject(hdc, previousPen);
+    SelectObject(hdc, previousBrush);
+    DeleteObject(border);
+    DeleteObject(fill);
+}
+
+void PaintMainWindow(HWND window) {
+    PAINTSTRUCT paint{};
+    HDC hdc = BeginPaint(window, &paint);
+    RECT client{};
+    GetClientRect(window, &client);
+    HBRUSH background = CreateSolidBrush(RGB(248, 250, 252));
+    FillRect(hdc, &client, background);
+    DeleteObject(background);
+    DrawPanel(hdc, g_wifiPanelRect);
+    DrawPanel(hdc, g_printerPanelRect);
+    DrawPanel(hdc, g_statusPanelRect);
+    EndPaint(window, &paint);
 }
 
 LRESULT CALLBACK AboutWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
         case WM_CREATE: {
             const HINSTANCE instance = GetModuleHandleW(nullptr);
-            HWND icon = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_ICON,
-                                        22, 22, 58, 58, window, nullptr, instance, nullptr);
-            SendMessageW(icon, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(
-                LoadImageW(instance, MAKEINTRESOURCEW(IDI_APP), IMAGE_ICON, 56, 56, LR_DEFAULTCOLOR)
+            HWND icon = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_BITMAP,
+                                        22, 18, 70, 70, window, nullptr, instance, nullptr);
+            SendMessageW(icon, STM_SETIMAGE, IMAGE_BITMAP, reinterpret_cast<LPARAM>(
+                LoadImageW(instance, MAKEINTRESOURCEW(IDB_LOGO), IMAGE_BITMAP, 70, 70, LR_CREATEDIBSECTION)
             ));
 
             HWND title = CreateWindowExW(0, L"STATIC", L"系统维护工具箱 mini", WS_CHILD | WS_VISIBLE,
-                                         94, 22, 360, 34, window, nullptr, instance, nullptr);
+                                         108, 24, 360, 34, window, nullptr, instance, nullptr);
             SendMessageW(title, WM_SETFONT, reinterpret_cast<WPARAM>(g_titleFont), TRUE);
 
             const wchar_t details[] =
@@ -625,46 +656,51 @@ void LayoutInterface(int clientWidth, int clientHeight) {
     const int inner = 18;
     const int right = std::max(margin + 650, clientWidth - margin);
     const int contentWidth = right - margin;
-    const int wifiTop = 96;
-    const int wifiHeight = 154;
-    const int printerTop = wifiTop + wifiHeight + 16;
-    const int statusHeight = 54;
-    const int statusTop = std::max(printerTop + 130, clientHeight - margin - statusHeight);
-    const int printerHeight = std::max(112, statusTop - printerTop - 18);
+    const int wifiTop = 108;
+    const int wifiHeight = 158;
+    const int printerTop = wifiTop + wifiHeight + 18;
+    const int statusHeight = 58;
+    const int statusTop = std::max(printerTop + 136, clientHeight - margin - statusHeight);
+    const int printerHeight = std::max(118, statusTop - printerTop - 18);
     const int controlLeft = margin + 128;
     const int refreshWidth = 128;
     const int refreshLeft = right - inner - refreshWidth;
-    const int comboWidth = std::max(180, refreshLeft - 14 - controlLeft);
+    const int comboWidth = std::max(220, refreshLeft - 14 - controlLeft);
 
-    PlaceControl(g_appIcon, margin + 2, 18, 54, 54);
-    PlaceControl(g_title, margin + 66, 18, std::max(250, right - margin - 180), 36);
-    PlaceControl(g_subtitle, margin + 66, 55, std::max(250, right - margin - 180), 24);
-    PlaceControl(g_aboutButton, right - 102, 29, 84, 32);
+    g_wifiPanelRect = {margin, wifiTop, right, wifiTop + wifiHeight};
+    g_printerPanelRect = {margin, printerTop, right, printerTop + printerHeight};
+    g_statusPanelRect = {margin, statusTop, right, statusTop + statusHeight};
 
-    PlaceControl(g_wifiFrame, margin, wifiTop, contentWidth, wifiHeight);
-    PlaceControl(g_wifiTitle, margin + inner, wifiTop + 12, 180, 24);
-    PlaceControl(g_wifiLabel, margin + inner, wifiTop + 48, 110, 26);
-    PlaceControl(g_wifiCombo, controlLeft, wifiTop + 44, comboWidth, 250);
-    PlaceControl(g_wifiRefresh, refreshLeft, wifiTop + 44, refreshWidth, 32);
-    PlaceControl(g_wifiFormat, controlLeft, wifiTop + 78, std::max(200, right - inner - controlLeft), 22);
-    PlaceControl(g_wifiEnable, controlLeft, wifiTop + 108, 160, 34);
-    PlaceControl(g_wifiDisable, controlLeft + 176, wifiTop + 108, 160, 34);
+    PlaceControl(g_appIcon, margin + 6, 18, 68, 68);
+    PlaceControl(g_title, margin + 88, 20, std::max(250, right - margin - 205), 36);
+    PlaceControl(g_subtitle, margin + 90, 58, std::max(250, right - margin - 205), 24);
+    PlaceControl(g_aboutButton, right - 102, 32, 84, 32);
 
-    PlaceControl(g_printerFrame, margin, printerTop, contentWidth, printerHeight);
-    PlaceControl(g_printerTitle, margin + inner, printerTop + 13, 180, 24);
-    PlaceControl(g_printerHint, margin + inner, printerTop + 44, std::max(280, contentWidth - inner * 2), 25);
-    PlaceControl(g_spoolerRestart, margin + inner, printerTop + 72, 190, 32);
-    PlaceControl(g_queueClear, margin + inner + 206, printerTop + 72, 170, 32);
+    PlaceControl(g_wifiTitle, margin + inner, wifiTop + 14, 180, 24);
+    PlaceControl(g_wifiLabel, margin + inner, wifiTop + 52, 110, 26);
+    PlaceControl(g_wifiCombo, controlLeft, wifiTop + 48, comboWidth, 250);
+    PlaceControl(g_wifiRefresh, refreshLeft, wifiTop + 48, refreshWidth, 32);
+    PlaceControl(g_wifiFormat, controlLeft, wifiTop + 84, std::max(200, right - inner - controlLeft), 22);
+    PlaceControl(g_wifiEnable, controlLeft, wifiTop + 114, 160, 34);
+    PlaceControl(g_wifiDisable, controlLeft + 176, wifiTop + 114, 160, 34);
 
-    PlaceControl(g_statusFrame, margin, statusTop, contentWidth, statusHeight);
-    PlaceControl(g_statusCaption, margin + inner, statusTop + 16, 72, 22);
+    PlaceControl(g_printerTitle, margin + inner, printerTop + 14, 180, 24);
+    PlaceControl(g_printerHint, margin + inner, printerTop + 46, std::max(280, contentWidth - inner * 2), 25);
+    PlaceControl(g_spoolerRestart, margin + inner, printerTop + 76, 190, 32);
+    PlaceControl(g_queueClear, margin + inner + 206, printerTop + 76, 170, 32);
+
+    PlaceControl(g_statusCaption, margin + inner, statusTop + 18, 72, 22);
     const int progressWidth = 164;
     const int percentWidth = 48;
     const int progressLeft = right - inner - progressWidth;
     const int percentLeft = progressLeft - percentWidth - 8;
-    PlaceControl(g_progressPercent, percentLeft, statusTop + 16, percentWidth, 22);
-    PlaceControl(g_progress, progressLeft, statusTop + 14, progressWidth, 22);
-    PlaceControl(g_status, margin + 92, statusTop + 16, std::max(120, percentLeft - 18 - (margin + 92)), 22);
+    PlaceControl(g_progressPercent, percentLeft, statusTop + 18, percentWidth, 22);
+    PlaceControl(g_progress, progressLeft, statusTop + 16, progressWidth, 22);
+    PlaceControl(g_status, margin + 92, statusTop + 18, std::max(120, percentLeft - 18 - (margin + 92)), 22);
+
+    if (g_mainWindow != nullptr) {
+        RedrawWindow(g_mainWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+    }
 }
 
 void BuildInterface(HWND window) {
@@ -676,10 +712,10 @@ void BuildInterface(HWND window) {
                               DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei UI");
 
     const HINSTANCE instance = GetModuleHandleW(nullptr);
-    g_appIcon = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_ICON,
+    g_appIcon = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_BITMAP,
                                 0, 0, 1, 1, window, nullptr, instance, nullptr);
-    SendMessageW(g_appIcon, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(
-        LoadImageW(instance, MAKEINTRESOURCEW(IDI_APP), IMAGE_ICON, 48, 48, LR_DEFAULTCOLOR)
+    SendMessageW(g_appIcon, STM_SETIMAGE, IMAGE_BITMAP, reinterpret_cast<LPARAM>(
+        LoadImageW(instance, MAKEINTRESOURCEW(IDB_LOGO), IMAGE_BITMAP, 68, 68, LR_CREATEDIBSECTION)
     ));
 
     g_title = CreateControl(0, 0, kAppTitle, 0, 0, 1, 1, window);
@@ -689,7 +725,6 @@ void BuildInterface(HWND window) {
                                     0, 0, 1, 1, window, reinterpret_cast<HMENU>(IDC_ABOUT), instance, nullptr);
     SendMessageW(g_aboutButton, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
 
-    g_wifiFrame = CreateControl(SS_GRAYFRAME, 0, L"", 0, 0, 1, 1, window);
     g_wifiTitle = CreateControl(0, 0, L"Wi-Fi 控制", 0, 0, 1, 1, window);
     g_wifiLabel = CreateControl(0, 0, L"无线网卡设备", 0, 0, 1, 1, window);
     g_wifiCombo = CreateWindowExW(0, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWN | WS_VSCROLL,
@@ -700,14 +735,12 @@ void BuildInterface(HWND window) {
     g_wifiEnable = CreateButton(L"启用 Wi-Fi", IDC_WIFI_ENABLE, 0, 0, 1, 1, window);
     g_wifiDisable = CreateButton(L"禁用 Wi-Fi", IDC_WIFI_DISABLE, 0, 0, 1, 1, window);
 
-    g_printerFrame = CreateControl(SS_GRAYFRAME, 0, L"", 0, 0, 1, 1, window);
     g_printerTitle = CreateControl(0, 0, L"打印维护", 0, 0, 1, 1, window);
     g_printerHint = CreateControl(0, 0, L"用于处理打印任务卡住、打印服务异常等问题。", 0, 0, 1, 1, window);
     g_spoolerRestart = CreateButton(L"重启打印机服务", IDC_SPOOLER_RESTART, 0, 0, 1, 1, window);
     g_queueClear = CreateButton(L"清空打印列表", IDC_QUEUE_CLEAR, 0, 0, 1, 1, window);
 
-    g_statusFrame = CreateControl(SS_GRAYFRAME, 0, L"", 0, 0, 1, 1, window);
-    g_statusCaption = CreateControl(0, 0, L"执行进度", 0, 0, 1, 1, window);
+    g_statusCaption = CreateControl(0, 0, L"", 0, 0, 1, 1, window);
     g_status = CreateControl(0, IDC_STATUS, L"", 0, 0, 1, 1, window);
     g_progressPercent = CreateControl(SS_CENTER, 0, L"", 0, 0, 1, 1, window);
     g_progress = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | PBS_SMOOTH,
@@ -740,10 +773,17 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             return 0;
         case WM_GETMINMAXINFO: {
             auto* minMax = reinterpret_cast<MINMAXINFO*>(lParam);
-            minMax->ptMinTrackSize.x = kWindowWidth;
-            minMax->ptMinTrackSize.y = kWindowHeight;
+            RECT minimumClient{0, 0, kWindowWidth, kWindowHeight};
+            AdjustWindowRect(&minimumClient, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, FALSE);
+            minMax->ptMinTrackSize.x = minimumClient.right - minimumClient.left;
+            minMax->ptMinTrackSize.y = minimumClient.bottom - minimumClient.top;
             return 0;
         }
+        case WM_ERASEBKGND:
+            return 1;
+        case WM_PAINT:
+            PaintMainWindow(window);
+            return 0;
         case WM_COMMAND:
             switch (LOWORD(wParam)) {
                 case IDC_ABOUT:
@@ -771,9 +811,8 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         case WM_CTLCOLORSTATIC: {
             HDC hdc = reinterpret_cast<HDC>(wParam);
             SetTextColor(hdc, RGB(35, 52, 68));
-            SetBkColor(hdc, RGB(248, 250, 252));
-            static HBRUSH brush = CreateSolidBrush(RGB(248, 250, 252));
-            return reinterpret_cast<LRESULT>(brush);
+            SetBkMode(hdc, TRANSPARENT);
+            return reinterpret_cast<LRESULT>(GetStockObject(NULL_BRUSH));
         }
         case WM_DESTROY:
             KillTimer(window, kProgressHideTimer);
@@ -807,7 +846,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
     windowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     windowClass.hIcon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APP));
     windowClass.hIconSm = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APP));
-    windowClass.hbrBackground = CreateSolidBrush(RGB(248, 250, 252));
+    windowClass.style = CS_HREDRAW | CS_VREDRAW;
+    windowClass.hbrBackground = nullptr;
     windowClass.lpszClassName = className;
     windowClass.lpfnWndProc = WindowProc;
     RegisterClassExW(&windowClass);

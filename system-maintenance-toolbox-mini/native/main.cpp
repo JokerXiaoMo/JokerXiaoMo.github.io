@@ -774,7 +774,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         case WM_GETMINMAXINFO: {
             auto* minMax = reinterpret_cast<MINMAXINFO*>(lParam);
             RECT minimumClient{0, 0, kWindowWidth, kWindowHeight};
-            AdjustWindowRect(&minimumClient, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, FALSE);
+            AdjustWindowRect(&minimumClient, WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN, FALSE);
             minMax->ptMinTrackSize.x = minimumClient.right - minimumClient.left;
             minMax->ptMinTrackSize.y = minimumClient.bottom - minimumClient.top;
             return 0;
@@ -852,7 +852,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
     windowClass.lpfnWndProc = WindowProc;
     RegisterClassExW(&windowClass);
 
-    const DWORD style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
+    const DWORD style = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN;
     RECT windowRect{0, 0, kWindowWidth, kWindowHeight};
     AdjustWindowRect(&windowRect, style, FALSE);
     HWND window = CreateWindowExW(

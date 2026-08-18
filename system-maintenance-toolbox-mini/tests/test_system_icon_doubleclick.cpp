@@ -11,15 +11,21 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     }
 
     SendMessageW(window, WM_NCLBUTTONDBLCLK, HTSYSMENU, 0);
+    SendMessageW(window, WM_SYSCOMMAND, SC_CLOSE, 0);
     Sleep(300);
     if (!IsWindow(window)) {
         return 3;
     }
 
+    Sleep(1000);
+    if (!IsWindow(window)) {
+        return 4;
+    }
+
     SendMessageW(window, WM_CLOSE, 0, 0);
     Sleep(100);
     if (IsWindow(window)) {
-        return 4;
+        return 5;
     }
     return 0;
 }

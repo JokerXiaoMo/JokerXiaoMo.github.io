@@ -42,6 +42,7 @@ constexpr int IDI_APP = 201;
 constexpr int IDB_LOGO = 102;
 constexpr UINT_PTR kProgressHideTimer = 1;
 constexpr UINT_PTR kProgressAnimationTimer = 2;
+constexpr UINT_PTR kSystemIconDoubleClickGuardTimer = 3;
 
 struct WifiAdapter {
     std::wstring interfaceName;
@@ -86,6 +87,7 @@ int g_progressValue = 0;
 int g_progressTarget = 0;
 bool g_wifiPickerVisible = false;
 bool g_wifiAdapterSelected = false;
+bool g_systemIconDoubleClickGuard = false;
 
 std::wstring Trim(const std::wstring& value) {
     const auto begin = value.find_first_not_of(L" \t\r\n");
@@ -954,13 +956,23 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
                 ClearProgressArea();
                 return 0;
             }
+            if (wParam == kSystemIconDoubleClickGuardTimer) {
+                KillTimer(window, kSystemIconDoubleClickGuardTimer);
+                g_systemIconDoubleClickGuard = false;
+                return 0;
+            }
             break;
         case WM_NCLBUTTONDBLCLK:
             if (wParam == HTSYSMENU) {
+                g_systemIconDoubleClickGuard = true;
+                SetTimer(window, kSystemIconDoubleClickGuardTimer, 900, nullptr);
                 return 0;
             }
             break;
         case WM_SYSCOMMAND:
+            if ((wParam & 0xFFF0) == SC_CLOSE && g_systemIconDoubleClickGuard) {
+                return 0;
+            }
             switch (wParam & 0xFFF0) {
                 case SC_SIZE:
                 case SC_MAXIMIZE:
@@ -1036,6 +1048,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         case WM_DESTROY:
             KillTimer(window, kProgressHideTimer);
             KillTimer(window, kProgressAnimationTimer);
+            KillTimer(window, kSystemIconDoubleClickGuardTimer);
             if (g_titleFont != nullptr) {
                 DeleteObject(g_titleFont);
             }

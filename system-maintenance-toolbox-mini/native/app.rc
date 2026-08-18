@@ -1,6 +1,6 @@
 #include <windows.h>
 
-101 ICON "../assets/app.ico"
+201 ICON "../assets/titlebar_logo_20260818.ico"
 102 BITMAP "../assets/logo.bmp"
 1 RT_MANIFEST "app.manifest"
 

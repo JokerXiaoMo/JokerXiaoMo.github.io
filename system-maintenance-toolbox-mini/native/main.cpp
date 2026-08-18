@@ -23,6 +23,8 @@
 namespace {
 
 constexpr wchar_t kAppTitle[] = L"系统维护工具箱 mini";
+constexpr wchar_t kWindowClassName[] = L"SystemMaintenanceToolboxMiniWindow";
+constexpr wchar_t kSingleInstanceMutex[] = L"Local\\SystemMaintenanceToolboxMini_0_1_0";
 constexpr int kWindowWidth = 720;
 constexpr int kWindowHeight = 520;
 
@@ -36,7 +38,7 @@ constexpr int IDC_STATUS = 1007;
 constexpr int IDC_PROGRESS = 1008;
 constexpr int IDC_ABOUT = 1009;
 constexpr int IDC_PRINTER_REFRESH = 1010;
-constexpr int IDI_APP = 101;
+constexpr int IDI_APP = 201;
 constexpr int IDB_LOGO = 102;
 constexpr UINT_PTR kProgressHideTimer = 1;
 constexpr UINT_PTR kProgressAnimationTimer = 2;
@@ -953,6 +955,15 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
                 return 0;
             }
             break;
+        case WM_SYSCOMMAND:
+            switch (wParam & 0xFFF0) {
+                case SC_SIZE:
+                case SC_MAXIMIZE:
+                    return 0;
+                default:
+                    break;
+            }
+            break;
         case WM_SIZE:
             LayoutInterface(LOWORD(lParam), HIWORD(lParam));
             return 0;
@@ -1037,12 +1048,28 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
 }  // namespace
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
+    HANDLE singleInstance = CreateMutexW(nullptr, FALSE, kSingleInstanceMutex);
+    if (singleInstance == nullptr) {
+        return 1;
+    }
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        HWND existing = FindWindowW(kWindowClassName, nullptr);
+        if (existing != nullptr) {
+            if (IsIconic(existing)) {
+                ShowWindow(existing, SW_RESTORE);
+            }
+            SetWindowPos(existing, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+            SetForegroundWindow(existing);
+        }
+        CloseHandle(singleInstance);
+        return 0;
+    }
+
     INITCOMMONCONTROLSEX controls{};
     controls.dwSize = sizeof(controls);
     controls.dwICC = ICC_STANDARD_CLASSES | ICC_PROGRESS_CLASS;
     InitCommonControlsEx(&controls);
 
-    const wchar_t className[] = L"SystemMaintenanceToolboxMiniWindow";
     WNDCLASSEXW windowClass{};
     windowClass.cbSize = sizeof(windowClass);
     windowClass.hInstance = instance;
@@ -1051,7 +1078,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
     windowClass.hIconSm = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APP));
     windowClass.style = CS_HREDRAW | CS_VREDRAW;
     windowClass.hbrBackground = nullptr;
-    windowClass.lpszClassName = className;
+    windowClass.lpszClassName = kWindowClassName;
     windowClass.lpfnWndProc = WindowProc;
     RegisterClassExW(&windowClass);
 
@@ -1060,7 +1087,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
     AdjustWindowRect(&windowRect, style, FALSE);
     HWND window = CreateWindowExW(
         0,
-        className,
+        kWindowClassName,
         kAppTitle,
         style,
         CW_USEDEFAULT,
@@ -1073,6 +1100,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
         nullptr
     );
     if (window == nullptr) {
+        CloseHandle(singleInstance);
         return 1;
     }
 
@@ -1084,5 +1112,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
         TranslateMessage(&message);
         DispatchMessageW(&message);
     }
+    CloseHandle(singleInstance);
     return static_cast<int>(message.wParam);
 }

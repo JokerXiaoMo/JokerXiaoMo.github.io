@@ -29,6 +29,7 @@ constexpr int IDC_SPOOLER_RESTART = 1005;
 constexpr int IDC_QUEUE_CLEAR = 1006;
 constexpr int IDC_STATUS = 1007;
 constexpr int IDC_PROGRESS = 1008;
+constexpr int IDC_ABOUT = 1009;
 constexpr int IDI_APP = 101;
 constexpr UINT_PTR kProgressHideTimer = 1;
 
@@ -39,7 +40,25 @@ struct WifiAdapter {
 };
 
 HWND g_mainWindow = nullptr;
+HWND g_appIcon = nullptr;
+HWND g_title = nullptr;
+HWND g_subtitle = nullptr;
+HWND g_aboutButton = nullptr;
+HWND g_wifiFrame = nullptr;
+HWND g_wifiTitle = nullptr;
+HWND g_wifiLabel = nullptr;
+HWND g_wifiFormat = nullptr;
 HWND g_wifiCombo = nullptr;
+HWND g_wifiRefresh = nullptr;
+HWND g_wifiEnable = nullptr;
+HWND g_wifiDisable = nullptr;
+HWND g_printerFrame = nullptr;
+HWND g_printerTitle = nullptr;
+HWND g_printerHint = nullptr;
+HWND g_spoolerRestart = nullptr;
+HWND g_queueClear = nullptr;
+HWND g_statusFrame = nullptr;
+HWND g_statusCaption = nullptr;
 HWND g_status = nullptr;
 HWND g_progress = nullptr;
 HFONT g_titleFont = nullptr;
@@ -172,6 +191,9 @@ void SetProgressPosition(int value) {
 
 void BeginProgress(const std::wstring& message, int progress = 10) {
     KillTimer(g_mainWindow, kProgressHideTimer);
+    if (g_statusCaption != nullptr) {
+        SetWindowTextW(g_statusCaption, L"执行进度");
+    }
     SetActionsEnabled(false);
     SetStatus(L"正在执行：" + message);
     if (g_progress != nullptr) {
@@ -191,7 +213,7 @@ void FinishProgress(bool success, const std::wstring& message) {
     SetProgressPosition(100);
     SetActionsEnabled(true);
     SetStatus((success ? L"已完成：" : L"执行失败：") + message);
-    SetTimer(g_mainWindow, kProgressHideTimer, 1800, nullptr);
+    SetTimer(g_mainWindow, kProgressHideTimer, 1600, nullptr);
     RefreshPaint();
 }
 
@@ -457,6 +479,144 @@ HWND CreateButton(const wchar_t* text, int id, int x, int y, int width, int heig
     return button;
 }
 
+void PlaceControl(HWND control, int x, int y, int width, int height) {
+    if (control != nullptr) {
+        MoveWindow(control, x, y, std::max(1, width), std::max(1, height), TRUE);
+    }
+}
+
+LRESULT CALLBACK AboutWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
+        case WM_CREATE: {
+            const HINSTANCE instance = GetModuleHandleW(nullptr);
+            HWND icon = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_ICON,
+                                        22, 22, 58, 58, window, nullptr, instance, nullptr);
+            SendMessageW(icon, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(
+                LoadImageW(instance, MAKEINTRESOURCEW(IDI_APP), IMAGE_ICON, 56, 56, LR_DEFAULTCOLOR)
+            ));
+
+            HWND title = CreateWindowExW(0, L"STATIC", L"系统维护工具箱 mini", WS_CHILD | WS_VISIBLE,
+                                         94, 22, 360, 34, window, nullptr, instance, nullptr);
+            SendMessageW(title, WM_SETFONT, reinterpret_cast<WPARAM>(g_titleFont), TRUE);
+
+            const wchar_t details[] =
+                L"By 樱花树下科技工作室·AI创作\n"
+                L"别的项目地址：http://fanxiaofei.ccwu.cc/\n\n"
+                L"文件说明：系统维护工具箱mini\n"
+                L"文件版本：0.05    类型：应用程序\n"
+                L"产品名：系统维护工具箱mini\n"
+                L"产品版本：0.1.0\n"
+                L"版权：© 樱花科技工作室";
+            HWND text = CreateWindowExW(0, L"STATIC", details, WS_CHILD | WS_VISIBLE | SS_LEFT,
+                                        24, 92, 430, 176, window, nullptr, instance, nullptr);
+            SendMessageW(text, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
+
+            HWND close = CreateWindowExW(0, L"BUTTON", L"关闭", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
+                                         356, 278, 92, 32, window, reinterpret_cast<HMENU>(IDOK), instance, nullptr);
+            SendMessageW(close, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
+            return 0;
+        }
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
+                DestroyWindow(window);
+                return 0;
+            }
+            break;
+        case WM_CLOSE:
+            DestroyWindow(window);
+            return 0;
+        default:
+            break;
+    }
+    return DefWindowProcW(window, message, wParam, lParam);
+}
+
+void ShowAboutWindow() {
+    static const wchar_t aboutClass[] = L"SystemMaintenanceToolboxMiniAboutWindow";
+    static bool registered = false;
+    const HINSTANCE instance = GetModuleHandleW(nullptr);
+    if (!registered) {
+        WNDCLASSEXW aboutClassInfo{};
+        aboutClassInfo.cbSize = sizeof(aboutClassInfo);
+        aboutClassInfo.hInstance = instance;
+        aboutClassInfo.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+        aboutClassInfo.hIcon = LoadIconW(instance, MAKEINTRESOURCEW(IDI_APP));
+        aboutClassInfo.hbrBackground = GetSysColorBrush(COLOR_WINDOW);
+        aboutClassInfo.lpszClassName = aboutClass;
+        aboutClassInfo.lpfnWndProc = AboutWindowProc;
+        registered = RegisterClassExW(&aboutClassInfo) != 0;
+    }
+    if (!registered) {
+        return;
+    }
+
+    const DWORD style = WS_CAPTION | WS_SYSMENU;
+    RECT rect{0, 0, 480, 330};
+    AdjustWindowRectEx(&rect, style, FALSE, WS_EX_DLGMODALFRAME);
+    HWND about = CreateWindowExW(
+        WS_EX_DLGMODALFRAME,
+        aboutClass,
+        L"关于系统维护工具箱 mini",
+        style,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
+        g_mainWindow,
+        nullptr,
+        instance,
+        nullptr
+    );
+    if (about != nullptr) {
+        ShowWindow(about, SW_SHOW);
+        UpdateWindow(about);
+    }
+}
+
+void LayoutInterface(int clientWidth, int clientHeight) {
+    const int margin = 24;
+    const int inner = 18;
+    const int right = std::max(margin + 650, clientWidth - margin);
+    const int contentWidth = right - margin;
+    const int wifiTop = 96;
+    const int wifiHeight = 154;
+    const int printerTop = wifiTop + wifiHeight + 16;
+    const int statusHeight = 54;
+    const int statusTop = std::max(printerTop + 130, clientHeight - margin - statusHeight);
+    const int printerHeight = std::max(112, statusTop - printerTop - 18);
+    const int controlLeft = margin + 128;
+    const int refreshWidth = 128;
+    const int refreshLeft = right - inner - refreshWidth;
+    const int comboWidth = std::max(180, refreshLeft - 14 - controlLeft);
+
+    PlaceControl(g_appIcon, margin + 2, 18, 54, 54);
+    PlaceControl(g_title, margin + 66, 18, std::max(250, right - margin - 180), 36);
+    PlaceControl(g_subtitle, margin + 66, 55, std::max(250, right - margin - 180), 24);
+    PlaceControl(g_aboutButton, right - 102, 29, 84, 32);
+
+    PlaceControl(g_wifiFrame, margin, wifiTop, contentWidth, wifiHeight);
+    PlaceControl(g_wifiTitle, margin + inner, wifiTop + 12, 180, 24);
+    PlaceControl(g_wifiLabel, margin + inner, wifiTop + 48, 110, 26);
+    PlaceControl(g_wifiCombo, controlLeft, wifiTop + 44, comboWidth, 250);
+    PlaceControl(g_wifiRefresh, refreshLeft, wifiTop + 44, refreshWidth, 32);
+    PlaceControl(g_wifiFormat, controlLeft, wifiTop + 78, std::max(200, right - inner - controlLeft), 22);
+    PlaceControl(g_wifiEnable, controlLeft, wifiTop + 108, 160, 34);
+    PlaceControl(g_wifiDisable, controlLeft + 176, wifiTop + 108, 160, 34);
+
+    PlaceControl(g_printerFrame, margin, printerTop, contentWidth, printerHeight);
+    PlaceControl(g_printerTitle, margin + inner, printerTop + 13, 180, 24);
+    PlaceControl(g_printerHint, margin + inner, printerTop + 44, std::max(280, contentWidth - inner * 2), 25);
+    PlaceControl(g_spoolerRestart, margin + inner, printerTop + 72, 190, 32);
+    PlaceControl(g_queueClear, margin + inner + 206, printerTop + 72, 170, 32);
+
+    PlaceControl(g_statusFrame, margin, statusTop, contentWidth, statusHeight);
+    PlaceControl(g_statusCaption, margin + inner, statusTop + 16, 72, 22);
+    const int progressWidth = 164;
+    const int progressLeft = right - inner - progressWidth;
+    PlaceControl(g_progress, progressLeft, statusTop + 14, progressWidth, 22);
+    PlaceControl(g_status, margin + 92, statusTop + 16, std::max(160, progressLeft - 18 - (margin + 92)), 22);
+}
+
 void BuildInterface(HWND window) {
     g_regularFont = CreateFontW(-18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
                                 OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
@@ -465,41 +625,49 @@ void BuildInterface(HWND window) {
                               OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                               DEFAULT_PITCH | FF_DONTCARE, L"Microsoft YaHei UI");
 
-    HWND appIcon = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_ICON,
-                                   26, 19, 50, 50, window, nullptr, GetModuleHandleW(nullptr), nullptr);
-    SendMessageW(appIcon, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(
-        LoadImageW(GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDI_APP), IMAGE_ICON, 48, 48, LR_DEFAULTCOLOR)
+    const HINSTANCE instance = GetModuleHandleW(nullptr);
+    g_appIcon = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_ICON,
+                                0, 0, 1, 1, window, nullptr, instance, nullptr);
+    SendMessageW(g_appIcon, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(
+        LoadImageW(instance, MAKEINTRESOURCEW(IDI_APP), IMAGE_ICON, 48, 48, LR_DEFAULTCOLOR)
     ));
 
-    HWND title = CreateControl(0, 0, kAppTitle, 88, 18, 420, 36, window);
-    SendMessageW(title, WM_SETFONT, reinterpret_cast<WPARAM>(g_titleFont), TRUE);
-    CreateControl(0, 0, L"Wi-Fi 与打印维护 · 支持 Windows 7 / 10 / 11", 90, 55, 470, 24, window);
+    g_title = CreateControl(0, 0, kAppTitle, 0, 0, 1, 1, window);
+    SendMessageW(g_title, WM_SETFONT, reinterpret_cast<WPARAM>(g_titleFont), TRUE);
+    g_subtitle = CreateControl(0, 0, L"Wi-Fi 与打印维护 · 支持 Windows 7 / 10 / 11", 0, 0, 1, 1, window);
+    g_aboutButton = CreateWindowExW(0, L"BUTTON", L"💡 信息", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+                                    0, 0, 1, 1, window, reinterpret_cast<HMENU>(IDC_ABOUT), instance, nullptr);
+    SendMessageW(g_aboutButton, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
 
-    CreateControl(SS_GRAYFRAME, 0, L"", 24, 96, 656, 154, window);
-    CreateControl(0, 0, L"Wi-Fi 控制", 42, 108, 180, 24, window);
-    CreateControl(0, 0, L"无线网卡设备", 42, 144, 110, 26, window);
+    g_wifiFrame = CreateControl(SS_GRAYFRAME, 0, L"", 0, 0, 1, 1, window);
+    g_wifiTitle = CreateControl(0, 0, L"Wi-Fi 控制", 0, 0, 1, 1, window);
+    g_wifiLabel = CreateControl(0, 0, L"无线网卡设备", 0, 0, 1, 1, window);
     g_wifiCombo = CreateWindowExW(0, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWN | WS_VSCROLL,
-                                   152, 140, 338, 250, window, reinterpret_cast<HMENU>(IDC_WIFI_COMBO), GetModuleHandleW(nullptr), nullptr);
+                                   0, 0, 1, 1, window, reinterpret_cast<HMENU>(IDC_WIFI_COMBO), instance, nullptr);
     SendMessageW(g_wifiCombo, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
-    CreateButton(L"刷新", IDC_WIFI_REFRESH, 505, 140, 128, 32, window);
-    CreateControl(0, 0, L"显示格式：网卡设备名称 [Windows 接口名称]", 152, 174, 400, 22, window);
-    CreateButton(L"启用 Wi-Fi", IDC_WIFI_ENABLE, 152, 204, 160, 34, window);
-    CreateButton(L"禁用 Wi-Fi", IDC_WIFI_DISABLE, 328, 204, 160, 34, window);
+    g_wifiRefresh = CreateButton(L"刷新", IDC_WIFI_REFRESH, 0, 0, 1, 1, window);
+    g_wifiFormat = CreateControl(0, 0, L"显示格式：网卡设备名称 [Windows 接口名称]", 0, 0, 1, 1, window);
+    g_wifiEnable = CreateButton(L"启用 Wi-Fi", IDC_WIFI_ENABLE, 0, 0, 1, 1, window);
+    g_wifiDisable = CreateButton(L"禁用 Wi-Fi", IDC_WIFI_DISABLE, 0, 0, 1, 1, window);
 
-    CreateControl(SS_GRAYFRAME, 0, L"", 24, 266, 656, 112, window);
-    CreateControl(0, 0, L"打印维护", 42, 279, 180, 24, window);
-    CreateControl(0, 0, L"用于处理打印任务卡住、打印服务异常等问题。", 42, 310, 440, 25, window);
-    CreateButton(L"重启打印机服务", IDC_SPOOLER_RESTART, 42, 338, 190, 32, window);
-    CreateButton(L"清空打印列表", IDC_QUEUE_CLEAR, 248, 338, 170, 32, window);
+    g_printerFrame = CreateControl(SS_GRAYFRAME, 0, L"", 0, 0, 1, 1, window);
+    g_printerTitle = CreateControl(0, 0, L"打印维护", 0, 0, 1, 1, window);
+    g_printerHint = CreateControl(0, 0, L"用于处理打印任务卡住、打印服务异常等问题。", 0, 0, 1, 1, window);
+    g_spoolerRestart = CreateButton(L"重启打印机服务", IDC_SPOOLER_RESTART, 0, 0, 1, 1, window);
+    g_queueClear = CreateButton(L"清空打印列表", IDC_QUEUE_CLEAR, 0, 0, 1, 1, window);
 
-    CreateControl(SS_GRAYFRAME, 0, L"", 24, 396, 656, 54, window);
-    CreateControl(0, 0, L"执行进度", 42, 412, 72, 22, window);
-    g_status = CreateControl(0, IDC_STATUS, L"准备就绪。", 116, 412, 355, 22, window);
+    g_statusFrame = CreateControl(SS_GRAYFRAME, 0, L"", 0, 0, 1, 1, window);
+    g_statusCaption = CreateControl(0, 0, L"执行进度", 0, 0, 1, 1, window);
+    g_status = CreateControl(0, IDC_STATUS, L"", 0, 0, 1, 1, window);
     g_progress = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | PBS_SMOOTH,
-                                  490, 410, 164, 22, window, reinterpret_cast<HMENU>(IDC_PROGRESS), GetModuleHandleW(nullptr), nullptr);
+                                  0, 0, 1, 1, window, reinterpret_cast<HMENU>(IDC_PROGRESS), instance, nullptr);
     SendMessageW(g_progress, PBM_SETRANGE32, 0, 100);
     SendMessageW(g_progress, PBM_SETBARCOLOR, 0, RGB(46, 160, 67));
     SendMessageW(g_progress, PBM_SETBKCOLOR, 0, RGB(230, 238, 232));
+
+    RECT client{};
+    GetClientRect(window, &client);
+    LayoutInterface(client.right - client.left, client.bottom - client.top);
 }
 
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -514,10 +682,21 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
                 KillTimer(window, kProgressHideTimer);
                 if (g_progress != nullptr) {
                     ShowWindow(g_progress, SW_HIDE);
+                    SetProgressPosition(0);
                 }
+                if (g_status != nullptr) {
+                    SetWindowTextW(g_status, L"");
+                }
+                if (g_statusCaption != nullptr) {
+                    SetWindowTextW(g_statusCaption, L"");
+                }
+                RefreshPaint();
                 return 0;
             }
             break;
+        case WM_SIZE:
+            LayoutInterface(LOWORD(lParam), HIWORD(lParam));
+            return 0;
         case WM_GETMINMAXINFO: {
             auto* minMax = reinterpret_cast<MINMAXINFO*>(lParam);
             minMax->ptMinTrackSize.x = kWindowWidth;
@@ -526,6 +705,9 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         }
         case WM_COMMAND:
             switch (LOWORD(wParam)) {
+                case IDC_ABOUT:
+                    ShowAboutWindow();
+                    return 0;
                 case IDC_WIFI_REFRESH:
                     RefreshWifiInterfaces();
                     return 0;
@@ -553,6 +735,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             return reinterpret_cast<LRESULT>(brush);
         }
         case WM_DESTROY:
+            KillTimer(window, kProgressHideTimer);
             if (g_titleFont != nullptr) {
                 DeleteObject(g_titleFont);
             }

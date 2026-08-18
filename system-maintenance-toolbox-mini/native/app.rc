@@ -2,3 +2,32 @@
 
 101 ICON "../assets/app.ico"
 1 RT_MANIFEST "app.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,5,0,0
+ PRODUCTVERSION 0,1,0,0
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404B0"
+        BEGIN
+            VALUE "CompanyName", "樱花科技工作室"
+            VALUE "FileDescription", "系统维护工具箱mini"
+            VALUE "FileVersion", "0.05"
+            VALUE "InternalName", "系统维护工具箱mini"
+            VALUE "OriginalFilename", "系统维护工具箱 mini.exe"
+            VALUE "ProductName", "系统维护工具箱mini"
+            VALUE "ProductVersion", "0.1.0"
+            VALUE "LegalCopyright", "© 樱花科技工作室"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0804, 1200
+    END
+END

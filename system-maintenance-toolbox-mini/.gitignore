@@ -5,3 +5,7 @@ build/
 dist/
 .venv/
 native/*.o
+.wine-*-prefix/
+runtime_*.png
+runtime_*.log
+runtime_ui_findings.txt

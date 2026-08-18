@@ -74,6 +74,8 @@ std::vector<HWND> g_actionControls;
 std::vector<WifiAdapter> g_wifiAdapters;
 int g_progressValue = 0;
 int g_progressTarget = 0;
+bool g_wifiPickerVisible = false;
+bool g_wifiAdapterSelected = false;
 
 std::wstring Trim(const std::wstring& value) {
     const auto begin = value.find_first_not_of(L" \t\r\n");
@@ -183,10 +185,18 @@ void RefreshPaint() {
 
 void SetActionsEnabled(bool enabled) {
     for (HWND control : g_actionControls) {
-        EnableWindow(control, enabled ? TRUE : FALSE);
+        if (control != g_wifiEnable && control != g_wifiDisable) {
+            EnableWindow(control, enabled ? TRUE : FALSE);
+        }
     }
     if (g_wifiCombo != nullptr) {
-        EnableWindow(g_wifiCombo, enabled ? TRUE : FALSE);
+        EnableWindow(g_wifiCombo, enabled && g_wifiPickerVisible ? TRUE : FALSE);
+    }
+    if (g_wifiEnable != nullptr) {
+        EnableWindow(g_wifiEnable, enabled && g_wifiAdapterSelected ? TRUE : FALSE);
+    }
+    if (g_wifiDisable != nullptr) {
+        EnableWindow(g_wifiDisable, enabled && g_wifiAdapterSelected ? TRUE : FALSE);
     }
 }
 
@@ -367,13 +377,7 @@ WifiAdapter SelectedAdapter() {
     if (selectedIndex >= 0 && static_cast<size_t>(selectedIndex) < g_wifiAdapters.size()) {
         return g_wifiAdapters[static_cast<size_t>(selectedIndex)];
     }
-
-    const int length = GetWindowTextLengthW(g_wifiCombo);
-    std::wstring interfaceName(static_cast<size_t>(length + 1), L'\0');
-    GetWindowTextW(g_wifiCombo, interfaceName.data(), length + 1);
-    interfaceName.resize(wcslen(interfaceName.c_str()));
-    interfaceName = Trim(interfaceName);
-    return {interfaceName, L"手动填写的无线接口", interfaceName};
+    return {};
 }
 
 void RefreshWifiInterfaces() {
@@ -386,19 +390,25 @@ void RefreshWifiInterfaces() {
         SendMessageW(g_wifiCombo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(adapter.displayName.c_str()));
     }
 
+    g_wifiPickerVisible = true;
+    g_wifiAdapterSelected = false;
+    SendMessageW(g_wifiCombo, CB_SETCURSEL, static_cast<WPARAM>(-1), 0);
+    ShowWindow(g_wifiLabel, SW_SHOW);
+    ShowWindow(g_wifiCombo, SW_SHOW);
+    ShowWindow(g_wifiFormat, SW_SHOW);
+    SetWindowTextW(g_wifiRefresh, L"重新检测");
+
     if (!g_wifiAdapters.empty()) {
-        SendMessageW(g_wifiCombo, CB_SETCURSEL, 0, 0);
-        FinishProgress(true, L"已识别无线网卡：" + g_wifiAdapters.front().displayName);
+        FinishProgress(true, L"已识别 " + std::to_wstring(g_wifiAdapters.size()) + L" 个物理无线网卡，请从列表选择。" );
     } else {
-        SetWindowTextW(g_wifiCombo, L"Wi-Fi");
-        FinishProgress(false, L"未识别到无线网卡；可手动填写接口名称，例如 Wi-Fi。");
+        FinishProgress(false, L"未识别到物理无线网卡。请检查无线网卡驱动或设备状态。" );
     }
 }
 
 void SetWifiEnabled(bool enabled) {
     const WifiAdapter adapter = SelectedAdapter();
     if (adapter.interfaceName.empty()) {
-        MessageBoxW(g_mainWindow, L"请先选择或填写 Wi-Fi 接口名称。", kAppTitle, MB_OK | MB_ICONWARNING);
+        MessageBoxW(g_mainWindow, L"请先点击“选择无线网卡”，再从列表中选择要操作的设备。", kAppTitle, MB_OK | MB_ICONWARNING);
         return;
     }
 
@@ -411,7 +421,7 @@ void SetWifiEnabled(bool enabled) {
         UpdateProgress(L"正在确认 Wi-Fi 接口状态…", 85);
         FinishProgress(true, action + L"成功：" + adapter.displayName);
     } else {
-        ShowFailure(action + L"失败。", output);
+        ShowFailure(action + L"失败。", L"系统未能执行该操作。请确认所选设备可用，并以管理员身份运行本程序。错误代码：" + std::to_wstring(exitCode));
     }
 }
 
@@ -428,7 +438,7 @@ void RestartPrintSpooler() {
     if (startCode == 0) {
         FinishProgress(true, stopCode == 0 ? L"打印后台服务已重启。" : L"打印后台服务已启动。" );
     } else {
-        ShowFailure(L"打印后台服务重启失败。", startOutput.empty() ? stopOutput : startOutput);
+        ShowFailure(L"打印后台服务重启失败。", L"系统未能启动打印后台服务。请确认以管理员身份运行本程序，并检查 Print Spooler 服务状态。错误代码：" + std::to_wstring(startCode));
     }
 }
 
@@ -486,7 +496,7 @@ void ClearPrintQueue() {
     DWORD stopCode = 1;
     RunHiddenCommand(L"net stop spooler /y", &stopOutput, &stopCode);
     if (stopCode != 0) {
-        ShowFailure(L"无法停止打印后台服务。", stopOutput);
+        ShowFailure(L"无法停止打印后台服务。", L"系统拒绝停止打印后台服务。请以管理员身份运行本程序，并检查 Print Spooler 服务状态。错误代码：" + std::to_wstring(stopCode));
         return;
     }
 
@@ -499,7 +509,7 @@ void ClearPrintQueue() {
     RunHiddenCommand(L"net start spooler", &startOutput, &startCode);
 
     if (startCode != 0) {
-        ShowFailure(L"打印队列已处理，但后台服务未能重新启动。", startOutput);
+        ShowFailure(L"打印队列已处理，但后台服务未能重新启动。", L"请手动检查 Print Spooler 服务状态。错误代码：" + std::to_wstring(startCode));
     } else if (!deleted) {
         ShowFailure(L"打印队列清理不完整。", deleteError);
     } else {
@@ -727,10 +737,10 @@ void BuildInterface(HWND window) {
 
     g_wifiTitle = CreateControl(0, 0, L"Wi-Fi 控制", 0, 0, 1, 1, window);
     g_wifiLabel = CreateControl(0, 0, L"无线网卡设备", 0, 0, 1, 1, window);
-    g_wifiCombo = CreateWindowExW(0, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWN | WS_VSCROLL,
+    g_wifiCombo = CreateWindowExW(0, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL,
                                    0, 0, 1, 1, window, reinterpret_cast<HMENU>(IDC_WIFI_COMBO), instance, nullptr);
     SendMessageW(g_wifiCombo, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
-    g_wifiRefresh = CreateButton(L"刷新", IDC_WIFI_REFRESH, 0, 0, 1, 1, window);
+    g_wifiRefresh = CreateButton(L"选择无线网卡", IDC_WIFI_REFRESH, 0, 0, 1, 1, window);
     g_wifiFormat = CreateControl(0, 0, L"显示格式：网卡设备名称 [Windows 接口名称]", 0, 0, 1, 1, window);
     g_wifiEnable = CreateButton(L"启用 Wi-Fi", IDC_WIFI_ENABLE, 0, 0, 1, 1, window);
     g_wifiDisable = CreateButton(L"禁用 Wi-Fi", IDC_WIFI_DISABLE, 0, 0, 1, 1, window);
@@ -752,7 +762,11 @@ void BuildInterface(HWND window) {
     RECT client{};
     GetClientRect(window, &client);
     LayoutInterface(client.right - client.left, client.bottom - client.top);
+    ShowWindow(g_wifiLabel, SW_HIDE);
+    ShowWindow(g_wifiCombo, SW_HIDE);
+    ShowWindow(g_wifiFormat, SW_HIDE);
     ClearProgressArea();
+    SetActionsEnabled(true);
 }
 
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -760,7 +774,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         case WM_CREATE:
             g_mainWindow = window;
             BuildInterface(window);
-            RefreshWifiInterfaces();
             return 0;
         case WM_TIMER:
             if (wParam == kProgressHideTimer) {
@@ -786,6 +799,13 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             return 0;
         case WM_COMMAND:
             switch (LOWORD(wParam)) {
+                case IDC_WIFI_COMBO:
+                    if (HIWORD(wParam) == CBN_SELCHANGE) {
+                        const int index = static_cast<int>(SendMessageW(g_wifiCombo, CB_GETCURSEL, 0, 0));
+                        g_wifiAdapterSelected = index >= 0 && static_cast<size_t>(index) < g_wifiAdapters.size();
+                        SetActionsEnabled(true);
+                    }
+                    return 0;
                 case IDC_ABOUT:
                     ShowAboutWindow();
                     return 0;
@@ -810,9 +830,16 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             break;
         case WM_CTLCOLORSTATIC: {
             HDC hdc = reinterpret_cast<HDC>(wParam);
+            HWND control = reinterpret_cast<HWND>(lParam);
+            static HBRUSH headerBrush = CreateSolidBrush(RGB(248, 250, 252));
+            static HBRUSH panelBrush = CreateSolidBrush(RGB(255, 255, 255));
             SetTextColor(hdc, RGB(35, 52, 68));
-            SetBkMode(hdc, TRANSPARENT);
-            return reinterpret_cast<LRESULT>(GetStockObject(NULL_BRUSH));
+            if (control == g_title || control == g_subtitle || control == g_appIcon) {
+                SetBkColor(hdc, RGB(248, 250, 252));
+                return reinterpret_cast<LRESULT>(headerBrush);
+            }
+            SetBkColor(hdc, RGB(255, 255, 255));
+            return reinterpret_cast<LRESULT>(panelBrush);
         }
         case WM_DESTROY:
             KillTimer(window, kProgressHideTimer);

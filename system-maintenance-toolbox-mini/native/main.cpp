@@ -11,6 +11,7 @@
 #include <shellapi.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <cwctype>
 #include <string>
 #include <vector>
@@ -32,6 +33,7 @@ constexpr int IDC_PROGRESS = 1008;
 constexpr int IDC_ABOUT = 1009;
 constexpr int IDI_APP = 101;
 constexpr UINT_PTR kProgressHideTimer = 1;
+constexpr UINT_PTR kProgressAnimationTimer = 2;
 
 struct WifiAdapter {
     std::wstring interfaceName;
@@ -61,11 +63,13 @@ HWND g_statusFrame = nullptr;
 HWND g_statusCaption = nullptr;
 HWND g_status = nullptr;
 HWND g_progress = nullptr;
+HWND g_progressPercent = nullptr;
 HFONT g_titleFont = nullptr;
 HFONT g_regularFont = nullptr;
 std::vector<HWND> g_actionControls;
 std::vector<WifiAdapter> g_wifiAdapters;
 int g_progressValue = 0;
+int g_progressTarget = 0;
 
 std::wstring Trim(const std::wstring& value) {
     const auto begin = value.find_first_not_of(L" \t\r\n");
@@ -187,6 +191,45 @@ void SetProgressPosition(int value) {
     if (g_progress != nullptr) {
         SendMessageW(g_progress, PBM_SETPOS, static_cast<WPARAM>(g_progressValue), 0);
     }
+    if (g_progressPercent != nullptr) {
+        const std::wstring percent = std::to_wstring(g_progressValue) + L"%";
+        SetWindowTextW(g_progressPercent, percent.c_str());
+    }
+}
+
+void AnimateProgressTo(int target) {
+    g_progressTarget = std::max(0, std::min(target, 100));
+    while (g_progressValue != g_progressTarget) {
+        const int distance = g_progressTarget - g_progressValue;
+        const int step = std::max(1, std::abs(distance) / 7);
+        SetProgressPosition(g_progressValue + (distance > 0 ? step : -step));
+        RefreshPaint();
+        Sleep(12);
+    }
+}
+
+void ClearProgressArea() {
+    KillTimer(g_mainWindow, kProgressHideTimer);
+    KillTimer(g_mainWindow, kProgressAnimationTimer);
+    g_progressTarget = 0;
+    SetProgressPosition(0);
+    if (g_progress != nullptr) {
+        ShowWindow(g_progress, SW_HIDE);
+    }
+    if (g_progressPercent != nullptr) {
+        SetWindowTextW(g_progressPercent, L"");
+        ShowWindow(g_progressPercent, SW_HIDE);
+    }
+    if (g_status != nullptr) {
+        SetWindowTextW(g_status, L"");
+    }
+    if (g_statusCaption != nullptr) {
+        SetWindowTextW(g_statusCaption, L"");
+    }
+    if (g_statusFrame != nullptr) {
+        RedrawWindow(g_statusFrame, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+    }
+    RefreshPaint();
 }
 
 void BeginProgress(const std::wstring& message, int progress = 10) {
@@ -198,19 +241,23 @@ void BeginProgress(const std::wstring& message, int progress = 10) {
     SetStatus(L"正在执行：" + message);
     if (g_progress != nullptr) {
         ShowWindow(g_progress, SW_SHOW);
-        SetProgressPosition(progress);
     }
+    if (g_progressPercent != nullptr) {
+        ShowWindow(g_progressPercent, SW_SHOW);
+    }
+    SetProgressPosition(0);
+    AnimateProgressTo(progress);
     RefreshPaint();
 }
 
 void UpdateProgress(const std::wstring& message, int progress) {
     SetStatus(L"正在执行：" + message);
-    SetProgressPosition(progress);
+    AnimateProgressTo(progress);
     RefreshPaint();
 }
 
 void FinishProgress(bool success, const std::wstring& message) {
-    SetProgressPosition(100);
+    AnimateProgressTo(100);
     SetActionsEnabled(true);
     SetStatus((success ? L"已完成：" : L"执行失败：") + message);
     SetTimer(g_mainWindow, kProgressHideTimer, 1600, nullptr);
@@ -500,7 +547,7 @@ LRESULT CALLBACK AboutWindowProc(HWND window, UINT message, WPARAM wParam, LPARA
             SendMessageW(title, WM_SETFONT, reinterpret_cast<WPARAM>(g_titleFont), TRUE);
 
             const wchar_t details[] =
-                L"By 樱花树下科技工作室·AI创作\n"
+                L"By 小潘·樱花树下科技工作室·AI创作\n"
                 L"别的项目地址：http://fanxiaofei.ccwu.cc/\n\n"
                 L"文件说明：系统维护工具箱mini\n"
                 L"文件版本：0.05    类型：应用程序\n"
@@ -508,11 +555,11 @@ LRESULT CALLBACK AboutWindowProc(HWND window, UINT message, WPARAM wParam, LPARA
                 L"产品版本：0.1.0\n"
                 L"版权：© 樱花科技工作室";
             HWND text = CreateWindowExW(0, L"STATIC", details, WS_CHILD | WS_VISIBLE | SS_LEFT,
-                                        24, 92, 430, 176, window, nullptr, instance, nullptr);
+                                        24, 92, 450, 226, window, nullptr, instance, nullptr);
             SendMessageW(text, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
 
             HWND close = CreateWindowExW(0, L"BUTTON", L"关闭", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-                                         356, 278, 92, 32, window, reinterpret_cast<HMENU>(IDOK), instance, nullptr);
+                                         378, 328, 92, 32, window, reinterpret_cast<HMENU>(IDOK), instance, nullptr);
             SendMessageW(close, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
             return 0;
         }
@@ -551,7 +598,7 @@ void ShowAboutWindow() {
     }
 
     const DWORD style = WS_CAPTION | WS_SYSMENU;
-    RECT rect{0, 0, 480, 330};
+    RECT rect{0, 0, 510, 390};
     AdjustWindowRectEx(&rect, style, FALSE, WS_EX_DLGMODALFRAME);
     HWND about = CreateWindowExW(
         WS_EX_DLGMODALFRAME,
@@ -612,9 +659,12 @@ void LayoutInterface(int clientWidth, int clientHeight) {
     PlaceControl(g_statusFrame, margin, statusTop, contentWidth, statusHeight);
     PlaceControl(g_statusCaption, margin + inner, statusTop + 16, 72, 22);
     const int progressWidth = 164;
+    const int percentWidth = 48;
     const int progressLeft = right - inner - progressWidth;
+    const int percentLeft = progressLeft - percentWidth - 8;
+    PlaceControl(g_progressPercent, percentLeft, statusTop + 16, percentWidth, 22);
     PlaceControl(g_progress, progressLeft, statusTop + 14, progressWidth, 22);
-    PlaceControl(g_status, margin + 92, statusTop + 16, std::max(160, progressLeft - 18 - (margin + 92)), 22);
+    PlaceControl(g_status, margin + 92, statusTop + 16, std::max(120, percentLeft - 18 - (margin + 92)), 22);
 }
 
 void BuildInterface(HWND window) {
@@ -659,6 +709,7 @@ void BuildInterface(HWND window) {
     g_statusFrame = CreateControl(SS_GRAYFRAME, 0, L"", 0, 0, 1, 1, window);
     g_statusCaption = CreateControl(0, 0, L"执行进度", 0, 0, 1, 1, window);
     g_status = CreateControl(0, IDC_STATUS, L"", 0, 0, 1, 1, window);
+    g_progressPercent = CreateControl(SS_CENTER, 0, L"", 0, 0, 1, 1, window);
     g_progress = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | PBS_SMOOTH,
                                   0, 0, 1, 1, window, reinterpret_cast<HMENU>(IDC_PROGRESS), instance, nullptr);
     SendMessageW(g_progress, PBM_SETRANGE32, 0, 100);
@@ -668,6 +719,7 @@ void BuildInterface(HWND window) {
     RECT client{};
     GetClientRect(window, &client);
     LayoutInterface(client.right - client.left, client.bottom - client.top);
+    ClearProgressArea();
 }
 
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -679,18 +731,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             return 0;
         case WM_TIMER:
             if (wParam == kProgressHideTimer) {
-                KillTimer(window, kProgressHideTimer);
-                if (g_progress != nullptr) {
-                    ShowWindow(g_progress, SW_HIDE);
-                    SetProgressPosition(0);
-                }
-                if (g_status != nullptr) {
-                    SetWindowTextW(g_status, L"");
-                }
-                if (g_statusCaption != nullptr) {
-                    SetWindowTextW(g_statusCaption, L"");
-                }
-                RefreshPaint();
+                ClearProgressArea();
                 return 0;
             }
             break;
@@ -736,6 +777,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         }
         case WM_DESTROY:
             KillTimer(window, kProgressHideTimer);
+            KillTimer(window, kProgressAnimationTimer);
             if (g_titleFont != nullptr) {
                 DeleteObject(g_titleFont);
             }

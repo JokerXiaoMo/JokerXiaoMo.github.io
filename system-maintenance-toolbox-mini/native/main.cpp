@@ -1,7 +1,11 @@
+#define WINVER 0x0601
 #define _WIN32_WINNT 0x0601
+#define NTDDI_VERSION 0x06010000
 
+#include <winsock2.h>
 #include <windows.h>
 #include <commctrl.h>
+#include <iphlpapi.h>
 #include <shellapi.h>
 
 #include <algorithm>
@@ -13,7 +17,7 @@ namespace {
 
 constexpr wchar_t kAppTitle[] = L"系统维护工具箱 mini";
 constexpr int kWindowWidth = 720;
-constexpr int kWindowHeight = 470;
+constexpr int kWindowHeight = 480;
 
 constexpr int IDC_WIFI_COMBO = 1001;
 constexpr int IDC_WIFI_REFRESH = 1002;
@@ -22,13 +26,23 @@ constexpr int IDC_WIFI_DISABLE = 1004;
 constexpr int IDC_SPOOLER_RESTART = 1005;
 constexpr int IDC_QUEUE_CLEAR = 1006;
 constexpr int IDC_STATUS = 1007;
+constexpr int IDC_PROGRESS = 1008;
 constexpr int IDI_APP = 101;
+
+struct WifiAdapter {
+    std::wstring interfaceName;
+    std::wstring deviceName;
+    std::wstring displayName;
+};
 
 HWND g_mainWindow = nullptr;
 HWND g_wifiCombo = nullptr;
 HWND g_status = nullptr;
+HWND g_progress = nullptr;
 HFONT g_titleFont = nullptr;
 HFONT g_regularFont = nullptr;
+std::vector<HWND> g_actionControls;
+std::vector<WifiAdapter> g_wifiAdapters;
 
 std::wstring Trim(const std::wstring& value) {
     const auto begin = value.find_first_not_of(L" \t\r\n");
@@ -44,30 +58,6 @@ std::wstring ToLower(std::wstring value) {
         return static_cast<wchar_t>(std::towlower(character));
     });
     return value;
-}
-
-std::vector<std::wstring> SplitColumns(const std::wstring& line) {
-    std::vector<std::wstring> result;
-    std::wstring current;
-    int whitespaceCount = 0;
-    for (wchar_t character : line) {
-        if (character == L' ' || character == L'\t') {
-            ++whitespaceCount;
-            if (whitespaceCount >= 2 && !Trim(current).empty()) {
-                result.push_back(Trim(current));
-                current.clear();
-            } else if (whitespaceCount < 2) {
-                current += L' ';
-            }
-        } else {
-            whitespaceCount = 0;
-            current += character;
-        }
-    }
-    if (!Trim(current).empty()) {
-        result.push_back(Trim(current));
-    }
-    return result;
 }
 
 std::wstring BytesToWide(const std::string& bytes) {
@@ -153,98 +143,164 @@ void SetStatus(const std::wstring& message) {
     }
 }
 
+void RefreshPaint() {
+    if (g_mainWindow != nullptr) {
+        RedrawWindow(g_mainWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+        UpdateWindow(g_mainWindow);
+    }
+}
+
+void SetActionsEnabled(bool enabled) {
+    for (HWND control : g_actionControls) {
+        EnableWindow(control, enabled ? TRUE : FALSE);
+    }
+    if (g_wifiCombo != nullptr) {
+        EnableWindow(g_wifiCombo, enabled ? TRUE : FALSE);
+    }
+}
+
+void BeginProgress(const std::wstring& message) {
+    SetActionsEnabled(false);
+    SetStatus(L"正在执行：" + message);
+    if (g_progress != nullptr) {
+        ShowWindow(g_progress, SW_SHOW);
+        SendMessageW(g_progress, PBM_SETMARQUEE, TRUE, 25);
+    }
+    RefreshPaint();
+}
+
+void UpdateProgress(const std::wstring& message) {
+    SetStatus(L"正在执行：" + message);
+    RefreshPaint();
+}
+
+void FinishProgress(bool success, const std::wstring& message) {
+    if (g_progress != nullptr) {
+        SendMessageW(g_progress, PBM_SETMARQUEE, FALSE, 0);
+        ShowWindow(g_progress, SW_HIDE);
+    }
+    SetActionsEnabled(true);
+    SetStatus((success ? L"已完成：" : L"执行失败：") + message);
+    RefreshPaint();
+}
+
 void ShowFailure(const std::wstring& heading, const std::wstring& detail) {
+    FinishProgress(false, heading);
     const std::wstring message = detail.empty() ? heading : heading + L"\n\n" + detail;
-    SetStatus(heading);
     MessageBoxW(g_mainWindow, message.c_str(), kAppTitle, MB_OK | MB_ICONERROR);
 }
 
-std::vector<std::wstring> FindWifiInterfaces() {
-    std::wstring output;
-    DWORD exitCode = 1;
-    if (!RunHiddenCommand(L"netsh interface show interface", &output, &exitCode) || exitCode != 0) {
+std::vector<WifiAdapter> FindWifiAdapters() {
+    ULONG bufferSize = 15 * 1024;
+    std::vector<unsigned char> buffer(bufferSize);
+    auto* addresses = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer.data());
+
+    DWORD result = GetAdaptersAddresses(
+        AF_UNSPEC,
+        GAA_FLAG_INCLUDE_ALL_INTERFACES,
+        nullptr,
+        addresses,
+        &bufferSize
+    );
+    if (result == ERROR_BUFFER_OVERFLOW) {
+        buffer.resize(bufferSize);
+        addresses = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer.data());
+        result = GetAdaptersAddresses(
+            AF_UNSPEC,
+            GAA_FLAG_INCLUDE_ALL_INTERFACES,
+            nullptr,
+            addresses,
+            &bufferSize
+        );
+    }
+    if (result != NO_ERROR) {
         return {};
     }
 
-    std::vector<std::wstring> adapters;
-    size_t lineStart = 0;
-    while (lineStart < output.size()) {
-        const size_t lineEnd = output.find(L'\n', lineStart);
-        const std::wstring line = Trim(output.substr(lineStart, lineEnd - lineStart));
-        const std::wstring lower = ToLower(line);
-        const bool looksWireless =
-            lower.find(L"wi-fi") != std::wstring::npos ||
-            lower.find(L"wifi") != std::wstring::npos ||
-            lower.find(L"wlan") != std::wstring::npos ||
-            lower.find(L"\x65e0\x7ebf") != std::wstring::npos;
-        if (looksWireless && lower.find(L"interface name") == std::wstring::npos) {
-            const std::vector<std::wstring> columns = SplitColumns(line);
-            if (!columns.empty()) {
-                const std::wstring& adapter = columns.back();
-                if (std::find(adapters.begin(), adapters.end(), adapter) == adapters.end()) {
-                    adapters.push_back(adapter);
-                }
-            }
+    std::vector<WifiAdapter> adapters;
+    for (PIP_ADAPTER_ADDRESSES adapter = addresses; adapter != nullptr; adapter = adapter->Next) {
+        if (adapter->IfType != IF_TYPE_IEEE80211) {
+            continue;
         }
-        if (lineEnd == std::wstring::npos) {
-            break;
+
+        const std::wstring interfaceName = adapter->FriendlyName == nullptr ? L"" : Trim(adapter->FriendlyName);
+        const std::wstring deviceName = adapter->Description == nullptr ? L"" : Trim(adapter->Description);
+        if (interfaceName.empty()) {
+            continue;
         }
-        lineStart = lineEnd + 1;
+
+        WifiAdapter item;
+        item.interfaceName = interfaceName;
+        item.deviceName = deviceName.empty() ? L"无线网卡" : deviceName;
+        item.displayName = item.deviceName + L"  [" + item.interfaceName + L"]";
+        adapters.push_back(item);
     }
     return adapters;
 }
 
-std::wstring SelectedAdapter() {
+WifiAdapter SelectedAdapter() {
+    const int selectedIndex = static_cast<int>(SendMessageW(g_wifiCombo, CB_GETCURSEL, 0, 0));
+    if (selectedIndex >= 0 && static_cast<size_t>(selectedIndex) < g_wifiAdapters.size()) {
+        return g_wifiAdapters[static_cast<size_t>(selectedIndex)];
+    }
+
     const int length = GetWindowTextLengthW(g_wifiCombo);
-    std::wstring adapter(static_cast<size_t>(length + 1), L'\0');
-    GetWindowTextW(g_wifiCombo, adapter.data(), length + 1);
-    adapter.resize(wcslen(adapter.c_str()));
-    return Trim(adapter);
+    std::wstring interfaceName(static_cast<size_t>(length + 1), L'\0');
+    GetWindowTextW(g_wifiCombo, interfaceName.data(), length + 1);
+    interfaceName.resize(wcslen(interfaceName.c_str()));
+    interfaceName = Trim(interfaceName);
+    return {interfaceName, L"手动填写的无线接口", interfaceName};
 }
 
 void RefreshWifiInterfaces() {
+    BeginProgress(L"正在读取无线网卡设备信息…");
+    g_wifiAdapters = FindWifiAdapters();
     SendMessageW(g_wifiCombo, CB_RESETCONTENT, 0, 0);
-    const std::vector<std::wstring> adapters = FindWifiInterfaces();
-    for (const std::wstring& adapter : adapters) {
-        SendMessageW(g_wifiCombo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(adapter.c_str()));
+
+    for (const WifiAdapter& adapter : g_wifiAdapters) {
+        SendMessageW(g_wifiCombo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(adapter.displayName.c_str()));
     }
 
-    if (!adapters.empty()) {
+    if (!g_wifiAdapters.empty()) {
         SendMessageW(g_wifiCombo, CB_SETCURSEL, 0, 0);
-        SetStatus(L"已识别无线接口：" + adapters.front());
+        FinishProgress(true, L"已识别无线网卡：" + g_wifiAdapters.front().displayName);
     } else {
         SetWindowTextW(g_wifiCombo, L"Wi-Fi");
-        SetStatus(L"未自动识别到无线接口；可手动填写名称，例如 Wi-Fi。");
+        FinishProgress(false, L"未识别到无线网卡；可手动填写接口名称，例如 Wi-Fi。");
     }
 }
 
 void SetWifiEnabled(bool enabled) {
-    const std::wstring adapter = SelectedAdapter();
-    if (adapter.empty()) {
+    const WifiAdapter adapter = SelectedAdapter();
+    if (adapter.interfaceName.empty()) {
         MessageBoxW(g_mainWindow, L"请先选择或填写 Wi-Fi 接口名称。", kAppTitle, MB_OK | MB_ICONWARNING);
         return;
     }
 
+    const std::wstring action = enabled ? L"启用 Wi-Fi" : L"禁用 Wi-Fi";
+    BeginProgress(action + L"：" + adapter.displayName);
     std::wstring output;
     DWORD exitCode = 1;
-    const std::wstring command = L"netsh interface set interface name=\"" + adapter + L"\" admin=" + (enabled ? L"enabled" : L"disabled");
+    const std::wstring command = L"netsh interface set interface name=\"" + adapter.interfaceName + L"\" admin=" + (enabled ? L"enabled" : L"disabled");
     if (RunHiddenCommand(command, &output, &exitCode) && exitCode == 0) {
-        SetStatus(enabled ? L"Wi-Fi 已启用。" : L"Wi-Fi 已禁用。");
+        FinishProgress(true, action + L"成功：" + adapter.displayName);
     } else {
-        ShowFailure(enabled ? L"启用 Wi-Fi 失败。" : L"禁用 Wi-Fi 失败。", output);
+        ShowFailure(action + L"失败。", output);
     }
 }
 
 void RestartPrintSpooler() {
+    BeginProgress(L"正在停止打印后台服务…");
     std::wstring stopOutput;
     std::wstring startOutput;
     DWORD stopCode = 1;
     DWORD startCode = 1;
     RunHiddenCommand(L"net stop spooler /y", &stopOutput, &stopCode);
+    UpdateProgress(L"正在启动打印后台服务…");
     RunHiddenCommand(L"net start spooler", &startOutput, &startCode);
 
     if (startCode == 0) {
-        SetStatus(stopCode == 0 ? L"打印后台服务已重启。" : L"打印后台服务已启动。" );
+        FinishProgress(true, stopCode == 0 ? L"打印后台服务已重启。" : L"打印后台服务已启动。" );
     } else {
         ShowFailure(L"打印后台服务重启失败。", startOutput.empty() ? stopOutput : startOutput);
     }
@@ -299,6 +355,7 @@ void ClearPrintQueue() {
         return;
     }
 
+    BeginProgress(L"正在停止打印后台服务…");
     std::wstring stopOutput;
     DWORD stopCode = 1;
     RunHiddenCommand(L"net stop spooler /y", &stopOutput, &stopCode);
@@ -307,8 +364,10 @@ void ClearPrintQueue() {
         return;
     }
 
+    UpdateProgress(L"正在清空本地打印列表…");
     std::wstring deleteError;
     const bool deleted = DeleteQueueFiles(&deleteError);
+    UpdateProgress(L"正在恢复打印后台服务…");
     std::wstring startOutput;
     DWORD startCode = 1;
     RunHiddenCommand(L"net start spooler", &startOutput, &startCode);
@@ -318,7 +377,7 @@ void ClearPrintQueue() {
     } else if (!deleted) {
         ShowFailure(L"打印队列清理不完整。", deleteError);
     } else {
-        SetStatus(L"打印列表已清空，打印后台服务已恢复。" );
+        FinishProgress(true, L"打印列表已清空，打印后台服务已恢复。" );
     }
 }
 
@@ -341,6 +400,7 @@ HWND CreateButton(const wchar_t* text, int id, int x, int y, int width, int heig
     if (g_regularFont != nullptr) {
         SendMessageW(button, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
     }
+    g_actionControls.push_back(button);
     return button;
 }
 
@@ -362,25 +422,28 @@ void BuildInterface(HWND window) {
     SendMessageW(title, WM_SETFONT, reinterpret_cast<WPARAM>(g_titleFont), TRUE);
     CreateControl(0, 0, L"Wi-Fi 与打印维护 · 支持 Windows 7 / 10 / 11", 90, 55, 470, 24, window);
 
-    CreateControl(SS_GRAYFRAME, 0, L"", 24, 96, 656, 152, window);
+    CreateControl(SS_GRAYFRAME, 0, L"", 24, 96, 656, 154, window);
     CreateControl(0, 0, L"Wi-Fi 控制", 42, 108, 180, 24, window);
-    CreateControl(0, 0, L"无线接口", 42, 144, 88, 26, window);
+    CreateControl(0, 0, L"无线网卡设备", 42, 144, 110, 26, window);
     g_wifiCombo = CreateWindowExW(0, L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWN | WS_VSCROLL,
-                                   128, 140, 360, 250, window, reinterpret_cast<HMENU>(IDC_WIFI_COMBO), GetModuleHandleW(nullptr), nullptr);
+                                   152, 140, 338, 250, window, reinterpret_cast<HMENU>(IDC_WIFI_COMBO), GetModuleHandleW(nullptr), nullptr);
     SendMessageW(g_wifiCombo, WM_SETFONT, reinterpret_cast<WPARAM>(g_regularFont), TRUE);
     CreateButton(L"刷新", IDC_WIFI_REFRESH, 505, 140, 128, 32, window);
-    CreateButton(L"启用 Wi-Fi", IDC_WIFI_ENABLE, 128, 192, 160, 34, window);
-    CreateButton(L"禁用 Wi-Fi", IDC_WIFI_DISABLE, 304, 192, 160, 34, window);
+    CreateControl(0, 0, L"显示格式：网卡设备名称 [Windows 接口名称]", 152, 174, 400, 22, window);
+    CreateButton(L"启用 Wi-Fi", IDC_WIFI_ENABLE, 152, 204, 160, 34, window);
+    CreateButton(L"禁用 Wi-Fi", IDC_WIFI_DISABLE, 328, 204, 160, 34, window);
 
-    CreateControl(SS_GRAYFRAME, 0, L"", 24, 264, 656, 110, window);
-    CreateControl(0, 0, L"打印维护", 42, 277, 180, 24, window);
-    CreateControl(0, 0, L"用于处理打印任务卡住、打印服务异常等问题。", 42, 308, 440, 25, window);
-    CreateButton(L"重启打印机服务", IDC_SPOOLER_RESTART, 42, 336, 190, 32, window);
-    CreateButton(L"清空打印列表", IDC_QUEUE_CLEAR, 248, 336, 170, 32, window);
+    CreateControl(SS_GRAYFRAME, 0, L"", 24, 266, 656, 112, window);
+    CreateControl(0, 0, L"打印维护", 42, 279, 180, 24, window);
+    CreateControl(0, 0, L"用于处理打印任务卡住、打印服务异常等问题。", 42, 310, 440, 25, window);
+    CreateButton(L"重启打印机服务", IDC_SPOOLER_RESTART, 42, 338, 190, 32, window);
+    CreateButton(L"清空打印列表", IDC_QUEUE_CLEAR, 248, 338, 170, 32, window);
 
-    CreateControl(SS_GRAYFRAME, 0, L"", 24, 394, 656, 48, window);
-    CreateControl(0, 0, L"状态：", 42, 408, 58, 22, window);
-    g_status = CreateControl(0, IDC_STATUS, L"准备就绪。", 98, 408, 562, 22, window);
+    CreateControl(SS_GRAYFRAME, 0, L"", 24, 396, 656, 54, window);
+    CreateControl(0, 0, L"执行进度", 42, 412, 72, 22, window);
+    g_status = CreateControl(0, IDC_STATUS, L"准备就绪。", 116, 412, 355, 22, window);
+    g_progress = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | PBS_MARQUEE,
+                                  490, 410, 164, 22, window, reinterpret_cast<HMENU>(IDC_PROGRESS), GetModuleHandleW(nullptr), nullptr);
 }
 
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -438,7 +501,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
     INITCOMMONCONTROLSEX controls{};
     controls.dwSize = sizeof(controls);
-    controls.dwICC = ICC_STANDARD_CLASSES;
+    controls.dwICC = ICC_STANDARD_CLASSES | ICC_PROGRESS_CLASS;
     InitCommonControlsEx(&controls);
 
     const wchar_t className[] = L"SystemMaintenanceToolboxMiniWindow";

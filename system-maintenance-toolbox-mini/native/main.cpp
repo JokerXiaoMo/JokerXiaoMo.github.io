@@ -6,6 +6,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <iphlpapi.h>
+#include <wlanapi.h>
+#include <objbase.h>
 #include <shellapi.h>
 
 #include <algorithm>
@@ -28,6 +30,7 @@ constexpr int IDC_QUEUE_CLEAR = 1006;
 constexpr int IDC_STATUS = 1007;
 constexpr int IDC_PROGRESS = 1008;
 constexpr int IDI_APP = 101;
+constexpr UINT_PTR kProgressHideTimer = 1;
 
 struct WifiAdapter {
     std::wstring interfaceName;
@@ -43,6 +46,7 @@ HFONT g_titleFont = nullptr;
 HFONT g_regularFont = nullptr;
 std::vector<HWND> g_actionControls;
 std::vector<WifiAdapter> g_wifiAdapters;
+int g_progressValue = 0;
 
 std::wstring Trim(const std::wstring& value) {
     const auto begin = value.find_first_not_of(L" \t\r\n");
@@ -159,28 +163,35 @@ void SetActionsEnabled(bool enabled) {
     }
 }
 
-void BeginProgress(const std::wstring& message) {
+void SetProgressPosition(int value) {
+    g_progressValue = std::max(0, std::min(value, 100));
+    if (g_progress != nullptr) {
+        SendMessageW(g_progress, PBM_SETPOS, static_cast<WPARAM>(g_progressValue), 0);
+    }
+}
+
+void BeginProgress(const std::wstring& message, int progress = 10) {
+    KillTimer(g_mainWindow, kProgressHideTimer);
     SetActionsEnabled(false);
     SetStatus(L"正在执行：" + message);
     if (g_progress != nullptr) {
         ShowWindow(g_progress, SW_SHOW);
-        SendMessageW(g_progress, PBM_SETMARQUEE, TRUE, 25);
+        SetProgressPosition(progress);
     }
     RefreshPaint();
 }
 
-void UpdateProgress(const std::wstring& message) {
+void UpdateProgress(const std::wstring& message, int progress) {
     SetStatus(L"正在执行：" + message);
+    SetProgressPosition(progress);
     RefreshPaint();
 }
 
 void FinishProgress(bool success, const std::wstring& message) {
-    if (g_progress != nullptr) {
-        SendMessageW(g_progress, PBM_SETMARQUEE, FALSE, 0);
-        ShowWindow(g_progress, SW_HIDE);
-    }
+    SetProgressPosition(100);
     SetActionsEnabled(true);
     SetStatus((success ? L"已完成：" : L"执行失败：") + message);
+    SetTimer(g_mainWindow, kProgressHideTimer, 1800, nullptr);
     RefreshPaint();
 }
 
@@ -190,34 +201,68 @@ void ShowFailure(const std::wstring& heading, const std::wstring& detail) {
     MessageBoxW(g_mainWindow, message.c_str(), kAppTitle, MB_OK | MB_ICONERROR);
 }
 
+std::wstring NormalizeAdapterId(std::wstring value) {
+    value = ToLower(Trim(value));
+    value.erase(std::remove(value.begin(), value.end(), L'{'), value.end());
+    value.erase(std::remove(value.begin(), value.end(), L'}'), value.end());
+    return value;
+}
+
+std::vector<std::wstring> GetPhysicalWlanAdapterIds() {
+    std::vector<std::wstring> identifiers;
+    DWORD negotiatedVersion = 0;
+    HANDLE clientHandle = nullptr;
+    if (WlanOpenHandle(2, nullptr, &negotiatedVersion, &clientHandle) != ERROR_SUCCESS) {
+        return identifiers;
+    }
+
+    PWLAN_INTERFACE_INFO_LIST interfaceList = nullptr;
+    const DWORD result = WlanEnumInterfaces(clientHandle, nullptr, &interfaceList);
+    if (result == ERROR_SUCCESS && interfaceList != nullptr) {
+        for (DWORD index = 0; index < interfaceList->dwNumberOfItems; ++index) {
+            wchar_t guidText[64]{};
+            if (StringFromGUID2(interfaceList->InterfaceInfo[index].InterfaceGuid, guidText, 64) > 0) {
+                identifiers.push_back(NormalizeAdapterId(guidText));
+            }
+        }
+        WlanFreeMemory(interfaceList);
+    }
+    WlanCloseHandle(clientHandle, nullptr);
+    return identifiers;
+}
+
+bool IsVirtualWirelessDevice(const std::wstring& deviceName) {
+    const std::wstring name = ToLower(deviceName);
+    static const wchar_t* blockedKeywords[] = {
+        L"wi-fi direct", L"wifi direct", L"hosted network", L"virtual", L"miniport",
+        L"hyper-v", L"vmware", L"virtualbox", L"tap-windows", L"loopback"
+    };
+    for (const wchar_t* keyword : blockedKeywords) {
+        if (name.find(keyword) != std::wstring::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::vector<WifiAdapter> FindWifiAdapters() {
+    const std::vector<std::wstring> physicalIds = GetPhysicalWlanAdapterIds();
     ULONG bufferSize = 15 * 1024;
     std::vector<unsigned char> buffer(bufferSize);
     auto* addresses = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer.data());
 
-    DWORD result = GetAdaptersAddresses(
-        AF_UNSPEC,
-        GAA_FLAG_INCLUDE_ALL_INTERFACES,
-        nullptr,
-        addresses,
-        &bufferSize
-    );
+    DWORD result = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_ALL_INTERFACES, nullptr, addresses, &bufferSize);
     if (result == ERROR_BUFFER_OVERFLOW) {
         buffer.resize(bufferSize);
         addresses = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer.data());
-        result = GetAdaptersAddresses(
-            AF_UNSPEC,
-            GAA_FLAG_INCLUDE_ALL_INTERFACES,
-            nullptr,
-            addresses,
-            &bufferSize
-        );
+        result = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_ALL_INTERFACES, nullptr, addresses, &bufferSize);
     }
     if (result != NO_ERROR) {
         return {};
     }
 
-    std::vector<WifiAdapter> adapters;
+    std::vector<WifiAdapter> physicalAdapters;
+    std::vector<WifiAdapter> fallbackAdapters;
     for (PIP_ADAPTER_ADDRESSES adapter = addresses; adapter != nullptr; adapter = adapter->Next) {
         if (adapter->IfType != IF_TYPE_IEEE80211) {
             continue;
@@ -225,7 +270,7 @@ std::vector<WifiAdapter> FindWifiAdapters() {
 
         const std::wstring interfaceName = adapter->FriendlyName == nullptr ? L"" : Trim(adapter->FriendlyName);
         const std::wstring deviceName = adapter->Description == nullptr ? L"" : Trim(adapter->Description);
-        if (interfaceName.empty()) {
+        if (interfaceName.empty() || IsVirtualWirelessDevice(deviceName)) {
             continue;
         }
 
@@ -233,9 +278,15 @@ std::vector<WifiAdapter> FindWifiAdapters() {
         item.interfaceName = interfaceName;
         item.deviceName = deviceName.empty() ? L"无线网卡" : deviceName;
         item.displayName = item.deviceName + L"  [" + item.interfaceName + L"]";
-        adapters.push_back(item);
+        fallbackAdapters.push_back(item);
+
+        const std::wstring adapterId = NormalizeAdapterId(BytesToWide(adapter->AdapterName == nullptr ? "" : adapter->AdapterName));
+        if (std::find(physicalIds.begin(), physicalIds.end(), adapterId) != physicalIds.end()) {
+            physicalAdapters.push_back(item);
+        }
     }
-    return adapters;
+
+    return physicalAdapters.empty() ? fallbackAdapters : physicalAdapters;
 }
 
 WifiAdapter SelectedAdapter() {
@@ -253,8 +304,9 @@ WifiAdapter SelectedAdapter() {
 }
 
 void RefreshWifiInterfaces() {
-    BeginProgress(L"正在读取无线网卡设备信息…");
+    BeginProgress(L"正在读取物理无线网卡设备信息…", 15);
     g_wifiAdapters = FindWifiAdapters();
+    UpdateProgress(L"正在整理无线网卡设备名称…", 75);
     SendMessageW(g_wifiCombo, CB_RESETCONTENT, 0, 0);
 
     for (const WifiAdapter& adapter : g_wifiAdapters) {
@@ -278,11 +330,12 @@ void SetWifiEnabled(bool enabled) {
     }
 
     const std::wstring action = enabled ? L"启用 Wi-Fi" : L"禁用 Wi-Fi";
-    BeginProgress(action + L"：" + adapter.displayName);
+    BeginProgress(action + L"：" + adapter.displayName, 20);
     std::wstring output;
     DWORD exitCode = 1;
     const std::wstring command = L"netsh interface set interface name=\"" + adapter.interfaceName + L"\" admin=" + (enabled ? L"enabled" : L"disabled");
     if (RunHiddenCommand(command, &output, &exitCode) && exitCode == 0) {
+        UpdateProgress(L"正在确认 Wi-Fi 接口状态…", 85);
         FinishProgress(true, action + L"成功：" + adapter.displayName);
     } else {
         ShowFailure(action + L"失败。", output);
@@ -290,13 +343,13 @@ void SetWifiEnabled(bool enabled) {
 }
 
 void RestartPrintSpooler() {
-    BeginProgress(L"正在停止打印后台服务…");
+    BeginProgress(L"正在停止打印后台服务…", 15);
     std::wstring stopOutput;
     std::wstring startOutput;
     DWORD stopCode = 1;
     DWORD startCode = 1;
     RunHiddenCommand(L"net stop spooler /y", &stopOutput, &stopCode);
-    UpdateProgress(L"正在启动打印后台服务…");
+    UpdateProgress(L"正在启动打印后台服务…", 65);
     RunHiddenCommand(L"net start spooler", &startOutput, &startCode);
 
     if (startCode == 0) {
@@ -349,13 +402,13 @@ void ClearPrintQueue() {
         g_mainWindow,
         L"确定要清空所有本地打印任务吗？\n\n此操作会取消尚未完成的打印作业，且无法恢复。",
         kAppTitle,
-        MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2
+        MB_YESNOCANCEL | MB_ICONWARNING | MB_DEFBUTTON3
     );
     if (confirmation != IDYES) {
         return;
     }
 
-    BeginProgress(L"正在停止打印后台服务…");
+    BeginProgress(L"正在停止打印后台服务…", 15);
     std::wstring stopOutput;
     DWORD stopCode = 1;
     RunHiddenCommand(L"net stop spooler /y", &stopOutput, &stopCode);
@@ -364,10 +417,10 @@ void ClearPrintQueue() {
         return;
     }
 
-    UpdateProgress(L"正在清空本地打印列表…");
+    UpdateProgress(L"正在清空本地打印列表…", 55);
     std::wstring deleteError;
     const bool deleted = DeleteQueueFiles(&deleteError);
-    UpdateProgress(L"正在恢复打印后台服务…");
+    UpdateProgress(L"正在恢复打印后台服务…", 82);
     std::wstring startOutput;
     DWORD startCode = 1;
     RunHiddenCommand(L"net start spooler", &startOutput, &startCode);
@@ -442,8 +495,11 @@ void BuildInterface(HWND window) {
     CreateControl(SS_GRAYFRAME, 0, L"", 24, 396, 656, 54, window);
     CreateControl(0, 0, L"执行进度", 42, 412, 72, 22, window);
     g_status = CreateControl(0, IDC_STATUS, L"准备就绪。", 116, 412, 355, 22, window);
-    g_progress = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | PBS_MARQUEE,
+    g_progress = CreateWindowExW(0, PROGRESS_CLASSW, L"", WS_CHILD | PBS_SMOOTH,
                                   490, 410, 164, 22, window, reinterpret_cast<HMENU>(IDC_PROGRESS), GetModuleHandleW(nullptr), nullptr);
+    SendMessageW(g_progress, PBM_SETRANGE32, 0, 100);
+    SendMessageW(g_progress, PBM_SETBARCOLOR, 0, RGB(46, 160, 67));
+    SendMessageW(g_progress, PBM_SETBKCOLOR, 0, RGB(230, 238, 232));
 }
 
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -453,6 +509,21 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             BuildInterface(window);
             RefreshWifiInterfaces();
             return 0;
+        case WM_TIMER:
+            if (wParam == kProgressHideTimer) {
+                KillTimer(window, kProgressHideTimer);
+                if (g_progress != nullptr) {
+                    ShowWindow(g_progress, SW_HIDE);
+                }
+                return 0;
+            }
+            break;
+        case WM_GETMINMAXINFO: {
+            auto* minMax = reinterpret_cast<MINMAXINFO*>(lParam);
+            minMax->ptMinTrackSize.x = kWindowWidth;
+            minMax->ptMinTrackSize.y = kWindowHeight;
+            return 0;
+        }
         case WM_COMMAND:
             switch (LOWORD(wParam)) {
                 case IDC_WIFI_REFRESH:
@@ -516,7 +587,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int commandShow) {
     windowClass.lpfnWndProc = WindowProc;
     RegisterClassExW(&windowClass);
 
-    const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+    const DWORD style = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
     RECT windowRect{0, 0, kWindowWidth, kWindowHeight};
     AdjustWindowRect(&windowRect, style, FALSE);
     HWND window = CreateWindowExW(

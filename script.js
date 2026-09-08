@@ -48,7 +48,12 @@ const closeShanhaiModal = () => {
   shanhaiOpen.focus();
 };
 
+const shanhaiFrame = document.querySelector('#shanhai-live-frame');
+
 shanhaiOpen.addEventListener('click', () => {
+  if (shanhaiFrame && !shanhaiFrame.getAttribute('src') && shanhaiFrame.dataset.src) {
+    shanhaiFrame.src = shanhaiFrame.dataset.src;
+  }
   shanhaiModal.hidden = false;
   document.body.classList.add('shanhai-modal-open');
   shanhaiClose.focus();

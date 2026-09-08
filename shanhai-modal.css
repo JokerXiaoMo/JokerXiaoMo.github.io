@@ -25,7 +25,14 @@
 .shanhai-modal__actions a { padding: .72rem 1rem; border: 1px solid rgba(196,154,81,.45); border-radius: 999px; color: #f2d694; font-size: .85rem; text-decoration: none; transition: background .18s; }
 .shanhai-modal__actions a:first-child { border-color: #b74335; background: #b74335; color: #fff4e1; }
 .shanhai-modal__actions a:hover { background: rgba(255,255,255,.1); }
-@media (max-width: 560px) { .shanhai-modal { padding: .65rem; } .shanhai-modal__header, .shanhai-modal__scroll { padding: 1rem; } .shanhai-modal__header h2 { font-size: 1.2rem; } .shanhai-modal__facts, .shanhai-modal__strategies p { grid-template-columns: 1fr; gap: .35rem; } .shanhai-modal__scroll { max-height: calc(100vh - 10.8rem); } }
+.shanhai-modal__live { display: grid; gap: .8rem; }
+.shanhai-modal__live .live-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.shanhai-modal__live .live-head span { padding: .25rem .65rem; border: 1px solid rgba(196,154,81,.45); border-radius: 999px; color: #f2d694; font-size: .64rem; letter-spacing: .18em; }
+.shanhai-modal__live .live-head code { flex: 1 1 12rem; overflow-x: auto; padding: .45rem .7rem; border: 1px dashed rgba(196,154,81,.28); border-radius: 10px; background: #07171d; color: #f2d694; font-size: .74rem; line-height: 1.6; white-space: nowrap; }
+.live-frame { position: relative; width: 100%; aspect-ratio: 16 / 10; min-height: 260px; overflow: hidden; border: 1px solid rgba(196,154,81,.35); border-radius: 12px; background: #07171d; }
+.live-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+.live-tip { color: #9fb3ae; font-size: .78rem; line-height: 1.7; }
+@media (max-width: 560px) { .shanhai-modal { padding: .65rem; } .shanhai-modal__header, .shanhai-modal__scroll { padding: 1rem; } .shanhai-modal__header h2 { font-size: 1.2rem; } .shanhai-modal__facts, .shanhai-modal__strategies p { grid-template-columns: 1fr; gap: .35rem; } .shanhai-modal__scroll { max-height: calc(100vh - 10.8rem); } .live-frame { aspect-ratio: 3 / 4; min-height: 300px; } }
 
 .taozhi-void-modal[hidden] { display: none; }
 .taozhi-void-modal { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 1rem; background: rgba(5, 19, 26, .78); backdrop-filter: blur(10px); }

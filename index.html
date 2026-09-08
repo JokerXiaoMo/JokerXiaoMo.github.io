@@ -67,7 +67,7 @@
             <div class="card-symbol">隐</div>
             <h3>云隐阁·国风 mihomo 覆写脚本</h3>
             <p>把节点分池、专项分流与四项连接增强题进云隐长卷；每一个策略组都有国风雅号与可解释的归途。</p>
-            <button class="note-action" id="open-shanhai-modal" type="button" aria-haspopup="dialog" aria-label="向上展开云隐阁项目长卷">向上展开长卷</button>
+            <button class="note-action" id="open-shanhai-modal" type="button" aria-haspopup="dialog" aria-label="点击查看云隐阁项目在线长卷">点击查看长卷</button>
           </article>
           <article class="note-card reveal">
             <div class="note-meta"><span>08.24</span><span>桃白行箧</span></div>
@@ -126,6 +126,15 @@
       <div class="shanhai-modal__panel" role="document">
         <header class="shanhai-modal__header"><div><p>云隐行箧 · 开源长卷</p><h2 id="shanhai-modal-title">云隐阁·国风 mihomo 覆写脚本</h2><span id="shanhai-modal-desc">面向 mihomo（Clash Meta）内核的国风二次元定制覆写脚本：将机场订阅覆写为国风雅号策略组体系，以超稳定、超低延迟访问各个 APP。</span></div><button id="close-shanhai-modal" class="shanhai-modal__close" type="button" aria-label="关闭云隐阁项目介绍">×</button></header>
         <div class="shanhai-modal__scroll" tabindex="0">
+          <section class="shanhai-modal__live">
+            <h3>在线长卷</h3>
+            <div class="live-head"><span>LIVE</span><code>https://65b6977acd254cbebbfa5c44943b99b1.app.workbuddy.link</code></div>
+            <div class="live-frame">
+              <iframe id="shanhai-live-frame" data-src="https://65b6977acd254cbebbfa5c44943b99b1.app.workbuddy.link" title="云隐阁 · 国风 mihomo 在线长卷" referrerpolicy="no-referrer"></iframe>
+            </div>
+            <p class="live-tip">长卷由线上沙箱托管，首次展开需预热一两分钟；若上方留白，请点在下方新窗口展开。</p>
+            <div class="shanhai-modal__actions"><a href="https://65b6977acd254cbebbfa5c44943b99b1.app.workbuddy.link" target="_blank" rel="noreferrer">在新窗口展开 ↗</a><a href="https://github.com/JokerXiaoMo/guofeng-mihomo" target="_blank" rel="noreferrer">前往项目主页</a></div>
+          </section>
           <section><h3>这座阁楼里装着什么</h3><p>「云隐阁」是一份以 <code>function main(config)</code> 为入口的 mihomo 配置覆写脚本，基于 <b>AIsouler/MyClash</b> 的 mihomoScript.js 微改并国风二次元化：节点自动识别归池、策略组雅号体系、专项分流、机场私有 DNS 与 hosts 解析修复，一卷俱全。</p><div class="shanhai-modal__facts"><p><b>节点归类</b>中国香港（香江）、中国澳门（濠镜）、中国台湾（宝岛）、日本（东瀛）、新加坡（狮城）、美国（花旗）等分池，并单列轻羽·低倍与重岳·高倍。</p><p><b>连接增强</b>sniffer 域名嗅探回落、chrome TLS 指纹、30s 空闲保活与「御风」50ms 容差自动测速，四项合围超稳低延迟。</p></div></section>
           <section><h3>长卷上的策略名</h3><div class="shanhai-modal__strategies"><p><b>「太一」主道</b><span>总入口，统领地区组、基础组与自建节点，万流归宗。</span></p><p><b>「御风」自动 / 「混元」均衡</b><span>全节点延迟自动择优与粘性负载均衡，始终走在最低延迟线路上。</span></p><p><b>香江 / 濠镜 / 宝岛 / 东瀛 / 狮城 / 花旗</b><span>中国香港、中国澳门、中国台湾与海外地区的自动择优分池，按订阅节点自动生成。</span></p><p><b>映画·油管 / 天工·灵智 / 飞书·电报 等</b><span>YouTube、AI、Telegram、Netflix、Steam 等十余项服务的专项分流入口。</span></p><p><b>「凡尘」直连 / 结界·拦截</b><span>中国大陆服务优先直连与广告拦截结界，未命中流量归于「补天」兜底。</span></p></div></section>
           <section><h3>分流与使用一览</h3><p>规则依次处理私有网络、国内游戏与厂商直连、广告结界、十余项专项分流、国内外大分流与兜底。使用时在 Clash Verge Rev、Mihomo Party 或兼容 mihomo 的覆写脚本入口粘贴脚本或导入下方 Raw 链接，并关闭客户端自带 DNS 覆写。</p><code class="shanhai-modal__url">https://raw.githubusercontent.com/JokerXiaoMo/guofeng-mihomo/main/Script/guofeng-mihomo.js</code></section>

@@ -21,6 +21,7 @@ window.__TAOBAI_STATIC__ = true;
     keyword: '',
     lbList: [],
     lbIndex: 0,
+    sdId: '',
     /* 静态部署模式：没有后端，数据读 /data/*.json，写操作自动跳过。
        静态导出时（tools/export-static.js）会在产物里预置 window.__TAOBAI_STATIC__ = true，
        于是这里一开始就为 true，不会再去探测 /api/*（避免控制台出现一堆 404）。
@@ -50,7 +51,21 @@ window.__TAOBAI_STATIC__ = true;
     return 'rgba(' + ((num >> 16) & 255) + ',' + ((num >> 8) & 255) + ',' + (num & 255) + ',' + alpha + ')';
   }
 
+  /* 推荐理由一类的多行文本：没写 Markdown 就按纯文本排（保留换行），
+     写了 Markdown（标题/列表/加粗/链接/表格）就跟正文一样渲染。 */
+  function richText(text) {
+    const src = String(text == null ? '' : text).replace(/\r\n/g, '\n').trim();
+    if (!src) return '';
+    const looksMarkdown = /(^|\n)\s{0,3}(#{1,4}\s|[-*+]\s|\d+[.)]\s|>\s|```|\|)/.test(src) ||
+      /\*\*[^*\n]+\*\*/.test(src) || /\[[^\]\n]+\]\([^)\s]+\)/.test(src);
+    if (looksMarkdown) return window.TZMarkdown.render(src);
+    return src.split(/\n{2,}/).map((block) =>
+      '<p>' + esc(block).split('\n').map((line) => line.trim()).filter(Boolean).join('<br>') + '</p>'
+    ).join('');
+  }
+
   let toastTimer = null;
+
   function toast(message) {
     const el = $('#toast');
     el.textContent = message;
@@ -479,7 +494,8 @@ window.__TAOBAI_STATIC__ = true;
     $('#sharesEmpty').hidden = list.length > 0;
     box.innerHTML = list.map((s) => {
       const initial = s.icon || (s.title || '?').slice(0, 2);
-      return '<article class="share-card reveal-item">' +
+      return '<article class="share-card reveal-item is-openable" data-id="' + esc(s.id) + '"' +
+          ' role="button" tabindex="0" aria-label="查看《' + esc(s.title) + '》的详情">' +
         '<div class="share-head">' +
           '<div class="share-icon">' + esc(initial) + '</div>' +
           '<div>' +
@@ -491,13 +507,32 @@ window.__TAOBAI_STATIC__ = true;
         '<p class="share-desc">' + esc(s.desc) + '</p>' +
         '<div class="share-foot">' +
           '<div class="platform-row">' + (s.platforms || []).slice(0, 3).map((p) => '<span class="platform">' + esc(p) + '</span>').join('') + '</div>' +
-          '<a class="share-link" href="' + esc(s.url) + '" target="_blank" rel="noopener" data-id="' + esc(s.id) + '">前往 <span>→</span></a>' +
+          '<div class="share-foot-acts">' +
+            '<button class="share-more" type="button" data-id="' + esc(s.id) + '">详情</button>' +
+            '<a class="share-link" href="' + esc(s.url) + '" target="_blank" rel="noopener" data-id="' + esc(s.id) + '">前往 <span>→</span></a>' +
+          '</div>' +
         '</div>' +
       '</article>';
     }).join('');
 
+    /* 整张卡片可点开详情；「前往」是外链，单独放行不拦截 */
+    $$('.share-card', box).forEach((card) => {
+      card.addEventListener('click', () => { location.hash = '#/tool/' + card.dataset.id; });
+      card.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+        e.preventDefault();
+        location.hash = '#/tool/' + card.dataset.id;
+      });
+    });
+    $$('.share-more', box).forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        location.hash = '#/tool/' + btn.dataset.id;
+      });
+    });
     $$('.share-link', box).forEach((link) => {
-      link.addEventListener('click', () => {
+      link.addEventListener('click', (e) => {
+        e.stopPropagation();
         track('/api/shares/' + link.dataset.id + '/click', { method: 'POST' });
       });
     });
@@ -622,6 +657,55 @@ window.__TAOBAI_STATIC__ = true;
     });
   }
 
+  /* ---------------- 拾遗录 · 条目详情 ---------------- */
+
+  function openShareDetail(id) {
+    const item = state.shares.find((s) => s.id === id);
+    if (!item) { toast('找不到这条收录'); return; }
+    state.sdId = id;
+
+    $('#sdIcon').textContent = item.icon || (item.title || '?').slice(0, 2);
+    $('#sdTitle').textContent = item.title || '未命名';
+    $('#sdSub').textContent = (item.category === 'website' ? '网站 · WEB' : '软件 · APP') +
+      (item.star ? ' · 工作室力荐' : '');
+    $('#sdTags').innerHTML = (item.tags || [])
+      .map((t) => '<span class="tag">' + esc(t) + '</span>').join('');
+    $('#sdDesc').innerHTML = richText(item.desc) ||
+      '<p>（这条还没有写推荐理由）</p>';
+    $('#sdPlats').innerHTML = (item.platforms || [])
+      .map((p) => '<span class="platform">' + esc(p) + '</span>').join('');
+    $('#sdActions').innerHTML =
+      '<a class="btn btn-primary sd-go" href="' + esc(item.url) + '" target="_blank" rel="noopener" data-id="' + esc(item.id) + '">前往官网 <span>→</span></a>' +
+      (Number(item.clicks || 0) > 0 ? '<span class="sd-clicks">已被打开 ' + Number(item.clicks) + ' 次</span>' : '');
+    $$('.sd-go', $('#sdActions')).forEach((a) => {
+      a.addEventListener('click', () => { track('/api/shares/' + a.dataset.id + '/click', { method: 'POST' }); });
+    });
+
+    const el = $('#shareDetail');
+    if (el.hidden) {
+      el.hidden = false;
+      document.body.style.overflow = 'hidden';
+      $('#sdScroll').scrollTop = 0;
+      $('.detail-panel', el).focus();
+    }
+  }
+
+  function closeShareDetail() {
+    if ($('#shareDetail').hidden) return;
+    $('#shareDetail').hidden = true;
+    document.body.style.overflow = '';
+    const back = state.sdId ? $('.share-card[data-id="' + state.sdId + '"]') : null;
+    state.sdId = '';
+    if (location.hash.indexOf('#/tool/') === 0) {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    if (back) back.focus();
+  }
+
+  function initShareDetail() {
+    $$('[data-sd-close]').forEach((el) => el.addEventListener('click', closeShareDetail));
+  }
+
   /* ---------------- 留言 ---------------- */
 
   function initContact() {
@@ -683,10 +767,30 @@ window.__TAOBAI_STATIC__ = true;
   function handleHash() {
     const hash = location.hash || '';
     if (hash.indexOf('#/note/') === 0) {
+      if (!$('#shareDetail').hidden) {
+        $('#shareDetail').hidden = true;
+        document.body.style.overflow = '';
+        state.sdId = '';
+      }
       openReader(decodeURIComponent(hash.slice(7)));
-    } else if (!$('#reader').hidden) {
+      return;
+    }
+    if (hash.indexOf('#/tool/') === 0) {
+      if (!$('#reader').hidden) {
+        $('#reader').hidden = true;
+        document.body.style.overflow = '';
+      }
+      openShareDetail(decodeURIComponent(hash.slice(7)));
+      return;
+    }
+    if (!$('#reader').hidden) {
       $('#reader').hidden = true;
       document.body.style.overflow = '';
+    }
+    if (!$('#shareDetail').hidden) {
+      $('#shareDetail').hidden = true;
+      document.body.style.overflow = '';
+      state.sdId = '';
     }
   }
 
@@ -708,6 +812,7 @@ window.__TAOBAI_STATIC__ = true;
     initNav();
     initReveal();
     initReader();
+    initShareDetail();
     initContact();
 
     $('#shareFilter').addEventListener('click', (e) => {
@@ -726,6 +831,7 @@ window.__TAOBAI_STATIC__ = true;
         return;
       }
       if (!$('#reader').hidden && e.key === 'Escape') closeReader();
+      if (!$('#shareDetail').hidden && e.key === 'Escape') closeShareDetail();
     });
 
     $$('[data-lb-close]').forEach((el) => el.addEventListener('click', closeLightbox));

@@ -1,125 +1,57 @@
 {
   "items": [
     {
-      "id": "pic_seed_01",
-      "title": "远山 · 雾起",
-      "desc": "凌晨五点半的山脊线。雾还没散，月亮悬在右上角，还没有要落的意思。",
-      "url": "/uploads/seed/mountain-mist.svg",
-      "tags": [
-        "山",
-        "雾",
-        "清晨"
-      ],
-      "width": 1280,
-      "height": 860,
+      "title": "番小绯_学院制服",
+      "desc": "",
+      "url": "/uploads/2026-09/01_学院制服-mu0zxcm93147.png",
+      "tags": [],
+      "width": 0,
+      "height": 0,
       "order": 1,
-      "featured": true
+      "featured": false,
+      "id": "pic_mu0zxcmd10c180",
+      "createdAt": "2026-09-14T08:43:42.757Z",
+      "updatedAt": "2026-09-14T08:44:59.425Z"
     },
     {
-      "id": "pic_seed_02",
-      "title": "桃枝 · 春信",
-      "desc": "院子里的桃树开了第一枝。今年比去年早了九天，我们记了下来。",
-      "url": "/uploads/seed/blossom-branch.svg",
-      "tags": [
-        "花",
-        "春",
-        "院中"
-      ],
-      "width": 1000,
-      "height": 1280,
+      "title": "番小绯_软糯针织",
+      "desc": "",
+      "url": "/uploads/2026-09/02_软糯针织-mu0zxeul4047.png",
+      "tags": [],
+      "width": 0,
+      "height": 0,
       "order": 2,
-      "featured": true
+      "featured": false,
+      "id": "pic_mu0zxeup5c0c61",
+      "createdAt": "2026-09-14T08:43:45.649Z",
+      "updatedAt": "2026-09-14T08:44:56.025Z"
     },
     {
-      "id": "pic_seed_03",
-      "title": "涟漪 · 一叶",
-      "desc": "一片叶子落在水面上，扩散出第八圈波纹时，我按下了快门。",
-      "url": "/uploads/seed/ripple-water.svg",
-      "tags": [
-        "水",
-        "静物",
-        "光影"
-      ],
-      "width": 1280,
-      "height": 860,
+      "title": "番小绯_新中式汉服",
+      "desc": "",
+      "url": "/uploads/2026-09/04_新中式汉服-mu0zxhkv07a8.png",
+      "tags": [],
+      "width": 0,
+      "height": 0,
       "order": 3,
-      "featured": false
+      "featured": false,
+      "id": "pic_mu0zxhl09845c8",
+      "createdAt": "2026-09-14T08:43:49.188Z",
+      "updatedAt": "2026-09-14T08:44:51.574Z"
     },
     {
-      "id": "pic_seed_04",
-      "title": "苔痕 · 石上",
-      "desc": "雨后的第三块石头。苔藓长得很好，比上周厚了一层。",
-      "url": "/uploads/seed/stone-moss.svg",
-      "tags": [
-        "苔",
-        "石",
-        "雨后"
-      ],
-      "width": 1280,
-      "height": 900,
+      "title": "番小绯_海滨度假",
+      "desc": "",
+      "url": "/uploads/2026-09/07_海滨度假-mu0zxklm8336.png",
+      "tags": [],
+      "width": 0,
+      "height": 0,
       "order": 4,
-      "featured": false
-    },
-    {
-      "id": "pic_seed_05",
-      "title": "云岫 · 峰回",
-      "desc": "云从谷底涌上来，把三座山峰连成了一片会呼吸的白。",
-      "url": "/uploads/seed/cloud-peak.svg",
-      "tags": [
-        "云",
-        "山",
-        "远景"
-      ],
-      "width": 1280,
-      "height": 860,
-      "order": 5,
-      "featured": true
-    },
-    {
-      "id": "pic_seed_06",
-      "title": "星野 · 夜行",
-      "desc": "离开城市四十公里后，终于看见了银河。曝光三十秒，手冻得发抖。",
-      "url": "/uploads/seed/starfield.svg",
-      "tags": [
-        "星空",
-        "夜",
-        "长曝光"
-      ],
-      "width": 1280,
-      "height": 860,
-      "order": 6,
-      "featured": false
-    },
-    {
-      "id": "pic_seed_07",
-      "title": "竹影 · 风过",
-      "desc": "下午三点的光穿过竹林，影子落在墙上，像一组会动的竖线。",
-      "url": "/uploads/seed/bamboo-shadow.svg",
-      "tags": [
-        "竹",
-        "影",
-        "午后"
-      ],
-      "width": 1000,
-      "height": 1280,
-      "order": 7,
-      "featured": false
-    },
-    {
-      "id": "pic_seed_08",
-      "title": "荷塘 · 夏至",
-      "desc": "开了一朵。旁边那支花苞我们连续拍了四天，还没开。",
-      "url": "/uploads/seed/lotus-pond.svg",
-      "tags": [
-        "荷",
-        "夏",
-        "池塘"
-      ],
-      "width": 1280,
-      "height": 860,
-      "order": 8,
-      "featured": false
+      "featured": false,
+      "id": "pic_mu0zxklr6a3c6a",
+      "createdAt": "2026-09-14T08:43:53.103Z",
+      "updatedAt": "2026-09-14T08:44:48.082Z"
     }
   ],
-  "total": 8
+  "total": 4
 }

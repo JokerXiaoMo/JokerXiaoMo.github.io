@@ -1,200 +1,24 @@
 {
   "items": [
     {
-      "id": "shr_sample_01",
-      "title": "Obsidian",
-      "desc": "本地优先的 Markdown 笔记库。所有文件都是纯文本躺在你的硬盘里，插件生态足够把手写、双链、白板全接上。我们的选题草稿和会议记录都在这里，最大的好处是十年后它依然打得开。",
-      "url": "https://obsidian.md",
-      "category": "software",
-      "tags": [
-        "笔记",
-        "Markdown",
-        "本地优先"
-      ],
-      "icon": "Ob",
-      "platforms": [
-        "Windows",
-        "macOS",
-        "Linux",
-        "iOS",
-        "Android"
-      ],
-      "star": true,
-      "clicks": 129
-    },
-    {
-      "id": "shr_sample_02",
-      "title": "Immich",
-      "desc": "自托管的照片备份方案，界面和体验接近主流云相册，但数据全在你自己的机器上。人脸识别、地图相册、原图下载齐全，是我们把两千张照片搬回家的主力工具。",
-      "url": "https://immich.app",
-      "category": "software",
-      "tags": [
-        "自托管",
-        "相册",
-        "备份"
-      ],
-      "icon": "Im",
-      "platforms": [
-        "Docker",
-        "Web",
-        "iOS",
-        "Android"
-      ],
-      "star": true,
-      "clicks": 97
-    },
-    {
-      "id": "shr_sample_03",
-      "title": "Excalidraw",
-      "desc": "手绘质感的白板工具，画出架构图时不会显得像教科书。支持端到端加密的协作房间，我们所有的流程图和界面草图都用它起稿，导出 PNG 直接就能贴进文档。",
-      "url": "https://excalidraw.com",
-      "category": "software",
-      "tags": [
-        "绘图",
-        "白板",
-        "协作"
-      ],
-      "icon": "Ex",
-      "platforms": [
-        "Web",
-        "VS Code"
-      ],
-      "star": true,
-      "clicks": 214
-    },
-    {
-      "id": "shr_sample_04",
-      "title": "Stirling PDF",
-      "desc": "本地部署的 PDF 全能工具箱：合并、拆分、压缩、加水印、OCR、格式转换，几十个功能全在一个界面里。合同和资料再也不必上传到不知名的在线转换站。",
-      "url": "https://stirlingpdf.io",
-      "category": "software",
-      "tags": [
-        "PDF",
-        "自托管",
-        "办公"
-      ],
-      "icon": "SP",
-      "platforms": [
-        "Docker",
-        "Web"
-      ],
-      "star": false,
-      "clicks": 64
-    },
-    {
-      "id": "shr_sample_05",
-      "title": "Snipaste",
-      "desc": "截图加贴图。真正让它无可替代的是「贴图」——把截图钉在屏幕上，写稿时对照参考资料、比对两个版本的设计稿，效率提升非常明显。免安装，绿色单文件。",
-      "url": "https://zh.snipaste.com",
-      "category": "software",
-      "tags": [
-        "截图",
-        "效率",
-        "Windows"
-      ],
-      "icon": "Sn",
-      "platforms": [
-        "Windows",
-        "macOS"
-      ],
-      "star": false,
-      "clicks": 158
-    },
-    {
-      "id": "shr_sample_06",
-      "title": "LocalSend",
-      "desc": "局域网内跨设备传文件的利器，手机、电脑、平板之间互传不需要数据线也不需要登录。开源、无广告、不压缩画质，替代聊天软件「传文件助手」的标准答案。",
-      "url": "https://localsend.org",
-      "category": "software",
-      "tags": [
-        "传输",
-        "开源",
-        "局域网"
-      ],
-      "icon": "LS",
-      "platforms": [
-        "Windows",
-        "macOS",
-        "Linux",
-        "iOS",
-        "Android"
-      ],
-      "star": false,
-      "clicks": 87
-    },
-    {
-      "id": "shr_sample_07",
-      "title": "Photopea",
-      "desc": "浏览器里跑的一个「Photoshop」，能直接打开 PSD、AI、XD 文件并保留图层。临时改一张图、扣个背景，不用装几个 G 的软件，打开网页就能干活。",
-      "url": "https://www.photopea.com",
+      "title": "桃白簪花 · mihomo",
+      "desc": "📖 简介\n「桃白簪花」 是一份面向 mihomo（Clash Meta）内核的配置覆写脚本：\n\n将机场订阅覆写为一套长卷式命名的完整策略组体系，并针对「超稳定、超低延迟访问各个 APP」做了四项增强。\n\n它能做什么\n\n🍑 覆写后，所有策略组以「卷名」命名（对照见下表），面板如一幅缓缓展开的长卷\n🔁 订阅更新后重新覆写即可，地区组、倍率组、分流组全部自动生成，无需手动维护\n🩹 自动处理机场私有 DNS / hosts 映射导致的节点解析问题，DNS 无泄露\n🎛 顶部 ruleOptionsEnable 提供全部开关，注释齐全，想改就改\n🙏 本项目基于 AIsouler/MyClash 的 mihomoScript.js 微改而来——分流逻辑、规则集与节点处理均出自原作者之手，在此致以诚挚谢意。本版在其基础上做了长卷式命名重塑与连接稳定性增强，并重新设计了文档与项目结构。",
+      "url": "https://github.com/JokerXiaoMo/taobai-zanhua",
       "category": "website",
       "tags": [
-        "设计",
-        "图片处理",
-        "免安装"
-      ],
-      "icon": "Ph",
-      "platforms": [
-        "Web"
-      ],
-      "star": true,
-      "clicks": 302
-    },
-    {
-      "id": "shr_sample_08",
-      "title": "Squoosh",
-      "desc": "谷歌出品的图片压缩工具，本地浏览器内完成，图片不会上传到任何服务器。左右分屏对照压缩前后的画质，是给网站图片瘦身时最先打开的一个页面。",
-      "url": "https://squoosh.app",
-      "category": "website",
-      "tags": [
-        "压缩",
-        "图片",
-        "隐私"
-      ],
-      "icon": "Sq",
-      "platforms": [
-        "Web"
-      ],
-      "star": false,
-      "clicks": 141
-    },
-    {
-      "id": "shr_sample_09",
-      "title": "IT-Tools",
-      "desc": "开发者小工具合集：时间戳转换、UUID 生成、Base64、哈希、正则测试、JWT 解析⋯⋯ 上百个零散需求集中在一个干净页面里，还支持自己部署一套内部使用。",
-      "url": "https://it-tools.tech",
-      "category": "website",
-      "tags": [
-        "开发",
-        "工具箱",
         "开源"
       ],
-      "icon": "IT",
+      "icon": "M",
       "platforms": [
-        "Web",
-        "Docker"
+        "Windows",
+        "Android"
       ],
-      "star": false,
-      "clicks": 119
-    },
-    {
-      "id": "shr_sample_10",
-      "title": "Internet Archive",
-      "desc": "互联网档案馆。除了那个著名的网页时光机，它还保存了大量公版书籍、老唱片和软件。查一份已经下线的文档、看某个网站十年前的样子，都靠它。",
-      "url": "https://archive.org",
-      "category": "website",
-      "tags": [
-        "档案",
-        "资料",
-        "公共资源"
-      ],
-      "icon": "IA",
-      "platforms": [
-        "Web"
-      ],
-      "star": false,
-      "clicks": 74
+      "star": true,
+      "clicks": 2,
+      "id": "shr_mu0zwapba36eed",
+      "createdAt": "2026-09-14T08:42:53.615Z",
+      "updatedAt": "2026-09-14T08:42:53.615Z"
     }
   ],
-  "total": 10
+  "total": 1
 }

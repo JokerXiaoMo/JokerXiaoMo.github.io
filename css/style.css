@@ -379,13 +379,17 @@ html[data-theme="dark"] .ico-moon { display: none; }
   font-size: 11px; color: var(--text-3); padding: 2px 8px;
   border: 1px solid var(--line); border-radius: 10px;
 }
-.share-foot-acts { display: flex; align-items: center; gap: 12px; }
+/* 卡片页脚：左边是平台胶囊，右边是一对等重的小文字动作（详情 │ 前往）
+   两者都不带边框，避免和胶囊标签的描边打架 */
+.share-foot-acts { display: flex; align-items: center; gap: 10px; }
 .share-more {
   font-size: 12px; color: var(--text-3); white-space: nowrap;
-  border-bottom: 1px dashed var(--line-2); padding-bottom: 1px;
-  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+  background: none; border: none; border-radius: 3px; padding: 0; line-height: 1.4;
+  transition: color 0.3s var(--ease);
 }
-.share-more:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.share-card:hover .share-more, .share-more:hover { color: var(--accent); }
+.share-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.share-sep { width: 1px; height: 11px; background: var(--line-2); flex-shrink: 0; }
 .share-link {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 12px; color: var(--accent); white-space: nowrap;
@@ -419,7 +423,7 @@ html[data-theme="dark"] .ico-moon { display: none; }
   transition: all 0.3s var(--ease);
 }
 .detail-close:hover { color: var(--accent); border-color: var(--accent); transform: rotate(90deg); }
-.detail-scroll { overflow-y: auto; padding: 30px 34px 34px; }
+.detail-scroll { overflow-y: auto; padding: 30px 34px 26px; flex: 1; }
 
 .detail-head { display: flex; align-items: center; gap: 14px; padding-right: 44px; }
 .detail-head .share-icon { width: 46px; height: 46px; font-size: 16px; }
@@ -438,9 +442,12 @@ html[data-theme="dark"] .ico-moon { display: none; }
 .detail-desc h1, .detail-desc h2 { font-size: 17px; margin-top: 26px; }
 .detail-desc h3 { font-size: 15px; margin-top: 22px; }
 .detail-plats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 26px; }
+/* 主按钮固定在面板底部，长文也不用往下滚才找得到 */
 .detail-actions {
+  flex-shrink: 0;
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line);
+  padding: 18px 34px; border-top: 1px solid var(--line);
+  background: var(--surface);
 }
 .detail-actions .btn { font-size: 13px; padding: 10px 20px; }
 .detail-actions .btn span { display: inline-block; transition: transform 0.3s var(--ease); }
@@ -641,6 +648,10 @@ html[data-theme="dark"] .ico-moon { display: none; }
   .section { padding: 72px 20px; }
   .section-alt { padding-left: 20px; padding-right: 20px; }
   .reader-scroll { padding: 48px 24px 64px; }
+  .detail { padding: 14px; }
+  .detail-scroll { padding: 26px 22px 22px; }
+  .detail-actions { padding: 14px 22px; }
+  .detail-head { padding-right: 40px; }
   .masonry { columns: 2 200px; column-gap: 12px; }
   .pic { margin-bottom: 12px; }
   .lb-prev { left: 10px; }
@@ -655,6 +666,9 @@ html[data-theme="dark"] .ico-moon { display: none; }
   .hero-title { letter-spacing: 0.1em; text-indent: 0.1em; }
   .brand-text { display: none; }
   .lb-btn { width: 40px; height: 40px; }
+  .detail-panel { max-height: 88vh; }
+  .detail-desc { font-size: 14px; line-height: 1.9; }
+  .share-foot-acts { gap: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -683,7 +697,7 @@ a, button, input, textarea { -webkit-tap-highlight-color: transparent; }
   -webkit-backdrop-filter: saturate(180%) blur(14px);
   backdrop-filter: saturate(180%) blur(14px);
 }
-.reader-backdrop, .lightbox-backdrop {
+.reader-backdrop, .lightbox-backdrop, .detail-backdrop {
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }

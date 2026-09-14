@@ -494,8 +494,7 @@ window.__TAOBAI_STATIC__ = true;
     $('#sharesEmpty').hidden = list.length > 0;
     box.innerHTML = list.map((s) => {
       const initial = s.icon || (s.title || '?').slice(0, 2);
-      return '<article class="share-card reveal-item is-openable" data-id="' + esc(s.id) + '"' +
-          ' role="button" tabindex="0" aria-label="查看《' + esc(s.title) + '》的详情">' +
+      return '<article class="share-card reveal-item is-openable" data-id="' + esc(s.id) + '">' +
         '<div class="share-head">' +
           '<div class="share-icon">' + esc(initial) + '</div>' +
           '<div>' +
@@ -509,20 +508,17 @@ window.__TAOBAI_STATIC__ = true;
           '<div class="platform-row">' + (s.platforms || []).slice(0, 3).map((p) => '<span class="platform">' + esc(p) + '</span>').join('') + '</div>' +
           '<div class="share-foot-acts">' +
             '<button class="share-more" type="button" data-id="' + esc(s.id) + '">详情</button>' +
+            '<span class="share-sep" aria-hidden="true"></span>' +
             '<a class="share-link" href="' + esc(s.url) + '" target="_blank" rel="noopener" data-id="' + esc(s.id) + '">前往 <span>→</span></a>' +
           '</div>' +
         '</div>' +
       '</article>';
     }).join('');
 
-    /* 整张卡片可点开详情；「前往」是外链，单独放行不拦截 */
+    /* 整张卡片可点开详情；「前往」是外链，单独放行不拦截。
+       键盘与读屏走卡片里的「详情」按钮，避免卡片里再套一层 role=button。 */
     $$('.share-card', box).forEach((card) => {
       card.addEventListener('click', () => { location.hash = '#/tool/' + card.dataset.id; });
-      card.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-        e.preventDefault();
-        location.hash = '#/tool/' + card.dataset.id;
-      });
     });
     $$('.share-more', box).forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -699,7 +695,10 @@ window.__TAOBAI_STATIC__ = true;
     if (location.hash.indexOf('#/tool/') === 0) {
       history.replaceState(null, '', location.pathname + location.search);
     }
-    if (back) back.focus();
+    if (back) {
+      const hit = $('.share-more', back) || back;
+      if (typeof hit.focus === 'function') hit.focus();
+    }
   }
 
   function initShareDetail() {

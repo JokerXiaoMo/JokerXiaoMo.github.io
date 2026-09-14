@@ -1,3 +1,0 @@
-first_instance_alive=yes
-second_instance_exited=yes
-window_count=1

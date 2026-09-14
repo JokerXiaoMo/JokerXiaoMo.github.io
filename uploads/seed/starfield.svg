@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 860" width="1280" height="860">
+<defs>
+  <linearGradient id="night" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#1B2434"/><stop offset="0.55" stop-color="#27313F"/><stop offset="1" stop-color="#333B46"/></linearGradient>
+  <radialGradient id="galaxy" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8FA6C4" stop-opacity="0.5"/><stop offset="1" stop-color="#8FA6C4" stop-opacity="0"/></radialGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="2.4"/></filter>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="22"/></filter>
+  
+  <filter id="paper" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</defs>
+<rect width="1280" height="860" fill="url(#night)"/>
+<ellipse cx="700" cy="380" rx="760" ry="200" fill="url(#galaxy)" transform="rotate(-24 700 380)"/>
+<g fill="#FFFFFF">
+  <circle cx="148" cy="120" r="2.4"/><circle cx="312" cy="76" r="1.6"/><circle cx="470" cy="188" r="2"/>
+  <circle cx="628" cy="102" r="1.8"/><circle cx="806" cy="164" r="2.6"/><circle cx="948" cy="88" r="1.7"/>
+  <circle cx="1104" cy="196" r="2.2"/><circle cx="1216" cy="112" r="1.6"/><circle cx="212" cy="298" r="1.9"/>
+  <circle cx="386" cy="342" r="2.8"/><circle cx="544" cy="270" r="1.5"/><circle cx="688" cy="364" r="2.1"/>
+  <circle cx="858" cy="296" r="1.8"/><circle cx="1002" cy="372" r="2.5"/><circle cx="1168" cy="322" r="1.7"/>
+  <circle cx="96" cy="452" r="2.2"/><circle cx="268" cy="512" r="1.6"/><circle cx="430" cy="470" r="2.4"/>
+  <circle cx="592" cy="544" r="1.9"/><circle cx="742" cy="486" r="2.2"/><circle cx="908" cy="546" r="1.5"/>
+  <circle cx="1064" cy="494" r="2"/><circle cx="1224" cy="562" r="1.8"/><circle cx="180" cy="646" r="1.7"/>
+  <circle cx="352" cy="700" r="2.3"/><circle cx="520" cy="652" r="1.6"/><circle cx="676" cy="716" r="2"/>
+  <circle cx="836" cy="664" r="1.8"/><circle cx="988" cy="726" r="2.4"/><circle cx="1146" cy="678" r="1.6"/>
+  <circle cx="640" cy="430" r="3.2" filter="url(#glow)"/><circle cx="228" cy="176" r="2.8" filter="url(#glow)"/>
+  <circle cx="1046" cy="240" r="2.6" filter="url(#glow)"/>
+</g>
+<g fill="#F3E3C4">
+  <circle cx="420" cy="146" r="2.2"/><circle cx="762" cy="228" r="1.9"/><circle cx="1120" cy="428" r="2.1"/>
+  <circle cx="298" cy="410" r="1.7"/><circle cx="884" cy="600" r="2"/>
+</g>
+<ellipse cx="640" cy="852" rx="900" ry="120" fill="#151C28" opacity="0.9" filter="url(#soft)"/>
+<path d="M0 826 C220 760 420 812 640 786 C860 760 1080 806 1280 772 L1280 860 L0 860Z" fill="#141A24"/>
+<rect width="100%" height="100%" filter="url(#paper)" opacity="0.055"/>
+</svg>

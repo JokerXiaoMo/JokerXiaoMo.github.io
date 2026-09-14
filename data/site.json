@@ -1,0 +1,47 @@
+{
+  "site": {
+    "name": "桃白簪花自然科技工作室",
+    "shortName": "桃白簪花",
+    "slogan": "取法自然，簪花入器",
+    "intro": "一间把自然的美感与技术的秩序放在一起打磨的小工作室。我们写字、做工具，也收藏散落四方的光影。",
+    "about": "桃白簪花自然科技工作室成立于一处有风的院子。\n\n我们相信两件事：一是事物有它自己的生长速度，不该被催；二是重复的劳动应该交给工具，人不该硬扛。这两句话构成了我们做事的全部方法论。\n\n这里放着三样东西：缓慢写下的文字、认真筛选过的工具、以及舍不得删掉的照片。它们都不追热点，也不打算说服谁。\n\n如果你在这里停了三秒以上，欢迎给工作室留一句话。",
+    "email": "hello@taobai.studio",
+    "location": "中国 · 杭州",
+    "accent": "#C75B7A",
+    "heroEffect": "petal",
+    "showStats": true,
+    "nav": [
+      {
+        "id": "articles",
+        "label": "桃花笺",
+        "en": "Notes"
+      },
+      {
+        "id": "shares",
+        "label": "拾遗录",
+        "en": "Tools"
+      },
+      {
+        "id": "gallery",
+        "label": "观照集",
+        "en": "Gallery"
+      },
+      {
+        "id": "about",
+        "label": "关于",
+        "en": "About"
+      }
+    ],
+    "social": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/JokerXiaoMo"
+      },
+      {
+        "label": "邮箱",
+        "url": "mailto:hello@taobai.studio"
+      }
+    ],
+    "footer": "桃白簪花自然科技工作室 · 保留所有权利"
+  }
+}

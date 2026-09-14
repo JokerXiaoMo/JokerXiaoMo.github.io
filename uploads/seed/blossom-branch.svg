@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1280" width="1000" height="1280">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FCF8F7"/><stop offset="1" stop-color="#F2E7E8"/></linearGradient>
+  <g id="bloom">
+    <circle cx="0" cy="-8" r="8" fill="#F5C6D6"/>
+    <circle cx="8" cy="0" r="8" fill="#EEB0C6"/>
+    <circle cx="0" cy="8" r="8" fill="#F5C6D6"/>
+    <circle cx="-8" cy="0" r="8" fill="#EEB0C6"/>
+    <circle cx="0" cy="0" r="3.6" fill="#C9527A"/>
+  </g>
+  <g id="bud"><circle cx="0" cy="0" r="6" fill="#F0B7CA"/><circle cx="0" cy="0" r="2.4" fill="#C9527A"/></g>
+  
+  <filter id="paper" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</defs>
+<rect width="1000" height="1280" fill="url(#bg)"/>
+<path d="M-30 1180 C170 1090 240 940 330 828 C430 702 520 636 700 566 C820 518 900 470 1010 372" fill="none" stroke="#6E5B52" stroke-width="13" stroke-linecap="round" opacity="0.9"/>
+<path d="M330 828 C392 760 430 690 452 596" fill="none" stroke="#7A655B" stroke-width="8" stroke-linecap="round" opacity="0.85"/>
+<path d="M700 566 C748 620 806 656 880 676" fill="none" stroke="#7A655B" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+<path d="M452 596 C500 570 548 566 610 580" fill="none" stroke="#8A7268" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+<path d="M560 500 C610 470 660 462 716 470" fill="none" stroke="#8A7268" stroke-width="4.5" stroke-linecap="round" opacity="0.75"/>
+<use href="#bloom" transform="translate(452,596) scale(1.5)"/>
+<use href="#bloom" transform="translate(546,614) scale(1.25)"/>
+<use href="#bloom" transform="translate(624,560) scale(1.75)"/>
+<use href="#bloom" transform="translate(716,470) scale(1.4)"/>
+<use href="#bloom" transform="translate(838,678) scale(1.55)"/>
+<use href="#bloom" transform="translate(892,646) scale(1.1)"/>
+<use href="#bloom" transform="translate(268,884) scale(1.3)"/>
+<use href="#bloom" transform="translate(346,776) scale(1.6)"/>
+<use href="#bloom" transform="translate(196,1006) scale(1.2)"/>
+<use href="#bloom" transform="translate(736,548) scale(1.05)"/>
+<use href="#bud" transform="translate(500,532) scale(1.5)"/>
+<use href="#bud" transform="translate(668,630) scale(1.3)"/>
+<use href="#bud" transform="translate(390,700) scale(1.45)"/>
+<use href="#bud" transform="translate(928,420) scale(1.2)"/>
+<circle cx="186" cy="300" r="5" fill="#F3CDD9" opacity="0.9"/>
+<circle cx="742" cy="256" r="4" fill="#F3CDD9" opacity="0.8"/>
+<circle cx="866" cy="906" r="4.5" fill="#F3CDD9" opacity="0.85"/>
+<circle cx="120" cy="742" r="4" fill="#F3CDD9" opacity="0.7"/>
+<rect width="100%" height="100%" filter="url(#paper)" opacity="0.055"/>
+</svg>

@@ -1,19 +1,20 @@
-# 桃白簪花 · 执子之手
+# 桃白簪花自然科技工作室
 
-这是「桃白簪花」的 GitHub Pages 纯静态版本。它以中国桃花、白桃、朱砂、鎏金与枝墨构成中式动漫长卷，发布目标为 `https://jokerxiaomo.github.io/`。
+一间把自然的美感与技术的秩序放在一起打磨的小工作室。我们写字、做工具，也收藏散落四方的光影。
 
-## 静态版本边界
+本站为纯静态站点，由 [桃白簪花自然科技工作室](https://github.com/JokerXiaoMo) 维护。
 
-此仓库不包含数据库、服务器端代码、Telegram Token、上传凭据或访问密钥。为确保公开仓库与 GitHub Pages 的安全性，本站仅提供静态阅读、角色切换与视觉动画；访客留言与文件上传功能不会在此版本中提供。
+## 结构
 
-## 发布
-
-推送至 `main` 分支会触发 `.github/workflows/deploy-pages.yml`。请在仓库 **Settings → Pages** 中将发布来源选择为 **GitHub Actions**。
-
-## 本地预览
-
-此站点没有构建依赖。任意静态 HTTP 服务器均可预览，例如：
-
-```bash
-npx serve .
 ```
+index.html          首页
+css/ js/            样式与脚本
+data/*.json         内容数据（文章 / 分享 / 图库 / 站点设置）
+uploads/seed/       图库图片
+```
+
+## 说明
+
+- 内容以 JSON 形式静态托管，前端直接读取，无需后端。
+- 发布前请确保草稿（`status: draft`）未被导出。
+- 自定义域名见 `CNAME`。

@@ -37,7 +37,7 @@
 (function () { try { var t = localStorage.getItem('tz-theme'); if (t !== 'dark' && t !== 'light') { t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) { /* 隐私模式下读不了 localStorage，用默认浅色 */ } })();
 </script>
 
-<link rel="stylesheet" href="/css/style.css?v=de39ca72">
+<link rel="stylesheet" href="/css/style.css?v=90a0136e">
 </head>
 <body>
 
@@ -294,14 +294,16 @@
       <span id="lbDesc"></span>
       <em id="lbCount"></em>
     </figcaption>
+    <!-- 从图组里点开的图：底部给一排同组缩略图，可以在组内直接换。其余情况隐藏 -->
+    <div class="lb-strip" id="lbStrip" hidden></div>
   </figure>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/js/markdown.js?v=b9707259"></script>
-<script src="/js/vault.js?v=0e249eae"></script>
+<script src="/js/vault.js?v=e14c59ea"></script>
 <script src="/js/tree.js?v=45c0fa9a"></script>
-<script src="/js/main.js?v=a1b94f83"></script>
+<script src="/js/main.js?v=775e876d"></script>
 </body>
 </html>

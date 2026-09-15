@@ -749,6 +749,170 @@ html[data-theme="dark"] .ico-moon { display: none; }
   .pic.is-decrypting .pic-lock svg { animation: none; opacity: 1; }
 }
 
+/* ---------- 图组：多图叠成一张卡 ----------
+   叠着的那两片「纸边」只用 CSS 画，不放任何 <img>：
+   组里可能有上锁的图，未解锁时页面上任何位置都不该出现它的原图地址。
+   展开的动效是「卡片原地摊开」——用 JS 量出真实高度再过渡，
+   height:auto 自己没法做 transition。 */
+
+/* 基础 .pic 那几条是给单张图写的（hover 抬升、裁切、悬停放大整张图），
+   叠图卡要另算，所以这里逐条覆盖。位置必须排在 .pic 之后。 */
+.pic-stack {
+  position: relative; overflow: visible; background: transparent; cursor: default;
+  /* 纸边会探出卡片一点点，抬一层是为了让它压在相邻卡片上面，而不是被盖住 */
+  z-index: 1;
+}
+.pic-stack:hover { transform: none; box-shadow: none; }
+.pic-stack:hover img { transform: none; }   /* 撤回 .pic:hover img 的整卡缩放 */
+
+.stack-deck {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  /* 这层自己必须有 opacity 过渡 —— 不然 .is-open 一挂上 opacity 就瞬间归零，
+     纸边那 420ms 的飞散全程在透明状态下播，等于没有。
+     淡出再延 0.14s：先让「散开」露出来，再淡走，收起时（不带延时）直接回来。 */
+  transition: opacity 0.3s var(--ease);
+}
+.pic-stack.is-open .stack-deck { transition: opacity 0.3s var(--ease) 0.14s; }
+/* 纸边用 --surface（白）而不是 --surface-2：页面底色本来就接近白，
+   同色系的浅灰在浅色模式下等于看不见，「这叠了几张」就传达不出去。 */
+.stack-deck i {
+  position: absolute; inset: 0;
+  border-radius: var(--r-md); background: var(--surface);
+  border: 1px solid var(--line-2);
+  /* 纸边是 #FFF 压在 #FBF9F7 上，只靠一条淡描边等于看不见 —— 这点阴影是它唯一的存在感 */
+  box-shadow: 0 2px 7px -3px rgba(43, 41, 38, 0.28);
+  transition: transform var(--dur-3) var(--ease-ios), opacity 0.3s var(--ease);
+}
+.stack-deck i:nth-child(1) { transform: translateY(-9px) rotate(-1.2deg) scale(0.96); }
+.stack-deck i:nth-child(2) { transform: translateY(-17px) rotate(1.6deg) scale(0.915); }
+.pic-stack.is-open .stack-deck { opacity: 0; }
+.pic-stack.is-open .stack-deck i:nth-child(1) { transform: translate(16px, -34px) rotate(-5deg) scale(0.94); }
+.pic-stack.is-open .stack-deck i:nth-child(2) { transform: translate(-18px, -44px) rotate(5.5deg) scale(0.9); }
+
+.stack-cover {
+  position: relative; z-index: 1; display: block; width: 100%;
+  padding: 0; margin: 0; border: 0; background: transparent;
+  border-radius: var(--r-md); overflow: hidden; cursor: zoom-in;
+  transition: box-shadow 0.5s var(--ease);
+}
+.pic-stack.is-open .stack-cover { cursor: zoom-out; }
+.stack-cover img { display: block; width: 100%; height: auto; background: var(--surface-2); }
+.stack-cover .pic-lock { min-height: 208px; }
+.stack-cover:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* 深色模式下纸边那点暖色阴影压在 #151419 上几乎没有了，
+   得换成纯黑阴影 + 更亮的描边，不然「这叠了几张」在深色模式里就丢了 */
+html[data-theme="dark"] .stack-deck i {
+  border-color: rgba(241, 238, 235, 0.28);
+  box-shadow: 0 2px 10px -3px rgba(0, 0, 0, 0.55);
+}
+
+/* 只是好看，交互全在封面那个 <button> 上，所以整层不吃指针事件 */
+.pic-stack .pic-overlay { opacity: 0; pointer-events: none; }
+.pic-stack:hover .pic-overlay { opacity: 1; }
+.pic-stack.is-open .pic-overlay { opacity: 0; }
+.pic-stack .pic-overlay .ov-t { color: #fff; font-size: 14px; font-weight: 500; }
+
+.stack-count {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  display: inline-flex; align-items: center; padding: 4px 10px;
+  border-radius: var(--r-pill); background: rgba(20, 18, 22, 0.62); color: #fff;
+  font-size: var(--fs-xs); letter-spacing: 0.06em; backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+/* 时长一律走 --dur-3（420ms），和 JS 里 STACK_MS=480 的兜底对得上。
+   visibility 的延时必须等于高度过渡的时长：早一帧切走，收起动画就看不见了。 */
+.stack-panel {
+  position: relative; z-index: 1;
+  height: 0; overflow: hidden; visibility: hidden;
+  transition: height var(--dur-3) var(--ease-ios), visibility 0s linear var(--dur-3);
+}
+.pic-stack.is-open .stack-panel {
+  height: auto; visibility: visible;
+  /* 间隔用 padding 而不是子元素 margin：JS 是按 scrollHeight 定高的，
+     子元素的外边距在部分引擎里不计入，展开后底部会少一截。
+     放在 .is-open 上，收起（height:0）时才不会凭空多出 12px。 */
+  padding-top: 12px;
+  transition: height var(--dur-3) var(--ease-ios), visibility 0s;
+}
+.stack-panel-inner {
+  padding: 16px 16px 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md);
+}
+.stack-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 13px; }
+/* 组名最长 60 字且可能不含空格（一长串 emoji 或 URL 式命名），
+   不写这两行它会直接把面板撑破 */
+.stack-head strong { font-size: 13.5px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.stack-head span { font-size: var(--fs-xs); color: var(--text-3); letter-spacing: 0.06em; flex: none; }
+
+.stack-thumbs {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px;
+}
+/* 摊开时缩略图一张张浮现（每张错开 30ms，封顶 12 张）。
+   整块一起冒出来是「啪」一下，没有把一叠照片铺开的感觉。 */
+/* 只在「真的从收起到展开」这一次播（is-fanning 由 JS 挂上、动画结束摘掉）。
+   写成 .is-open 的话，解密完成每重画一次卡片就会重播一遍，看着像在闪。
+   步长 28ms、封顶 8 张：面板本身 420ms，尾巴不能拖太长，否则显得各动各的。 */
+.pic-stack.is-fanning .stack-item { animation: stackItemIn 0.32s var(--ease-out) both; }
+.pic-stack.is-fanning .stack-item:nth-child(1) { animation-delay: 0.04s; }
+.pic-stack.is-fanning .stack-item:nth-child(2) { animation-delay: 0.068s; }
+.pic-stack.is-fanning .stack-item:nth-child(3) { animation-delay: 0.096s; }
+.pic-stack.is-fanning .stack-item:nth-child(4) { animation-delay: 0.124s; }
+.pic-stack.is-fanning .stack-item:nth-child(5) { animation-delay: 0.152s; }
+.pic-stack.is-fanning .stack-item:nth-child(6) { animation-delay: 0.18s; }
+.pic-stack.is-fanning .stack-item:nth-child(7) { animation-delay: 0.208s; }
+.pic-stack.is-fanning .stack-item:nth-child(n + 8) { animation-delay: 0.236s; }
+@keyframes stackItemIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.stack-thumb {
+  display: block; width: 100%; padding: 0; margin: 0; border: 0;
+  background: transparent; cursor: zoom-in; text-align: left;
+}
+/* 固定长宽比：展开时要靠 scrollHeight 算高度，
+   图片还没加载完时高度必须是确定的，否则会摊到一半就停住 */
+.stack-thumb img, .stack-thumb-lock {
+  display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover;
+  border-radius: var(--r-sm); background: var(--surface-2); border: 1px solid var(--line);
+  transition: border-color 0.3s var(--ease), transform 0.35s var(--ease);
+}
+.stack-thumb-lock {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+  color: var(--text-3); font-size: var(--fs-xs);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 7px, rgba(43, 41, 38, 0.04) 7px, rgba(43, 41, 38, 0.04) 14px);
+}
+.stack-thumb-lock svg { width: 18px; height: 18px; color: var(--accent); }
+.stack-thumb-lock em { font-style: normal; letter-spacing: 0.06em; }
+.stack-thumb:hover img, .stack-thumb:hover .stack-thumb-lock {
+  border-color: var(--accent); transform: translateY(-2px);
+}
+.stack-thumb.is-decrypting .stack-thumb-lock svg { animation: lockBreathe 1.3s ease-in-out infinite; }
+.stack-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--r-sm); }
+.stack-thumb-name {
+  display: block; margin-top: 6px; font-size: var(--fs-xs); color: var(--text-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stack-thumb:hover .stack-thumb-name { color: var(--text-2); }
+.stack-thumb.is-locked .stack-thumb-name { color: var(--accent); }
+
+.stack-collapse {
+  display: block; margin: 15px auto 0; padding: 7px 20px;
+  font-size: var(--fs-sm); color: var(--text-2);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill);
+  cursor: pointer; transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.stack-collapse:hover { color: var(--accent); border-color: var(--accent); }
+/* 深色底上的 UA 默认焦点环太弱，自己给一条 */
+.stack-collapse:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 悬停放大只给真的能悬停的设备 —— 触屏会「粘住」上一次的悬停态 */
+@media (hover: hover) {
+  .pic-stack:hover .stack-cover img { transform: scale(1.03); }
+}
+
 /* 口令浮层 */
 .gate { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 22px; }
 .gate-backdrop {
@@ -942,6 +1106,29 @@ html[data-theme="dark"] .ico-moon { display: none; }
 .lb-next { right: 3vw; top: 50%; margin-top: -23px; }
 .lb-close { top: 26px; right: 26px; }
 
+/* 灯箱底部的「同组缩略图」。展开一叠图之后点进任意一张，
+   能在组内直接换来换去 —— 不然得退出去、重新展开、再点一次。 */
+.lb-strip { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.lb-strip-item {
+  width: 52px; height: 52px; padding: 0; flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.07); overflow: hidden; cursor: pointer;
+  opacity: 0.62;
+  transition: opacity 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.lb-strip-item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lb-strip-item:hover { opacity: 1; transform: translateY(-2px); }
+.lb-strip-item.is-current { opacity: 1; border-color: rgba(255, 255, 255, 0.85); }
+.lb-strip-item:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.lb-strip-lock { display: grid; place-items: center; width: 100%; height: 100%; color: var(--accent); }
+.lb-strip-lock svg { width: 18px; height: 18px; }
+/* 底部多了一排缩略图，大图就得让点位置出来 */
+.lb-figure.has-strip > img { max-height: 62vh; }
+@supports (height: 100svh) {
+  /* 移动端地址栏伸缩会让 100vh 跳，能认 svh 的浏览器一律用 svh（与上面那条 76svh 同理） */
+  .lb-figure.has-strip > img { max-height: 62svh; }
+}
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; bottom: 30px; left: 50%; transform: translate(-50%, 20px);
@@ -1133,6 +1320,15 @@ a, button, input, textarea { -webkit-tap-highlight-color: transparent; }
     opacity: 1;
     background: linear-gradient(to top, rgba(20, 18, 22, 0.72), rgba(20, 18, 22, 0.05) 62%, transparent);
   }
+  /* 图组的悬停态在触屏上会「粘住」上一次点过的那张 —— 抬起来 + 变主色边，
+     手指移开了还留着。这里一并取消。 */
+  .stack-thumb:hover img, .stack-thumb:hover .stack-thumb-lock {
+    transform: none; border-color: var(--line);
+  }
+  .stack-thumb:hover .stack-thumb-name { color: var(--text-3); }
+  /* opacity 也得一起取消，不然点过的那张会一直亮着 */
+  .lb-strip-item:hover { transform: none; opacity: 0.62; }
+  .stack-collapse:hover { color: var(--text-2); border-color: var(--line); }
 }
 
 /* 触控目标不小于 44px（iOS 人机界面指南） */
@@ -1141,6 +1337,8 @@ a, button, input, textarea { -webkit-tap-highlight-color: transparent; }
   .chip { padding: 9px 15px; }
   .seg-btn { padding: 9px 16px; }
   .article-card h3, .share-title { font-size: 16px; }
+  /* 「收起」按钮原本只有 31px 高，手指点不准；触屏上补到 44 */
+  .stack-collapse { min-height: 44px; padding: 11px 26px; }
 }
 
 /* 移动端表单字号必须 ≥16px，否则 iOS Safari 聚焦时会自动放大整页 */

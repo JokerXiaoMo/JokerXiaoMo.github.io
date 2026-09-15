@@ -17,13 +17,17 @@ window.__TAOBAI_VAULT__ = true;
     articles: [],
     shares: [],
     gallery: [],
-    view: { articles: [], shares: [], gallery: [] },
+    /* view.gallery 是「展平后的可见图」，灯箱前后翻页走它；
+       view.blocks 是渲染用的分块结果（单张 / 图组），两者指向同一批对象。 */
+    view: { articles: [], shares: [], gallery: [], blocks: [] },
     articleTag: 'all',
     galleryTag: 'all',
     shareCat: 'all',
     keyword: '',
     lbList: [],
     lbIndex: 0,
+    /* 灯箱底部那排「同组缩略图」当前是哪个图组 —— 只用来避免每次翻页都重建一遍 DOM */
+    lbStripKey: null,
     sdId: '',
     /* 加密：解锁后的图片 Blob URL（按 id 缓存），刷新页面时随内存一起失效 */
     decUrls: {},
@@ -530,6 +534,214 @@ window.__TAOBAI_VAULT__ = true;
     '</figure>';
   }
 
+  /* ---------------- 图组：多图叠成一张卡 ----------------
+     数据里只多一个 stack 字段（值就是组名本身）：填了同一个名字的图，
+     前台叠成一张卡，点开才把全部摊出来。
+     加密与导出链路一点没动 —— 组里每张图仍然各自独立加密、各自要自己的口令。 */
+
+  const REDUCED_MOTION = () =>
+    Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* 把排好序的图库切成「块」：有 stack 的按组归并，没有的各成一块。
+     只剩一张的图组没必要叠着显示，退回单张。 */
+  function buildBlocks(list) {
+    const out = [];
+    const byKey = new Map();
+    list.forEach((g) => {
+      const key = String(g.stack || '').trim();
+      if (!key) { out.push({ kind: 'one', key: '', members: [g] }); return; }
+      let block = byKey.get(key);
+      if (!block) { block = { kind: 'stack', key: key, members: [] }; byKey.set(key, block); out.push(block); }
+      block.members.push(g);
+    });
+    out.forEach((b) => { if (b.kind === 'stack' && b.members.length < 2) b.kind = 'one'; });
+    return out;
+  }
+
+  /* 叠图卡的 HTML。
+     刻意不把整张卡做成 role="button" —— 卡片里还有可点的缩略图，
+     交互元素不能套交互元素。封面自己是个 <button>（鼠标、键盘、读屏都能展开），
+     说明文字单独放在一层 aria-hidden 的浮层里，只负责好看。 */
+  function stackHtml(block, startIndex) {
+    const cover = block.members[0];
+    const count = block.members.length;
+    const tagName = Vault() ? Vault().tag() : '加密';
+    const coverLocked = isLocked(cover) && !state.decUrls[cover.id];
+    const coverBusy = Boolean(state.decrypting[cover.id]);
+    const src = gallerySrc(cover);
+    const lockText = coverBusy ? (state.decProgress[cover.id] || '正在解密…') : '加密作品 · 点击展开';
+    /* 「展开/收起」这个动作词在 setStackOpen 里按状态改写 —— 固定写死的话，
+       摊开之后那句还写着「点击展开」，读屏念出来和 aria-expanded 是矛盾的 */
+    const label = '图组「' + block.key + '」共 ' + count + ' 张' + (coverLocked ? '，封面已加密' : '') +
+      (!coverLocked && cover.title ? '，第一张：' + cover.title : '');
+    const panelId = 'stack-panel-' + cover.id;
+
+    const thumbs = block.members.map((g, i) => {
+      const locked = isLocked(g) && !state.decUrls[g.id];
+      const busy = Boolean(state.decrypting[g.id]);
+      const s = gallerySrc(g);
+      const name = g.title || (locked ? '加密作品' : '第 ' + (i + 1) + ' 张');
+      return '<li class="stack-item">' +
+        '<button class="stack-thumb' + (locked ? ' is-locked' : '') + (busy ? ' is-decrypting' : '') + '"' +
+          ' type="button" data-index="' + (startIndex + i) + '" data-id="' + esc(g.id) + '"' +
+          ' aria-label="' + esc(name + (locked ? '，需要口令才能查看' : '，查看大图')) + '">' +
+          (s
+            ? '<img src="' + esc(s) + '" alt="" loading="lazy" decoding="async">'
+            : '<span class="stack-thumb-lock">' + LOCK_ICON + '<em>' + esc(busy ? '解密中…' : tagName) + '</em></span>') +
+          '<span class="stack-thumb-name">' + esc(locked ? '加密' : name) + '</span>' +
+        '</button>' +
+      '</li>';
+    }).join('');
+
+    return '<figure class="pic pic-stack reveal-item' + (state.revealed.has(cover.id) ? ' is-in' : '') +
+      (coverLocked ? ' stack-locked' : '') + '"' +
+      ' data-stack="' + esc(block.key) + '" data-id="' + esc(cover.id) + '">' +
+      '<span class="stack-deck" aria-hidden="true"><i></i><i></i></span>' +
+      '<button class="stack-cover" type="button" data-act="toggle" aria-expanded="false"' +
+        ' aria-controls="' + esc(panelId) + '" data-label="' + esc(label) + '"' +
+        ' aria-label="' + esc(label + '，点击展开') + '">' +
+        (src
+          ? '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async">'
+          : '<span class="pic-lock">' + LOCK_ICON + '<span>' + esc(lockText) + '</span></span>') +
+      '</button>' +
+      '<span class="pic-overlay" aria-hidden="true">' +
+        (coverLocked ? '' : '<span class="ov-t">' + esc(cover.title || '') + '</span>') +
+      '</span>' +
+      /* 这两个角标只是给眼睛看的，内容已经写进封面的 aria-label 了，
+         不标 aria-hidden 的话读屏会把「N 张」「加密」重复念一遍 */
+      '<span class="stack-count" aria-hidden="true">' + count + ' 张</span>' +
+      (coverLocked ? '<span class="lock-badge" aria-hidden="true">' + LOCK_ICON + esc(tagName) + '</span>' : '') +
+      '<div class="stack-panel" id="' + esc(panelId) + '">' +
+        '<div class="stack-panel-inner">' +
+          '<div class="stack-head">' +
+            '<strong>' + esc(block.key) + '</strong>' +
+            '<span>' + count + ' 张 · 第一张作封面</span>' +
+          '</div>' +
+          '<ul class="stack-thumbs">' + thumbs + '</ul>' +
+          '<button class="stack-collapse" type="button" data-act="collapse">收起</button>' +
+        '</div>' +
+      '</div>' +
+    '</figure>';
+  }
+
+  /* 展开 / 收起。用 JS 量出真实高度再过渡：
+     height:auto 本身没法做 transition，而 grid-template-rows 0fr→1fr
+     在部分浏览器上还没拿到过渡支持。
+
+     ⚠️ 这里有三个坑，都是踩过才知道的：
+       ① transitionend 会冒泡 —— 面板里任何子元素的过渡（缩略图描边、位移）
+          都会冒上来。不校验 target / propertyName，展开动画就会被提前截断；
+          而一旦加了 {once:true}，被子元素消耗掉之后面板自己的那次就再也收不到。
+       ② 动画没播完就反向收起时，scrollHeight 量的是内容全高而不是「当前高度」，
+          直接用它会先弹到满高再合。得先读一次 computed。
+       ③ 连续点击必须清掉上一轮的监听与兜底定时器，否则旧的定时器会把新一轮
+          动画瞬间切到 height:auto。 */
+  const STACK_MS = 480;                 /* 兜底用，必须略长于 CSS 的 --dur-3（420ms） */
+  const stackAnim = new WeakMap();      /* 卡片 → 本轮动画的 {timer, settle} */
+  const stackFan = new WeakMap();       /* 卡片 → 交错入场动画的收尾定时器 */
+
+  /* 缩略图「一张张浮现」只在真的从收起到展开时播一次。
+     要是绑在 is-open 上，解密完成每重画一次卡片就会重播一遍，
+     组里有几张就要闪几下 —— 那正是这个项目早就修过的「全部小窗都在闪」。 */
+  function setFanning(card, on) {
+    const old = stackFan.get(card);
+    if (old) { clearTimeout(old); stackFan.delete(card); }
+    card.classList.remove('is-fanning');
+    if (!on) return;
+    card.classList.add('is-fanning');
+    stackFan.set(card, setTimeout(() => {
+      card.classList.remove('is-fanning');
+      stackFan.delete(card);
+    }, 760));
+  }
+
+  function clearStackAnim(card) {
+    const a = stackAnim.get(card);
+    if (!a) return;
+    clearTimeout(a.timer);
+    const panel = card.querySelector('.stack-panel');
+    if (panel && a.settle) panel.removeEventListener('transitionend', a.settle);
+    stackAnim.delete(card);
+  }
+
+  function setStackOpen(card, on, silent) {
+    const panel = card.querySelector('.stack-panel');
+    if (!panel) return;
+    const cover = card.querySelector('.stack-cover');
+    clearStackAnim(card);
+
+    if (cover) cover.setAttribute('aria-expanded', on ? 'true' : 'false');
+    /* 收起过渡的这四百多毫秒里面板还是 visible，里面的缩略图仍能被 Tab 到。
+       inert 直接把它从可聚焦集合里摘出去（老浏览器不认这个属性，忽略即可）。 */
+    if ('inert' in HTMLElement.prototype) panel.inert = !on;
+    /* 封面是锁形占位时那句提示也得跟着变 —— 摊开着却写着「点击展开」，
+       读屏念出来会和 aria-expanded 打架。正在解密时的进度文案不能覆盖。
+       可见文字与无障碍名要一致（WCAG 2.5.3）：读屏与语音控制都靠 aria-label，
+       它必须把「点击展开 / 点击收起」这几个字也带上。 */
+    const lockLabel = cover ? cover.querySelector('.pic-lock span') : null;
+    const busy = Boolean(state.decrypting[card.dataset.id]);
+    if (lockLabel && !busy) {
+      lockLabel.textContent = on ? '加密作品 · 点击收起' : '加密作品 · 点击展开';
+    }
+    if (cover && cover.dataset.label && !busy) {
+      cover.setAttribute('aria-label', cover.dataset.label + (on ? '，点击收起' : '，点击展开'));
+    }
+    card.classList.toggle('is-open', on);
+    setFanning(card, on && !silent && !REDUCED_MOTION());
+
+    if (silent || REDUCED_MOTION()) {
+      panel.style.height = on ? 'auto' : '0px';
+      return;
+    }
+    if (on) {
+      panel.style.height = panel.scrollHeight + 'px';
+      const settle = (ev) => {
+        if (ev && (ev.target !== panel || ev.propertyName !== 'height')) return;
+        clearStackAnim(card);
+        /* 期间可能又点了收起，别把已经合上的面板重新撑开 */
+        if (card.classList.contains('is-open')) panel.style.height = 'auto';
+      };
+      panel.addEventListener('transitionend', settle);
+      stackAnim.set(card, { timer: setTimeout(settle, STACK_MS), settle: settle });
+    } else {
+      /* 先钉住当前真实高度、强制一次样式计算，再收到 0，才有过渡可看 */
+      panel.style.height = getComputedStyle(panel).height;
+      void panel.offsetHeight;
+      panel.style.height = '0px';
+    }
+  }
+
+  /* 叠图卡的交互。行为都收在这里，renderGallery 与 updateGalleryCard 共用，
+     免得两条路径慢慢漂移。 */
+  function bindStack(card, block) {
+    if (!block) return;
+    const toggle = () => setStackOpen(card, !card.classList.contains('is-open'));
+    card.addEventListener('click', (e) => {
+      const act = e.target.closest('[data-act]');
+      if (!act || !card.contains(act)) return;
+      if (act.dataset.act === 'collapse') {
+        setStackOpen(card, false);
+        /* 「收起」按钮马上就要消失，焦点得还回封面，别掉到 body 上 */
+        const cover = card.querySelector('.stack-cover');
+        if (cover) cover.focus();
+        return;
+      }
+      toggle();
+    });
+    /* Escape 先收这张卡；不拦住的话会一路冒到全局处理器把灯箱一起关了 */
+    card.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !card.classList.contains('is-open')) return;
+      e.stopPropagation();
+      setStackOpen(card, false);
+      const cover = card.querySelector('.stack-cover');
+      if (cover) cover.focus();
+    });
+    $$('.stack-thumb', card).forEach((btn) => {
+      btn.addEventListener('click', () => { openLightbox(Number(btn.dataset.index)).catch(() => {}); });
+    });
+    hydratePicImg(card);
+  }
+
   /* 图块的点击/键盘与图片淡入。renderGallery 与 updateGalleryCard 都走这里，
      免得两边的行为慢慢漂移。 */
   function bindPic(pic) {
@@ -546,7 +758,9 @@ window.__TAOBAI_VAULT__ = true;
      error 也一并标记 —— 破图占位总比一片空白好。 */
   function hydratePicImg(pic) {
     $$('img', pic).forEach((img) => {
-      if (img.complete && img.naturalWidth > 0) { img.classList.add('is-loaded'); return; }
+      /* complete 就说明解码尝试已经结束（成功或失败都算）。
+         不能只认 naturalWidth > 0 —— 破图也 complete，那样它会永远停在全透明。 */
+      if (img.complete) { img.classList.add('is-loaded'); return; }
       const done = () => img.classList.add('is-loaded');
       img.addEventListener('load', done, { once: true });
       img.addEventListener('error', done, { once: true });
@@ -555,43 +769,105 @@ window.__TAOBAI_VAULT__ = true;
 
   function renderGallery() {
     const box = $('#galleryGrid');
-    let list = state.gallery.filter(matchKeyword);
-    if (state.galleryTag !== 'all') list = list.filter((g) => (g.tags || []).indexOf(state.galleryTag) !== -1);
-    list = list.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
-    state.view.gallery = list;
+    const sorted = state.gallery.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+    /* 关键词与标签都在「块」这一级过筛：组里任何一张命中，整组就留下 */
+    const shown = buildBlocks(sorted).filter((b) => {
+      if (state.keyword && !b.members.some(matchKeyword)) return false;
+      if (state.galleryTag !== 'all' &&
+        !b.members.some((m) => (m.tags || []).indexOf(state.galleryTag) !== -1)) return false;
+      return true;
+    });
 
-    $('#galleryEmpty').hidden = list.length > 0;
-    box.innerHTML = list.map((g, index) => picHtml(g, index)).join('');
-    $$('.pic', box).forEach(bindPic);
+    /* 展平一遍：灯箱的上一张 / 下一张要能跨组走到组里的每一张 */
+    const flat = [];
+    const view = shown.map((b) => {
+      const startIndex = flat.length;
+      b.members.forEach((m) => flat.push(m));
+      return { kind: b.kind, key: b.key, members: b.members, startIndex };
+    });
+    state.view.gallery = flat;
+    state.view.blocks = view;
+
+    $('#galleryEmpty').hidden = view.length > 0;
+    box.innerHTML = view.map((b) => (b.kind === 'stack'
+      ? stackHtml(b, b.startIndex)
+      : picHtml(b.members[0], b.startIndex))).join('');
+
+    $$('.pic', box).forEach((el) => {
+      const key = el.dataset.stack;
+      if (key) bindStack(el, view.filter((b) => b.key === key)[0]);
+      else bindPic(el);
+    });
     observeReveal(box);
+    /* 整块重排之后，灯箱那排「同组缩略图」缓存的索引与成员都可能对不上了 */
+    state.lbStripKey = null;
   }
 
-  /* 只换掉那一张卡片。解锁一张图之后走这里，而不是 renderGallery()：
+  /* 只换掉那一块（单张卡 / 整张叠图卡）。解锁一张图之后走这里，而不是 renderGallery()：
      整块重建会把页面上所有卡片重新淡入一遍，用户看到的就是「全部小窗都会闪」。 */
   function updateGalleryCard(id) {
     const box = $('#galleryGrid');
     if (!box) return;
-    const item = state.view.gallery.find((g) => g.id === id);
-    const index = state.view.gallery.indexOf(item);
-    if (index < 0) return;
-    const old = box.querySelector('.pic[data-index="' + index + '"]');
-    if (!old) { renderGallery(); return; }   /* 没找到就退回整块重建，至少状态是对的 */
+    const block = (state.view.blocks || []).filter((b) => b.members.some((m) => m.id === id))[0];
+    if (!block) { renderGallery(); return; }   /* 没找到就退回整块重建，至少状态是对的 */
+    const old = box.querySelector(block.kind === 'stack'
+      ? '.pic-stack[data-id="' + block.members[0].id + '"]'
+      : '.pic[data-id="' + id + '"]');
+    if (!old) { renderGallery(); return; }
 
-    /* 已经是目标状态就别再换节点 —— 换节点本身也是一次可见的重绘。
+    /* 已经是对的状态就别再换节点 —— 换节点本身也是一次可见的重绘。
        解锁回调与点卡片两条路径都会走到这里，去重后只换一次。 */
-    const img = old.querySelector('img');
-    if (state.decUrls[id] && img && img.src.indexOf('blob:') === 0 &&
-      !old.classList.contains('is-locked') && !old.classList.contains('is-decrypting')) {
-      return;
+    if (block.kind === 'one') {
+      const img = old.querySelector('img');
+      if (state.decUrls[id] && img && img.src.indexOf('blob:') === 0 &&
+        !old.classList.contains('is-locked') && !old.classList.contains('is-decrypting')) {
+        return;
+      }
+    } else {
+      const shown = old.querySelector('.stack-thumb[data-id="' + id + '"] img');
+      if (state.decUrls[id] && shown && shown.src.indexOf('blob:') === 0) return;
     }
 
+    const wasOpen = old.classList.contains('is-open');
+    /* 换节点前先记住焦点在哪儿：解锁一张图之后会重画整块卡片，
+       原来那个按钮已经不在文档里了，焦点会掉回 <body> ——
+       键盘用户刚刚点的地方直接丢失，等于要重新 Tab 一遍。 */
+    const active = document.activeElement;
+    const focusId = (active && old.contains(active) && active.dataset) ? (active.dataset.id || '') : '';
+    const focusCover = Boolean(active && active.classList && active.classList.contains('stack-cover'));
+
     const holder = document.createElement('div');
-    holder.innerHTML = picHtml(item, index);
+    holder.innerHTML = block.kind === 'stack'
+      ? stackHtml(block, block.startIndex)
+      : picHtml(block.members[0], block.startIndex);
     const next = holder.firstElementChild;
     if (!next) return;
     next.style.setProperty('--d', old.style.getPropertyValue('--d') || '0ms');
+    if (old.classList.contains('is-in')) next.classList.add('is-in');
     old.replaceWith(next);
-    bindPic(next);
+    if (block.kind === 'stack') {
+      bindStack(next, block);
+      /* 原来就摊开着的话静默恢复展开态，否则会看到它自己先收一下再打开 */
+      if (wasOpen) setStackOpen(next, true, true);
+    } else {
+      bindPic(next);
+    }
+
+    /* 按 id 把焦点还回去（不认节点：那个节点已经被换掉了） */
+    if (focusId) {
+      const back = next.querySelector('[data-id="' + focusId + '"]');
+      if (back && back.focus) back.focus({ preventScroll: true });
+    } else if (focusCover) {
+      const cover = next.querySelector('.stack-cover');
+      if (cover) cover.focus({ preventScroll: true });
+    }
+
+    /* 换进来的节点得重新挂上进场观察：
+       原来那张卡可能还没滚进视口（没有 is-in），直接换节点会让它永远停在
+       opacity:0 —— 表现成「这张卡凭空消失了」。 */
+    observeReveal(box);
+    /* 灯箱底部那排同组缩略图可能已经过期（比如组内某张刚解开），下次打开重画 */
+    state.lbStripKey = null;
   }
 
   /* ---------------- 灯箱 ---------------- */
@@ -620,6 +896,8 @@ window.__TAOBAI_VAULT__ = true;
       state.lbList = state.view.gallery;
       const back = state.view.gallery.findIndex((g) => g.id === item.id);
       state.lbIndex = back < 0 ? 0 : back;
+      /* 刚解锁的这张如果就在底部那排缩略图里，得让它换成明文 —— 丢掉缓存重画一遍 */
+      state.lbStripKey = null;
     }
 
     const el = $('#lightbox');
@@ -644,11 +922,59 @@ window.__TAOBAI_VAULT__ = true;
     $('#lbTitle').textContent = item.title || (isLocked(item) ? '加密作品' : '');
     $('#lbDesc').textContent = item.desc || '';
     $('#lbCount').textContent = (state.lbIndex + 1) + ' / ' + state.lbList.length;
+    updateLbStrip(item);
+  }
+
+  /* 灯箱底部那排「同组缩略图」。
+     展开一叠图之后点进任意一张，能在组内直接换来换去 —— 不然要退出来重新展开。
+     只在组变化时重建 DOM，翻页只改高亮，免得缩略图每次翻页都重解码闪一下。 */
+  function updateLbStrip(item) {
+    const strip = $('#lbStrip');
+    if (!strip) return;
+    const block = (state.view.blocks || []).filter(
+      (b) => b.kind === 'stack' && b.members.some((m) => m.id === item.id))[0];
+    const figure = $('.lb-figure');
+    if (!block) {
+      strip.hidden = true;
+      state.lbStripKey = null;
+      if (figure) figure.classList.remove('has-strip');
+      return;
+    }
+    strip.hidden = false;
+    if (figure) figure.classList.add('has-strip');
+
+    if (state.lbStripKey !== block.key) {
+      const tagName = Vault() ? Vault().tag() : '加密';
+      strip.innerHTML = block.members.map((m, i) => {
+        const s = gallerySrc(m);
+        const locked = isLocked(m) && !s;
+        const name = m.title || (locked ? tagName : '第 ' + (i + 1) + ' 张');
+        return '<button class="lb-strip-item' + (locked ? ' is-locked' : '') + '" type="button"' +
+          ' data-lb-strip="' + (block.startIndex + i) + '" data-lb-id="' + esc(m.id) + '"' +
+          ' aria-label="' + esc(name + (locked ? '，需要口令才能查看' : '')) + '">' +
+          (s
+            ? '<img src="' + esc(s) + '" alt="" loading="lazy">'
+            : '<span class="lb-strip-lock">' + LOCK_ICON + '</span>') +
+        '</button>';
+      }).join('');
+      $$('[data-lb-strip]', strip).forEach((btn) => {
+        btn.addEventListener('click', () => { openLightbox(Number(btn.dataset.lbStrip)).catch(() => {}); });
+      });
+      state.lbStripKey = block.key;
+    }
+    $$('[data-lb-strip]', strip).forEach((btn) => {
+      const on = btn.dataset.lbId === item.id;
+      btn.classList.toggle('is-current', on);
+      if (on) btn.setAttribute('aria-current', 'true');
+      else btn.removeAttribute('aria-current');
+    });
   }
 
   function closeLightbox() {
     $('#lightbox').hidden = true;
     document.body.style.overflow = '';
+    /* 丢掉缩略图缓存：关灯箱期间可能有图被解锁，下次打开要按最新状态重画 */
+    state.lbStripKey = null;
   }
 
   function stepLightbox(delta) {
@@ -691,14 +1017,40 @@ window.__TAOBAI_VAULT__ = true;
   function paintDecrypting() {
     const box = $('#galleryGrid');
     if (!box) return;
-    $$('.pic', box).forEach((pic) => {
-      const g = state.view.gallery[Number(pic.dataset.index)];
-      const busy = Boolean(g && state.decrypting[g.id]);
-      pic.classList.toggle('is-decrypting', busy);
-      if (busy) pic.setAttribute('aria-busy', 'true');
-      else pic.removeAttribute('aria-busy');
-      const label = pic.querySelector('.pic-lock span');
-      if (label) label.textContent = busy ? (state.decProgress[g.id] || '正在解密…') : '加密作品 · 点击解锁';
+    /* 按 id 找，不按 index —— 叠图卡的根节点没有 data-index（索引分散在各张缩略图上），
+       按 index 反查会让整张卡拿不到进度。解一张 5 MB 的图要好几秒，
+       那几秒里用户看到的就是「点了没反应」。 */
+    const tagName = Vault() ? Vault().tag() : '加密';
+    $$('.pic', box).forEach((card) => {
+      const coverId = card.dataset.id;
+      if (!card.classList.contains('pic-stack')) {
+        const busy = Boolean(state.decrypting[coverId]);
+        card.classList.toggle('is-decrypting', busy);
+        if (busy) card.setAttribute('aria-busy', 'true');
+        else card.removeAttribute('aria-busy');
+        const label = card.querySelector('.pic-lock span');
+        if (label) {
+          label.textContent = busy ? (state.decProgress[coverId] || '正在解密…') : '加密作品 · 点击解锁';
+        }
+        return;
+      }
+      /* 叠图卡：封面与组内每张缩略图各有各的进度，互不相干 */
+      $$('.stack-thumb', card).forEach((btn) => {
+        const id = btn.dataset.id;
+        const busy = Boolean(state.decrypting[id]);
+        btn.classList.toggle('is-decrypting', busy);
+        if (busy) btn.setAttribute('aria-busy', 'true');
+        else btn.removeAttribute('aria-busy');
+        const em = btn.querySelector('.stack-thumb-lock em');
+        if (em) em.textContent = busy ? (state.decProgress[id] || '解密中…') : tagName;
+      });
+      const coverBusy = Boolean(state.decrypting[coverId]);
+      const coverLabel = card.querySelector('.stack-cover .pic-lock span');
+      if (coverLabel) {
+        coverLabel.textContent = coverBusy
+          ? (state.decProgress[coverId] || '正在解密…')
+          : (card.classList.contains('is-open') ? '加密作品 · 点击收起' : '加密作品 · 点击展开');
+      }
     });
   }
 

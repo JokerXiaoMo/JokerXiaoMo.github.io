@@ -411,12 +411,28 @@
   function closeGate(ok) {
     const el = document.getElementById('vaultGate');
     if (!el || !state.gateOpen) return;
+    const backId = state.gateId;
     state.gateOpen = false;
     el.hidden = true;
     const resolve = state.resolveGate;
     state.resolveGate = null;
     state.gateId = null;
     if (resolve) resolve(Boolean(ok));
+    focusBack(backId);
+  }
+
+  /* 浮层关掉之后把焦点还给「刚才点开它的那个元素」——
+     按 id 找而不是留节点引用：解锁成功会重画卡片（main.js 的 updateGalleryCard），
+     原节点那时已经不在文档里了，focus() 只会静默失败。
+     灯箱开着时不抢焦点：那时背景里那些图块本来就不该被聚焦。 */
+  function focusBack(id) {
+    if (!id) return;
+    const lb = document.getElementById('lightbox');
+    if (lb && !lb.hidden) return;
+    const sel = '[data-id="' + String(id).replace(/["\\]/g, '') + '"]';
+    const back = document.querySelector('#galleryGrid ' + sel) || document.querySelector(sel);
+    if (!back || typeof back.focus !== 'function') return;
+    try { back.focus({ preventScroll: true }); } catch (err) { back.focus(); }
   }
 
   function bindGate() {

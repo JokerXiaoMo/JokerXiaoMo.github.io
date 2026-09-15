@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="桃白簪花">
 <meta name="robots" content="index, follow">
 <title>桃白簪花自然科技工作室</title>
-<meta name="description" content="桃白簪花自然科技工作室 —— 取法自然，簪花入器。文字、工具与光影的收藏处。">
+<meta name="description" content="桃白簪花自然科技工作室：写的文章、改的工具、存的图。承诺做满十年。">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=8d2f847c">
 <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png?v=325040d3">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png?v=86ce8d48">
@@ -19,7 +19,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="桃白簪花自然科技工作室">
 <meta property="og:title" content="桃白簪花自然科技工作室">
-<meta property="og:description" content="取法自然，簪花入器。文字、工具与光影的收藏处。">
+<meta property="og:description" content="写的文章、改的工具、存的图。承诺做满十年。">
 <meta property="og:url" content="https://fanxiaofei.ccwu.cc/">
 <meta property="og:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png">
 <meta property="og:image:width" content="512">
@@ -27,7 +27,7 @@
 <meta property="og:image:alt" content="桃白簪花的印章标志：红底金框，一株桃花枝与一颗寿桃">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="桃白簪花自然科技工作室">
-<meta name="twitter:description" content="取法自然，簪花入器。文字、工具与光影的收藏处。">
+<meta name="twitter:description" content="写的文章、改的工具、存的图。承诺做满十年。">
 <meta name="twitter:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png">
 
 <!-- 主题在首帧就定好。这段必须同步执行、且排在样式表之前：
@@ -37,13 +37,13 @@
 (function () { try { var t = localStorage.getItem('tz-theme'); if (t !== 'dark' && t !== 'light') { t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) { /* 隐私模式下读不了 localStorage，用默认浅色 */ } })();
 </script>
 
-<link rel="stylesheet" href="/css/style.css?v=00b78cab">
+<link rel="stylesheet" href="/css/style.css?v=de39ca72">
 </head>
 <body>
 
 <noscript>
   <div style="margin:0;padding:14px 18px;background:#FBEAF0;color:#4B1528;font:14px/1.7 system-ui,-apple-system,sans-serif;text-align:center;border-bottom:1px solid #ED93B1">
-    这个站点的内容由 JavaScript 渲染 —— 请在浏览器设置里开启 JavaScript 后刷新页面。
+    本站内容由 JavaScript 渲染。请在浏览器设置里开启 JavaScript，然后刷新页面。
   </div>
 </noscript>
 
@@ -80,29 +80,55 @@
 <main id="top">
 
   <section class="hero" id="hero">
-    <canvas class="petals" id="petals" aria-hidden="true"></canvas>
     <div class="hero-glow" aria-hidden="true"></div>
     <div class="hero-inner">
-      <p class="hero-eyebrow reveal">TAOBAI · ZANHUA STUDIO</p>
-      <h1 class="hero-title">
-        <span class="reveal" style="--d:0ms">桃</span><span class="reveal" style="--d:80ms">白</span><span class="reveal" style="--d:160ms">簪</span><span class="reveal" style="--d:240ms">花</span>
-      </h1>
-      <p class="hero-sub reveal" style="--d:340ms" id="heroSlogan">取法自然，簪花入器</p>
-      <p class="hero-intro reveal" style="--d:420ms" id="heroIntro"></p>
-      <div class="hero-actions reveal" style="--d:500ms">
-        <a class="btn btn-primary" href="#articles">读桃花笺</a>
-        <a class="btn btn-ghost" href="#gallery">看观照集</a>
+
+      <div class="hero-copy">
+        <p class="hero-eyebrow reveal">TAOBAI · ZANHUA STUDIO</p>
+        <h1 class="hero-title">
+          <span class="reveal" style="--d:0ms">桃</span><span class="reveal" style="--d:80ms">白</span><span class="reveal" style="--d:160ms">簪</span><span class="reveal" style="--d:240ms">花</span>
+        </h1>
+        <p class="hero-sub reveal" style="--d:340ms" id="heroSlogan"></p>
+        <p class="hero-intro reveal" style="--d:420ms" id="heroIntro"></p>
+        <div class="hero-actions reveal" style="--d:500ms">
+          <a class="btn btn-primary" href="#articles">读文章</a>
+          <a class="btn btn-ghost" href="#gallery">看图片</a>
+        </div>
+        <nav class="hero-index reveal" style="--d:580ms" id="heroIndex" aria-label="本站目录"></nav>
       </div>
-      <div class="hero-stats reveal" style="--d:580ms" id="heroStats"></div>
+
+      <!-- 满树桃花：每一朵花代表十年之约里的一个月，时间过去花就少一朵。
+           SVG 的树枝与花朵由 main.js 的 PeachTree 模块生成并注入（种子固定，每次打开都一样）。 -->
+      <div class="hero-tree reveal" style="--d:660ms">
+        <figure class="tree-figure">
+          <svg class="peach-tree" id="peachTree" viewBox="0 0 600 470" role="img"
+               aria-labelledby="treeTitle treeDesc">
+            <title id="treeTitle">一株盛开的桃树</title>
+            <desc id="treeDesc">树上的花代表十年之约：十年共 120 个月，最初有 120 朵花，每过一个月落一朵。</desc>
+          </svg>
+          <figcaption class="tree-pledge" id="treePledge">
+            <span class="pledge-head">
+              <span class="pledge-title" id="pledgeTitle">十年之约</span>
+              <span class="pledge-left" id="pledgeLeft"></span>
+            </span>
+            <span class="pledge-ticker">
+              <span class="pledge-ticker-label">距下一朵花落</span>
+              <span class="pledge-count" id="pledgeCount"></span>
+            </span>
+            <span class="pledge-note" id="pledgeNote"></span>
+          </figcaption>
+        </figure>
+      </div>
+
     </div>
     <div class="hero-scroll" aria-hidden="true"><span></span>向下</div>
   </section>
 
   <section class="section" id="articles">
-    <div class="section-head">
+    <div class="section-head head--folio" data-no="01">
       <div class="section-title">
         <h2>桃花笺</h2>
-        <p class="section-en">Notes · 缓慢写下的文字</p>
+        <p class="section-en">Notes · 写下来的文字</p>
       </div>
       <div class="section-tools">
         <div class="chip-row" id="articleTags"></div>
@@ -113,10 +139,10 @@
   </section>
 
   <section class="section section-alt" id="shares">
-    <div class="section-head">
+    <div class="section-head head--stacked" data-no="02">
       <div class="section-title">
         <h2>拾遗录</h2>
-        <p class="section-en">Tools · 认真筛选过的软件与网站</p>
+        <p class="section-en">Tools · 顺手做、也顺手收的工具</p>
       </div>
       <div class="section-tools">
         <div class="seg" id="shareFilter">
@@ -131,10 +157,10 @@
   </section>
 
   <section class="section" id="gallery">
-    <div class="section-head">
+    <div class="section-head head--bleed" data-no="03">
       <div class="section-title">
         <h2>观照集</h2>
-        <p class="section-en">Gallery · 只放，不解释</p>
+        <p class="section-en">Gallery · 一组图，加了口令</p>
       </div>
       <div class="section-tools">
         <div class="chip-row" id="galleryTags"></div>
@@ -154,16 +180,16 @@
   </section>
 
   <section class="section section-alt" id="about">
-    <div class="about-wrap">
+    <div class="about-wrap" data-no="04">
       <div class="section-title">
         <h2>关于</h2>
-        <p class="section-en">About · 这间工作室</p>
+        <p class="section-en">About · 关于本站</p>
       </div>
       <div class="about-body" id="aboutBody"></div>
       <div class="about-meta" id="aboutMeta"></div>
       <div class="about-contact">
         <h3>留一句话</h3>
-        <p class="muted">不需要注册。写下想说的，我们会看到。</p>
+        <p class="muted">不用注册，写下想说的就行。</p>
         <form class="contact-form" id="contactForm">
           <input type="text" name="name" placeholder="称呼" maxlength="60" required>
           <input type="text" name="contact" placeholder="联系方式（可不填）" maxlength="120">
@@ -173,6 +199,9 @@
             <span class="form-msg" id="contactMsg"></span>
           </div>
         </form>
+        <!-- 纯静态托管没有后端时，表单提交了也没人收。与其放一个假按钮，
+             不如直接把邮箱摆出来（main.js 会按 messageEndpoint 是否配置来二选一显示）。 -->
+        <p class="contact-mail" id="contactMail" hidden></p>
       </div>
     </div>
   </section>
@@ -235,7 +264,11 @@
     </div>
     <h2 id="vgTitle">加密内容</h2>
     <p class="gate-reason" id="vgReason"></p>
-    <input type="password" id="vgInput" placeholder="输入口令" autocomplete="off" spellcheck="false" aria-label="加密口令">
+    <div class="gate-input-row">
+      <input type="password" id="vgInput" placeholder="输入口令" autocomplete="off" spellcheck="false"
+             autocapitalize="off" autocorrect="off" enterkeyhint="go" aria-label="加密口令">
+      <button class="gate-eye" id="vgEye" type="button" aria-pressed="false" title="显示或隐藏口令">显示</button>
+    </div>
     <div class="gate-foot">
       <button class="btn btn-primary" id="vgSubmit" type="submit">解锁</button>
       <span class="gate-msg" id="vgMsg"></span>
@@ -267,7 +300,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/js/markdown.js?v=b9707259"></script>
-<script src="/js/vault.js?v=59ea4c0d"></script>
-<script src="/js/main.js?v=49afc402"></script>
+<script src="/js/vault.js?v=0e249eae"></script>
+<script src="/js/tree.js?v=45c0fa9a"></script>
+<script src="/js/main.js?v=a1b94f83"></script>
 </body>
 </html>

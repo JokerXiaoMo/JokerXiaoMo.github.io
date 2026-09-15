@@ -2,7 +2,7 @@
   "items": [
     {
       "title": "桃白簪花 · mihomo",
-      "desc": "📖 简介\n「桃白簪花」 是一份面向 mihomo（Clash Meta）内核的配置覆写脚本：\n\n将机场订阅覆写为一套长卷式命名的完整策略组体系，并针对「超稳定、超低延迟访问各个 APP」做了四项增强。\n\n它能做什么\n\n🍑 覆写后，所有策略组以「卷名」命名（对照见下表），面板如一幅缓缓展开的长卷\n🔁 订阅更新后重新覆写即可，地区组、倍率组、分流组全部自动生成，无需手动维护\n🩹 自动处理机场私有 DNS / hosts 映射导致的节点解析问题，DNS 无泄露\n🎛 顶部 ruleOptionsEnable 提供全部开关，注释齐全，想改就改\n🙏 本项目基于 AIsouler/MyClash 的 mihomoScript.js 微改而来——分流逻辑、规则集与节点处理均出自原作者之手，在此致以诚挚谢意。本版在其基础上做了长卷式命名重塑与连接稳定性增强，并重新设计了文档与项目结构。",
+      "desc": "一份面向 mihomo（Clash Meta）内核的配置覆写脚本。它把机场订阅覆写为一套按卷名分类的完整策略组体系，并针对连接稳定性做了几处调整 —— 如果你觉得机场自带的策略组命名混乱、订阅一更新就得手动收拾，可以直接把它套在自己的订阅上。\n\n它做了什么\n地区组、倍率组、分流组在订阅更新后自动重新生成，不需要手动维护。同时处理了机场私有 DNS / hosts 映射导致的节点解析问题（DNS 不泄露），顶部 ruleOptionsEnable 集中提供全部开关，注释齐全，想改就改。\n\n出处\n本项目基于 AIsouler/MyClash 的 mihomoScript.js 微改而来，分流逻辑、规则集与节点处理均出自原作者之手，在此致谢。本版在其基础上重做了策略组命名，并重新设计了文档与项目结构。\n\n仓库：https://github.com/JokerXiaoMo/taobai-zanhua",
       "url": "https://github.com/JokerXiaoMo/taobai-zanhua",
       "category": "website",
       "tags": [
@@ -17,7 +17,7 @@
       "clicks": 7,
       "id": "shr_mu0zwapba36eed",
       "createdAt": "2026-09-14T08:42:53.615Z",
-      "updatedAt": "2026-09-14T08:42:53.615Z"
+      "updatedAt": "2026-09-15T08:42:53.615Z"
     }
   ],
   "total": 1

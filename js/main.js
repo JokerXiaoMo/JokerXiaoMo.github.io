@@ -30,6 +30,16 @@ window.__TAOBAI_VAULT__ = true;
     /* 正在解密中的条目 id —— 纯 JS 解一张 5 MB 的图要一秒多，
        卡片上必须有可见状态，否则访客以为「点了没反应」 */
     decrypting: {},
+    /* 正在解密中的进度文案（按 id）：下载 5 MB 在国内链路上要好几秒，
+       只写「正在解密…」看不出是在动还是卡死了 */
+    decProgress: {},
+    /* 正在进行的解密任务（按 id）。同一张图会被两条路径同时要求解开
+       （点卡片开灯箱、以及解锁回调里的批量解），要复用同一个 promise，
+       否则 5 MB 会被下载两遍 —— 国内链路下这就是成功与失败的分界。 */
+    decPending: {},
+    /* 已经播过进场动画的条目 id。重渲染时直接带上 is-in，
+       不再让全部卡片重新淡入一遍（那看起来就是「所有小窗都在闪」）。 */
+    revealed: new Set(),
     /* 静态部署模式：没有后端，数据读 /data/*.json，写操作自动跳过。
        静态导出时（tools/export-static.js）会在产物里预置 window.__TAOBAI_STATIC__ = true，
        于是这里一开始就为 true，不会再去探测 /api/*（避免控制台出现一堆 404）。
@@ -72,14 +82,28 @@ window.__TAOBAI_VAULT__ = true;
     ).join('');
   }
 
+  /* 卡片上只放第一段。推荐理由常常分了好几段、还带小标题，
+     整段塞进卡片会把「它做什么」这类小标题挤成半句话，读起来像病句；
+     完整内容留给点开后的详情浮层。 */
+  function leadOf(text) {
+    const src = String(text == null ? '' : text).replace(/\r\n/g, '\n');
+    const first = src.split(/\n{2,}/)[0] || '';
+    return first.replace(/\s*\n\s*/g, ' ').trim();
+  }
+
   let toastTimer = null;
 
-  function toast(message) {
+  /* kind='error' 的提示留久一点：解密失败这类事，2.6 秒往往还没看完就没了 */
+  function toast(message, kind) {
     const el = $('#toast');
     el.textContent = message;
+    el.classList.toggle('is-error', kind === 'error');
     el.classList.add('is-show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('is-show'), 2600);
+    toastTimer = setTimeout(() => {
+      el.classList.remove('is-show');
+      el.classList.remove('is-error');
+    }, kind === 'error' ? 5000 : 2600);
   }
 
   async function api(path, options) {
@@ -190,7 +214,6 @@ window.__TAOBAI_VAULT__ = true;
       window.setTimeout(() => root.classList.remove('is-theme-switching'), 360);
       root.setAttribute('data-theme', next);
       try { localStorage.setItem('tz-theme', next); } catch (err) { /* 隐私模式读不了就算了 */ }
-      Petals.recolor();
     });
   }
 
@@ -298,6 +321,9 @@ window.__TAOBAI_VAULT__ = true;
         if (entry.isIntersecting) {
           entry.target.style.setProperty('--d', (index % 8) * 60 + 'ms');
           entry.target.classList.add('is-in');
+          /* 记下来：这块 DOM 将来被重渲染时直接带 is-in，
+             不让已经亮过的卡片再淡入一遍（那会看起来像「全部小窗在闪」） */
+          if (entry.target.dataset.id) state.revealed.add(entry.target.dataset.id);
           observer.unobserve(entry.target);
         }
       });
@@ -305,132 +331,27 @@ window.__TAOBAI_VAULT__ = true;
     $$('.reveal-item:not(.is-in)', scope || document).forEach((el) => observer.observe(el));
   }
 
-  /* ---------------- 花瓣飘落 ---------------- */
-
-  const Petals = (function () {
-    let canvas, ctx, items = [], running = false, raf = null, color = '#C75B7A';
-    let width = 0, height = 0;
-
-    function resize() {
-      if (!canvas) return;
-      /* 触屏机与低核心数设备降低像素比和花瓣数量，避免掉帧 */
-      const lowEnd = window.matchMedia('(pointer: coarse)').matches
-        || (navigator.hardwareConcurrency || 4) <= 4;
-      const dpr = Math.min(window.devicePixelRatio || 1, lowEnd ? 1.5 : 2);
-      width = canvas.clientWidth;
-      height = canvas.clientHeight;
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const target = lowEnd
-        ? Math.max(8, Math.min(16, Math.round(width / 74)))
-        : Math.max(14, Math.min(34, Math.round(width / 46)));
-      while (items.length < target) items.push(spawn(true));
-      items.length = target;
-    }
-
-    function spawn(randomY) {
-      return {
-        x: Math.random() * width,
-        y: randomY ? Math.random() * height : -30,
-        size: 5 + Math.random() * 7,
-        speed: 0.35 + Math.random() * 0.65,
-        sway: 0.5 + Math.random() * 1.1,
-        phase: Math.random() * Math.PI * 2,
-        swaySpeed: 0.004 + Math.random() * 0.008,
-        rot: Math.random() * Math.PI,
-        rotSpeed: (Math.random() - 0.5) * 0.012,
-        alpha: 0.28 + Math.random() * 0.4
-      };
-    }
-
-    function draw() {
-      if (!ctx) return;
-      ctx.clearRect(0, 0, width, height);
-      items.forEach((p) => {
-        p.y += p.speed;
-        p.phase += p.swaySpeed;
-        p.rot += p.rotSpeed;
-        p.x += Math.sin(p.phase) * p.sway * 0.5;
-        if (p.y > height + 30) {
-          Object.assign(p, spawn(false));
-          p.x = Math.random() * width;
-        }
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.size, p.size * 0.58, 0, 0, Math.PI * 2);
-        ctx.fillStyle = hexToRgba(color, p.alpha);
-        ctx.fill();
-        ctx.restore();
-      });
-      raf = requestAnimationFrame(draw);
-    }
-
-    function start() {
-      if (running) return;
-      running = true;
-      draw();
-    }
-    function stop() {
-      running = false;
-      if (raf) cancelAnimationFrame(raf);
-      raf = null;
-    }
-
-    return {
-      init(accent) {
-        canvas = $('#petals');
-        if (!canvas) return;
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        ctx = canvas.getContext('2d');
-        color = accent || color;
-        resize();
-        items = [];
-        resize();
-        window.addEventListener('resize', resize);
-        const hero = $('#hero');
-        const io = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => (entry.isIntersecting ? start() : stop()));
-        }, { threshold: 0.02 });
-        io.observe(hero);
-      },
-      recolor() {
-        const value = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-        if (value) color = value;
-      }
-    };
-  })();
-
-  /* ---------------- 统计数字 ---------------- */
-
-  function renderHeroStats() {
-    const box = $('#heroStats');
-    if (!box || !state.site || state.site.showStats === false) {
-      if (box) box.hidden = true;
-      return;
-    }
+  /* ---------------- 首屏目录 ----------------
+     这里原来是一排「实时统计数字」（1 篇文章 / 1 件工具 / 4 帧画面）。
+     数字本身没说错，但对第一次来的人没有任何用处，反而等于自曝「本站几乎是空的」。
+     换成目录：期号 + 栏目名 + 数量，点一下就到那一段。 */
+  function renderHeroIndex() {
+    const box = $('#heroIndex');
+    if (!box) return;
+    if (!state.site || state.site.showStats === false) { box.hidden = true; return; }
     const items = [
-      { label: '篇文章', value: state.articles.length },
-      { label: '件工具', value: state.shares.length },
-      { label: '帧画面', value: state.gallery.length }
+      { no: '01', key: 'articles', name: '桃花笺', unit: '篇' },
+      { no: '02', key: 'shares', name: '拾遗录', unit: '条' },
+      { no: '03', key: 'gallery', name: '观照集', unit: '张' }
     ];
+    box.hidden = false;
     box.innerHTML = items.map((item) =>
-      '<div class="stat"><b data-count="' + item.value + '">0</b><span>' + item.label + '</span></div>'
+      '<a class="hero-index-item" href="#' + esc(item.key) + '">' +
+        '<span class="hi-no">' + item.no + '</span>' +
+        '<span class="hi-name">' + esc(item.name) + '</span>' +
+        '<span class="hi-count">' + (state[item.key] || []).length + ' ' + item.unit + '</span>' +
+      '</a>'
     ).join('');
-    $$('b[data-count]', box).forEach((el) => {
-      const target = Number(el.dataset.count) || 0;
-      const duration = 900;
-      const startAt = performance.now();
-      function tick(now) {
-        const t = Math.min((now - startAt) / duration, 1);
-        const eased = 1 - Math.pow(1 - t, 3);
-        el.textContent = String(Math.round(target * eased));
-        if (t < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    });
   }
 
   /* ---------------- 文章 ---------------- */
@@ -518,7 +439,8 @@ window.__TAOBAI_VAULT__ = true;
     $('#sharesEmpty').hidden = list.length > 0;
     box.innerHTML = list.map((s) => {
       const initial = s.icon || (s.title || '?').slice(0, 2);
-      return '<article class="share-card reveal-item is-openable" data-id="' + esc(s.id) + '">' +
+      return '<article class="share-card reveal-item is-openable' +
+        (state.revealed.has(s.id) ? ' is-in' : '') + '" data-id="' + esc(s.id) + '">' +
         '<div class="share-head">' +
           '<div class="share-icon">' + esc(initial) + '</div>' +
           '<div>' +
@@ -527,7 +449,7 @@ window.__TAOBAI_VAULT__ = true;
             '<div class="share-cat">' + (s.category === 'website' ? '网站 · WEB' : '软件 · APP') + '</div>' +
           '</div>' +
         '</div>' +
-        '<p class="share-desc">' + esc(s.desc) + '</p>' +
+        '<p class="share-desc">' + esc(leadOf(s.desc)) + '</p>' +
         '<div class="share-foot">' +
           '<div class="platform-row">' + (s.platforms || []).slice(0, 3).map((p) => '<span class="platform">' + esc(p) + '</span>').join('') + '</div>' +
           '<div class="share-foot-acts">' +
@@ -577,6 +499,60 @@ window.__TAOBAI_VAULT__ = true;
     });
   }
 
+  /* 单张图卡的 HTML。抽出来是为了「只换一张卡片」时能复用同一份模板 ——
+     整块重渲染会让所有卡片重播一遍进场动画，看起来就是全部小窗都在闪。 */
+  function picHtml(g, index) {
+    /* 和文章卡片一样：解开并渲染出图之后就不要再挂锁标/遮罩了 */
+    const locked = isLocked(g) && !state.decUrls[g.id];
+    const busy = Boolean(state.decrypting[g.id]);
+    const src = gallerySrc(g);
+    const tagName = Vault() ? Vault().tag() : '加密';
+    /* 图块内没有别的可交互元素，所以整块做 role="button" 是安全的；
+       键盘可达性不能只靠鼠标点击。 */
+    const label = (g.title || (locked ? '加密作品' : '图片')) + (locked ? '，需要口令才能查看' : '，查看大图');
+    /* 下载 5 MB 要好几秒，只写「正在解密…」会让人分不清是在动还是卡死了 */
+    const busyText = busy ? (state.decProgress[g.id] || '正在解密…') : '加密作品 · 点击解锁';
+    return '<figure class="pic reveal-item' + (locked ? ' is-locked' : '') + (busy ? ' is-decrypting' : '') +
+      (state.revealed.has(g.id) ? ' is-in' : '') + '"' +
+      ' data-index="' + index + '" data-id="' + esc(g.id) + '"' +
+      ' tabindex="0" role="button" aria-label="' + esc(label) + '"' +
+      (busy ? ' aria-busy="true"' : '') + '>' +
+      (locked ? '<span class="lock-badge">' + LOCK_ICON + esc(tagName) + '</span>' : '') +
+      (src
+        ? '<img src="' + esc(src) + '" alt="' + esc(g.title || '') + '" loading="lazy">'
+        : '<div class="pic-lock">' + LOCK_ICON + '<span>' + esc(busyText) + '</span></div>') +
+      '<figcaption class="pic-overlay">' +
+        /* 锁态下不再重复写标题：锁位里已经写了「加密作品」（未解锁时 title 本来就是空的） */
+        (locked ? '' : '<h3>' + esc(g.title || '') + '</h3>') +
+        (g.desc ? '<p>' + esc(g.desc) + '</p>' : '') +
+        '<div class="pic-tags">' + (g.tags || []).slice(0, 3).map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
+      '</figcaption>' +
+    '</figure>';
+  }
+
+  /* 图块的点击/键盘与图片淡入。renderGallery 与 updateGalleryCard 都走这里，
+     免得两边的行为慢慢漂移。 */
+  function bindPic(pic) {
+    const open = () => { openLightbox(Number(pic.dataset.index)).catch(() => {}); };
+    pic.addEventListener('click', open);
+    pic.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+    hydratePicImg(pic);
+  }
+
+  /* 图片淡入的兜底：缓存命中时图片在绑定事件之前就已经加载完，
+     不会再派发 load，所以必须先查 img.complete，否则它会一直停在全透明。
+     error 也一并标记 —— 破图占位总比一片空白好。 */
+  function hydratePicImg(pic) {
+    $$('img', pic).forEach((img) => {
+      if (img.complete && img.naturalWidth > 0) { img.classList.add('is-loaded'); return; }
+      const done = () => img.classList.add('is-loaded');
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    });
+  }
+
   function renderGallery() {
     const box = $('#galleryGrid');
     let list = state.gallery.filter(matchKeyword);
@@ -585,49 +561,37 @@ window.__TAOBAI_VAULT__ = true;
     state.view.gallery = list;
 
     $('#galleryEmpty').hidden = list.length > 0;
-    box.innerHTML = list.map((g, index) => {
-      /* 和文章卡片一样：解开并渲染出图之后就不要再挂锁标/遮罩了 */
-      const locked = isLocked(g) && !state.decUrls[g.id];
-      const busy = Boolean(state.decrypting[g.id]);
-      const src = gallerySrc(g);
-      const tagName = Vault() ? Vault().tag() : '加密';
-      /* 图块内没有别的可交互元素，所以整块做 role="button" 是安全的；
-         键盘可达性不能只靠鼠标点击。 */
-      const label = (g.title || (locked ? '加密作品' : '图片')) + (locked ? '，需要口令才能查看' : '，查看大图');
-      return '<figure class="pic reveal-item' + (locked ? ' is-locked' : '') + (busy ? ' is-decrypting' : '') + '"' +
-        ' data-index="' + index + '" tabindex="0" role="button" aria-label="' + esc(label) + '">' +
-        (locked ? '<span class="lock-badge">' + LOCK_ICON + esc(tagName) + '</span>' : '') +
-        (src
-          ? '<img src="' + esc(src) + '" alt="' + esc(g.title || '') + '" loading="lazy">'
-          : '<div class="pic-lock">' + LOCK_ICON + '<span>' + (busy ? '正在解密…' : '加密作品 · 点击解锁') + '</span></div>') +
-        '<figcaption class="pic-overlay">' +
-          /* 锁态下不再重复写标题：锁位里已经写了「加密作品」（未解锁时 title 本来就是空的） */
-          (locked ? '' : '<h3>' + esc(g.title || '') + '</h3>') +
-          (g.desc ? '<p>' + esc(g.desc) + '</p>' : '') +
-          '<div class="pic-tags">' + (g.tags || []).slice(0, 3).map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
-        '</figcaption>' +
-      '</figure>';
-    }).join('');
-
-    $$('.pic', box).forEach((pic) => {
-      const open = () => { openLightbox(Number(pic.dataset.index)).catch(() => {}); };
-      pic.addEventListener('click', open);
-      pic.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
-      });
-    });
-
-    /* 图片淡入的兜底：缓存命中时图片在绑定事件之前就已经加载完，
-       不会再派发 load，所以必须先查 img.complete，否则它会一直停在全透明。
-       error 也一并标记 —— 破图占位总比一片空白好。 */
-    $$('.pic img', box).forEach((img) => {
-      if (img.complete && img.naturalWidth > 0) { img.classList.add('is-loaded'); return; }
-      const done = () => img.classList.add('is-loaded');
-      img.addEventListener('load', done, { once: true });
-      img.addEventListener('error', done, { once: true });
-    });
-
+    box.innerHTML = list.map((g, index) => picHtml(g, index)).join('');
+    $$('.pic', box).forEach(bindPic);
     observeReveal(box);
+  }
+
+  /* 只换掉那一张卡片。解锁一张图之后走这里，而不是 renderGallery()：
+     整块重建会把页面上所有卡片重新淡入一遍，用户看到的就是「全部小窗都会闪」。 */
+  function updateGalleryCard(id) {
+    const box = $('#galleryGrid');
+    if (!box) return;
+    const item = state.view.gallery.find((g) => g.id === id);
+    const index = state.view.gallery.indexOf(item);
+    if (index < 0) return;
+    const old = box.querySelector('.pic[data-index="' + index + '"]');
+    if (!old) { renderGallery(); return; }   /* 没找到就退回整块重建，至少状态是对的 */
+
+    /* 已经是目标状态就别再换节点 —— 换节点本身也是一次可见的重绘。
+       解锁回调与点卡片两条路径都会走到这里，去重后只换一次。 */
+    const img = old.querySelector('img');
+    if (state.decUrls[id] && img && img.src.indexOf('blob:') === 0 &&
+      !old.classList.contains('is-locked') && !old.classList.contains('is-decrypting')) {
+      return;
+    }
+
+    const holder = document.createElement('div');
+    holder.innerHTML = picHtml(item, index);
+    const next = holder.firstElementChild;
+    if (!next) return;
+    next.style.setProperty('--d', old.style.getPropertyValue('--d') || '0ms');
+    old.replaceWith(next);
+    bindPic(next);
   }
 
   /* ---------------- 灯箱 ---------------- */
@@ -645,10 +609,14 @@ window.__TAOBAI_VAULT__ = true;
       try {
         await decryptGalleryItem(item);
       } catch (err) {
-        toast('解密失败：' + (err.message || '未知错误'));
+        /* 失败的原因要能分清：下不完和口令不对是两回事，给的话术也不同 */
+        toast(err.message || '解密失败，请重试', 'error');
+        paintDecrypting();
         return;
       }
-      renderGallery();
+      /* 只换这一张卡片。整块 renderGallery() 会让所有卡片重播进场动画，
+         看起来就是「全部小窗都在闪」 */
+      updateGalleryCard(item.id);
       state.lbList = state.view.gallery;
       const back = state.view.gallery.findIndex((g) => g.id === item.id);
       state.lbIndex = back < 0 ? 0 : back;
@@ -718,8 +686,8 @@ window.__TAOBAI_VAULT__ = true;
   }
 
   /* 解密期间把对应卡片切成「正在解密…」
-     纯粹是体验：一张 5 MB 的图在纯 JS 下要一秒多，
-     没有任何可见状态时，访客只会觉得「点了没反应」。 */
+     一张 5 MB 的图在国内链路上要好几秒，光转个圈说明不了任何事，
+     所以把「已收到多少 / 共多少」实时写进卡片，让人知道它确实在动。 */
   function paintDecrypting() {
     const box = $('#galleryGrid');
     if (!box) return;
@@ -727,38 +695,63 @@ window.__TAOBAI_VAULT__ = true;
       const g = state.view.gallery[Number(pic.dataset.index)];
       const busy = Boolean(g && state.decrypting[g.id]);
       pic.classList.toggle('is-decrypting', busy);
+      if (busy) pic.setAttribute('aria-busy', 'true');
+      else pic.removeAttribute('aria-busy');
       const label = pic.querySelector('.pic-lock span');
-      if (label) label.textContent = busy ? '正在解密…' : '加密作品 · 点击解锁';
+      if (label) label.textContent = busy ? (state.decProgress[g.id] || '正在解密…') : '加密作品 · 点击解锁';
     });
   }
 
-  async function decryptGalleryItem(item) {
+  /* 解一张加密图。
+   *
+   * 两个刻意的设计：
+   *   ① 同一个 id 只跑一份任务。点卡片开灯箱与解锁回调的批量解会同时要求解这一张，
+   *      不复用的话 5 MB 要下载两遍 —— 在国内链路上这就是成功与失败的分界。
+   *   ② 不收尾也不整块重渲染。状态清了就走，界面交给调用方按 id 局部更新。
+   */
+  function decryptGalleryItem(item) {
     const V = Vault();
-    if (!item || !isLocked(item) || state.decUrls[item.id]) return;
+    if (!item) return Promise.resolve();
+    if (state.decUrls[item.id]) return Promise.resolve();
+    if (!isLocked(item)) return Promise.resolve();
+    if (state.decPending[item.id]) return state.decPending[item.id];
+
     state.decrypting[item.id] = true;
+    state.decProgress[item.id] = '正在连接…';
     paintDecrypting();
-    try {
-      /* 原图与标题说明是两段独立的密文，并行解可以省掉一半等待 */
-      const pair = await Promise.all([
-        V.decryptBlob(item.id),
-        V.decryptMeta(item.id).catch(() => null)
-      ]);
-      const blob = pair[0];
-      const meta = pair[1];
-      if (!blob) throw new Error('缺少密文');
-      state.decUrls[item.id] = URL.createObjectURL(blob);
-      if (meta) {
-        item.title = meta.title || item.title;
-        item.desc = meta.desc || item.desc;
+
+    const task = (async () => {
+      try {
+        const blob = await V.decryptBlob(item.id, (got, total) => {
+          state.decProgress[item.id] = total
+            ? '正在接收 ' + (got / 1048576).toFixed(1) + ' / ' + (total / 1048576).toFixed(1) + ' MB'
+            : '正在接收 ' + (got / 1048576).toFixed(1) + ' MB';
+          paintDecrypting();
+        });
+        if (!blob) throw new Error('这张作品在线上缺少密文，请重新发布一次');
+        state.decProgress[item.id] = '正在解密…';
+        paintDecrypting();
+        state.decUrls[item.id] = URL.createObjectURL(blob);
+        const meta = await V.decryptMeta(item.id).catch(() => null);
+        if (meta) {
+          item.title = meta.title || item.title;
+          item.desc = meta.desc || item.desc;
+        }
+      } finally {
+        delete state.decrypting[item.id];
+        delete state.decProgress[item.id];
+        delete state.decPending[item.id];
+        paintDecrypting();
       }
-    } finally {
-      delete state.decrypting[item.id];
-      paintDecrypting();
-    }
+    })();
+
+    state.decPending[item.id] = task;
+    return task;
   }
 
   /* 把「已经拿到密钥的那几条」解出来。
-     逐条加密之后不再有「一开全开」，所以这里只认 isUnlocked 的条目。 */
+     逐条加密之后不再有「一开全开」，所以这里只认 isUnlocked 的条目。
+     解好一条就当场换掉那一张卡片，不整块重渲染。 */
   async function decryptUnlockedGallery() {
     const V = Vault();
     if (!V || !V.unlockedCount()) return;
@@ -766,6 +759,7 @@ window.__TAOBAI_VAULT__ = true;
     for (let i = 0; i < targets.length; i += 1) {
       try {
         await decryptGalleryItem(targets[i]);
+        updateGalleryCard(targets[i].id);
       } catch (err) { /* 单张失败不拦其余 */ }
     }
   }
@@ -798,6 +792,8 @@ window.__TAOBAI_VAULT__ = true;
     });
     state.decUrls = {};
     state.decrypting = {};
+    state.decProgress = {};
+    state.decPending = {};
     state.articles.forEach((a) => { delete a.dec; });
   }
 
@@ -810,7 +806,12 @@ window.__TAOBAI_VAULT__ = true;
 
     V.onChange((keys) => {
       if (keys && Object.keys(keys).length) {
-        decryptUnlockedGallery().then(renderAll).catch(() => renderAll());
+        /* 解锁了：只动受影响的卡片与栏板文案。
+           这里刻意不调 renderAll()/renderGallery() —— 整块重建会把所有卡片
+           重新播一遍进场动画，用户看到的就是「全部小窗都在闪」。 */
+        renderVaultBar();
+        paintDecrypting();
+        decryptUnlockedGallery().catch(() => {});
       } else {
         revokeDecrypted();
         renderAll();
@@ -836,7 +837,8 @@ window.__TAOBAI_VAULT__ = true;
       try {
         article.dec = await Vault().decryptJson(id);
       } catch (err) {
-        toast('解密失败：' + (err.message || '未知错误'));
+        /* decryptJson 已经把无名错误翻译过，这里不要再套一层「解密失败：未知错误」 */
+        toast(err.message || '这篇文章解不开，请重试', 'error');
         return;
       }
       renderArticles();
@@ -853,7 +855,7 @@ window.__TAOBAI_VAULT__ = true;
     $('#readerBody').innerHTML = window.TZMarkdown.render(plain.content || '') ||
       '<p>（这篇文章还没有正文）</p>';
     $('#readerFoot').innerHTML =
-      '<p>感谢读到此处。若有想法，欢迎在<a href="#about">关于</a>页留言。</p>';
+      '<p>读完了？有想法的话，去<a href="#about">关于</a>页留一句话。</p>';
     reader.hidden = false;
     document.body.style.overflow = 'hidden';
     $('#readerScroll').scrollTop = 0;
@@ -888,7 +890,7 @@ window.__TAOBAI_VAULT__ = true;
     $('#sdIcon').textContent = item.icon || (item.title || '?').slice(0, 2);
     $('#sdTitle').textContent = item.title || '未命名';
     $('#sdSub').textContent = (item.category === 'website' ? '网站 · WEB' : '软件 · APP') +
-      (item.star ? ' · 工作室力荐' : '');
+      (item.star ? ' · 工作室推荐' : '');
     $('#sdTags').innerHTML = (item.tags || [])
       .map((t) => '<span class="tag">' + esc(t) + '</span>').join('');
     $('#sdDesc').innerHTML = richText(item.desc) ||
@@ -930,7 +932,24 @@ window.__TAOBAI_VAULT__ = true;
     $$('[data-sd-close]').forEach((el) => el.addEventListener('click', closeShareDetail));
   }
 
-  /* ---------------- 留言 ---------------- */
+  /* ---------------- 留言 ----------------
+     纯静态托管没有后端。配置了 site.messageEndpoint 就把表单提交过去；
+     没配就**不摆表单**，直接把邮箱亮出来 —— 一个点了没人收的假表单，
+     比干脆没有表单更劝退，访客会以为网站坏了。 */
+  function renderContact() {
+    const form = $('#contactForm');
+    const mailBox = $('#contactMail');
+    if (!form || !mailBox) return;
+    const endpoint = (state.site && state.site.messageEndpoint) || '';
+    const mail = (state.site && state.site.email) || '';
+    const usable = !state.staticMode || Boolean(endpoint);
+    form.hidden = !usable;
+    mailBox.hidden = usable || !mail;
+    if (!usable && mail) {
+      mailBox.innerHTML = '本站是纯静态托管，没接后端，表单寄不出去。有事直接发邮件：' +
+        '<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>';
+    }
+  }
 
   function initContact() {
     const form = $('#contactForm');
@@ -941,18 +960,10 @@ window.__TAOBAI_VAULT__ = true;
       const data = Object.fromEntries(new FormData(form).entries());
       if (!data.content || !String(data.content).trim()) return;
 
-      /* 静态托管没有后端：
-         配置了 site.messageEndpoint（如 Formspree / Web3Forms 的免费表单地址）就提交过去，
-         没配则引导用户走邮件，避免出现「提交成功但没人收到」的假象。 */
       if (state.staticMode) {
         const endpoint = (state.site && state.site.messageEndpoint) || '';
-        if (!endpoint) {
-          const mail = (state.site && state.site.email) || '';
-          msg.textContent = mail
-            ? '本站为静态部署，留言功能未开启，欢迎邮件联系：' + mail
-            : '本站为静态部署，留言功能未开启。';
-          return;
-        }
+        /* 没有收件端点时表单本来就不显示，这里只是兜底，别再给一句没用的提示 */
+        if (!endpoint) return;
         try {
           const res = await fetch(endpoint, {
             method: 'POST',
@@ -1027,7 +1038,6 @@ window.__TAOBAI_VAULT__ = true;
     renderGalleryTags();
     renderGallery();
     renderVaultBar();
-    Petals.recolor();
   }
 
   /* ---------------- 启动 ---------------- */
@@ -1107,8 +1117,11 @@ window.__TAOBAI_VAULT__ = true;
       state.shares = shareRes.items || [];
       state.gallery = galleryRes.items || [];
       renderAll();
-      renderHeroStats();
-      Petals.init(siteRes.site.accent);
+      renderHeroIndex();
+      renderContact();
+      /* 满树桃花 + 十年之约（tree.js）。万一这个脚本没加载上，
+         首屏只是少一棵树，其余部分照常工作。 */
+      if (window.TZTree) window.TZTree.init(siteRes.site);
       /* 解锁态不跨刷新保留 —— 每次打开页面都从「全部上锁」开始 */
       handleHash();
     } catch (err) {

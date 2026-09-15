@@ -1,13 +1,15 @@
 /* 桃白簪花 · 加密板块（纯前端解密）
  *
- * 密文与 KDF 参数来自产物里的 data/locked.json；口令只在浏览器里用一次，
- * 派生完密钥就丢掉口令，解锁态以「原始密钥字节」存 sessionStorage（关标签页即失效）。
+ * 一条内容一个口令：产物 data/locked.json 里每条自带 salt、校验块与密文，
+ * 输对哪条的口令就只解开哪条，其余照旧锁着（salt 互不相同，密钥也就互不相同）。
  *
  * 几个刻意的取舍：
- *   - PBKDF2 迭代 60 万次由服务端在导出时写进 locked.json，前端照用，不写死
- *   - 先拿一段固定明文（check）验口令，口令不对时不必去解一张 5 MB 的图
+ *   - PBKDF2 迭代次数写在 locked.json 的 kdf 里，前端照用，不写死
+ *   - 每条先解一段固定明文（check）验口令，口令不对时不必去解一张 5 MB 的图
  *   - 图片密文是独立的 .bin，按需 fetch，不塞进 JSON 再 base64（那会多 33% 体积）
- *   - 迭代参数或 salt 变了（重新导出）就自动作废旧解锁态
+ *   - 解锁态存 sessionStorage，只存派生出来的密钥字节，关标签页即失效
+ *   - 非安全上下文（http://域名、http://局域网IP）下 crypto.subtle 根本不存在，
+ *     这时按需加载 js/vault-pure.js 走纯 JS 实现，两套后端接口完全一致
  *   - 文件名是 locked.json 而不是 vault.json：后者在本地存的是口令本身，
  *     两者同名迟早会有人搞混，所以刻意分开
  */
@@ -15,16 +17,18 @@
   'use strict';
 
   const DATA_URL = '/data/locked.json';
-  const STORAGE_KEY = 'tz-vault-key';
+  const PURE_URL = '/js/vault-pure.js';
+  const STORAGE_KEY = 'tz-vault-keys';
   const CHECK_PLAIN = 'TAOBAI-VAULT-CHECK-V1';
 
   const state = {
     config: null,
-    key: null,
+    keys: {},          /* { [id]: Uint8Array(32) } —— 逐条解锁，互不影响 */
     loaded: false,
     loading: null,
     listeners: [],
-    gateOpen: false
+    gateOpen: false,
+    gateId: null
   };
 
   /* ---------- base64 <-> 字节 ---------- */
@@ -45,10 +49,72 @@
     return btoa(bin);
   }
 
-  const fingerprint = (cfg) =>
-    [cfg.kdf.name, cfg.kdf.hash, cfg.kdf.iterations, cfg.kdf.salt].join('|');
+  /* 任何一条的 salt / KDF 参数变了（重新导出、改了某条口令），
+     所有已解锁状态一律作废 —— 不能留下用旧密钥解新密文的缝 */
+  const fingerprint = (cfg) => [
+    cfg.kdf && cfg.kdf.name,
+    cfg.kdf && cfg.kdf.hash,
+    cfg.kdf && cfg.kdf.iterations,
+    Object.keys(cfg.items || {}).sort().map((id) => id + ':' + cfg.items[id].salt).join(',')
+  ].join('|');
 
-  /* ---------- 加载与派生 ---------- */
+  /* ---------- 解密后端：WebCrypto 优先，纯 JS 兜底 ---------- */
+
+  function hasWebCrypto() {
+    return Boolean(global.crypto && global.crypto.subtle);
+  }
+
+  function webCryptoBackend() {
+    return {
+      name: 'webcrypto',
+      async deriveKey(password, salt, iterations) {
+        const base = await crypto.subtle.importKey(
+          'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']
+        );
+        const bits = await crypto.subtle.deriveBits(
+          { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, base, 256
+        );
+        return new Uint8Array(bits);
+      },
+      async decrypt(keyBytes, iv, data) {
+        const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']);
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+        return new Uint8Array(plain);
+      }
+    };
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const el = document.createElement('script');
+      el.src = src;
+      el.async = true;
+      el.onload = () => resolve();
+      el.onerror = () => reject(new Error('解密模块加载失败（' + src + '）'));
+      document.head.appendChild(el);
+    });
+  }
+
+  async function pureJsBackend() {
+    await loadScript(PURE_URL);
+    const P = global.TZVaultPure;
+    if (!P) throw new Error('解密模块不可用');
+    return {
+      name: 'pure-js',
+      deriveKey: (password, salt, iterations) => P.deriveKey(password, salt, iterations),
+      decrypt: (keyBytes, iv, data) => P.decrypt(keyBytes, iv, data)
+    };
+  }
+
+  let backendPromise = null;
+  function backend() {
+    if (!backendPromise) {
+      backendPromise = hasWebCrypto() ? Promise.resolve(webCryptoBackend()) : pureJsBackend();
+    }
+    return backendPromise;
+  }
+
+  /* ---------- 加载 ---------- */
 
   function load() {
     if (state.loading) return state.loading;
@@ -62,10 +128,10 @@
     state.loading = fetch(DATA_URL, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
-      .then((cfg) => {
+      .then(async (cfg) => {
         state.config = (cfg && cfg.items && Object.keys(cfg.items).length) ? cfg : null;
         state.loaded = true;
-        if (state.config) restore();
+        if (state.config) await restore();
         return state.config;
       });
     return state.loading;
@@ -79,139 +145,150 @@
     return (state.config && state.config.tag) || '加密';
   }
 
-  function isUnlocked() {
-    return Boolean(state.key);
-  }
+  const entryOf = (id) => (state.config && state.config.items[id]) || null;
 
   function isLocked(id) {
-    if (!state.config) return false;
-    const file = state.config.items[id + ':file'];
-    return Boolean(state.config.items[id] || file);
+    return Boolean(entryOf(id));
   }
 
-  async function deriveKey(password) {
-    const cfg = state.config;
-    const base = await crypto.subtle.importKey(
-      'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: b64ToBytes(cfg.kdf.salt),
-        iterations: Number(cfg.kdf.iterations) || 600000,
-        hash: cfg.kdf.hash || 'SHA-256'
-      },
-      base,
-      { name: 'AES-GCM', length: 256 },
-      true,
-      ['decrypt']
-    );
+  function isUnlocked(id) {
+    return Boolean(state.keys[id]);
   }
 
-  async function decryptWith(key, ivB64, dataBuf) {
-    return crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: b64ToBytes(ivB64) }, key, dataBuf
-    );
+  function unlockedCount() {
+    return Object.keys(state.keys).length;
   }
 
-  async function verifyKey(key) {
+  /* ---------- 解锁（逐条） ---------- */
+
+  async function unlock(id, password) {
+    const entry = entryOf(id);
+    if (!entry) return { ok: false, error: '这条内容没有加密数据' };
+
+    let bd;
     try {
-      const plain = await decryptWith(key, state.config.check.iv, b64ToBytes(state.config.check.ct));
-      return new TextDecoder().decode(plain) === CHECK_PLAIN;
+      bd = await backend();
     } catch (err) {
-      return false;
+      return { ok: false, error: '当前浏览器无法解密：' + (err.message || '未知原因') };
     }
-  }
 
-  function persist(key) {
-    try {
-      crypto.subtle.exportKey('raw', key).then((raw) => {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-          fp: fingerprint(state.config), k: bytesToB64(raw)
-        }));
-      });
-    } catch (err) { /* 存不了就算了，只是刷新后要重输 */ }
-  }
-
-  function restore() {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
-      if (!saved || saved.fp !== fingerprint(state.config)) return;
-      const raw = b64ToBytes(saved.k);
-      crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, true, ['decrypt'])
-        .then((key) => {
-          /* 换了密码或重新导出后，旧密钥要能自己失效 */
-          return verifyKey(key).then((ok) => { if (ok) state.key = key; else state.key = null; });
-        })
-        .then(emit)
-        .catch(() => {});
-    } catch (err) { /* 忽略 */ }
-  }
-
-  /* ---------- 对外：解锁 ---------- */
-
-  async function unlock(password) {
-    if (!state.config) return { ok: false, error: '这个站点没有加密内容' };
-    if (!global.crypto || !crypto.subtle) {
-      return { ok: false, error: '当前环境不支持解密（需要 https 或 localhost）' };
-    }
+    const iterations = Number((state.config.kdf && state.config.kdf.iterations) || 600000);
     let key;
     try {
-      key = await deriveKey(password);
+      key = await bd.deriveKey(password, b64ToBytes(entry.salt), iterations);
     } catch (err) {
       return { ok: false, error: '解密失败：' + (err.message || '未知错误') };
     }
-    if (!await verifyKey(key)) return { ok: false, error: '口令不对' };
-    state.key = key;
-    persist(key);
+
+    /* 先拿校验块验一下，口令不对就不必去解一张 5 MB 的图 */
+    try {
+      const plain = await bd.decrypt(key, b64ToBytes(entry.check.iv), b64ToBytes(entry.check.ct));
+      if (new TextDecoder().decode(plain) !== CHECK_PLAIN) return { ok: false, error: '口令不对' };
+    } catch (err) {
+      return { ok: false, error: '口令不对' };
+    }
+
+    state.keys[id] = key;
+    persist();
     emit();
     return { ok: true };
   }
 
-  function lock() {
-    state.key = null;
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch (err) { /* 忽略 */ }
+  /* 上锁：传 id 只锁那一条，不传则全部锁上 */
+  function lock(id) {
+    if (id === undefined) state.keys = {};
+    else delete state.keys[id];
+    persist();
     emit();
+  }
+
+  function persist() {
+    try {
+      const keys = {};
+      Object.keys(state.keys).forEach((kid) => { keys[kid] = bytesToB64(state.keys[kid]); });
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        fp: fingerprint(state.config), keys
+      }));
+    } catch (err) { /* 存不了就算了，只是刷新后要重输 */ }
+  }
+
+  async function restore() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
+      if (!saved || saved.fp !== fingerprint(state.config)) return;
+      const ids = Object.keys(saved.keys || {});
+      if (!ids.length) return;
+
+      const bd = await backend();
+      const next = {};
+      for (const id of ids) {
+        const entry = entryOf(id);
+        if (!entry) continue;
+        const key = b64ToBytes(saved.keys[id]);
+        try {
+          const plain = await bd.decrypt(key, b64ToBytes(entry.check.iv), b64ToBytes(entry.check.ct));
+          if (new TextDecoder().decode(plain) === CHECK_PLAIN) next[id] = key;
+        } catch (err) { /* 这一条失效了（多半是重新导出过），丢掉即可 */ }
+      }
+      state.keys = next;
+    } catch (err) { /* 忽略 */ }
   }
 
   /* ---------- 取内容 ---------- */
 
   async function decryptJson(id) {
-    const entry = state.config && state.config.items[id];
+    const entry = entryOf(id);
     if (!entry || entry.t !== 'json') return null;
-    if (!state.key) throw new Error('locked');
-    const plain = await decryptWith(state.key, entry.iv, b64ToBytes(entry.ct));
+    const key = state.keys[id];
+    if (!key) throw new Error('locked');
+    const bd = await backend();
+    const plain = await bd.decrypt(key, b64ToBytes(entry.iv), b64ToBytes(entry.ct));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+
+  /* 图片条目的标题与说明（和原图共用一份密钥） */
+  async function decryptMeta(id) {
+    const entry = entryOf(id);
+    if (!entry || !entry.meta) return null;
+    const key = state.keys[id];
+    if (!key) throw new Error('locked');
+    const bd = await backend();
+    const plain = await bd.decrypt(key, b64ToBytes(entry.meta.iv), b64ToBytes(entry.meta.ct));
     return JSON.parse(new TextDecoder().decode(plain));
   }
 
   const blobCache = new Map();
 
   async function decryptBlob(id) {
-    const entry = state.config && state.config.items[id + ':file'];
+    const entry = entryOf(id);
     if (!entry || entry.t !== 'bin') return null;
-    if (!state.key) throw new Error('locked');
-    if (blobCache.has(id + ':file')) return blobCache.get(id + ':file');
+    const key = state.keys[id];
+    if (!key) throw new Error('locked');
+    if (blobCache.has(id)) return blobCache.get(id);
+
     const res = await fetch(entry.url, { cache: 'no-store' });
     if (!res.ok) throw new Error('密文读取失败（HTTP ' + res.status + '）');
-    const plain = await decryptWith(state.key, entry.iv, await res.arrayBuffer());
+    const bd = await backend();
+    const plain = await bd.decrypt(key, b64ToBytes(entry.iv), new Uint8Array(await res.arrayBuffer()));
     const blob = new Blob([plain], { type: entry.mime || 'application/octet-stream' });
-    blobCache.set(id + ':file', blob);
+    blobCache.set(id, blob);
     return blob;
   }
 
   /* ---------- 解锁浮层 ---------- */
 
-  async function ensure(reason) {
+  async function ensure(id, reason) {
     if (!state.config) return false;
-    if (state.key) return true;
-    return openGate(reason || '这部分内容已加密，请输入口令');
+    if (state.keys[id]) return true;
+    return openGate(id, reason || '这条内容已加密，请输入口令');
   }
 
-  function openGate(reason) {
+  function openGate(id, reason) {
     return new Promise((resolve) => {
       const el = document.getElementById('vaultGate');
       if (!el) { resolve(false); return; }
       state.gateOpen = true;
+      state.gateId = id;
       state.resolveGate = resolve;
       el.querySelector('#vgReason').textContent = reason;
       const input = el.querySelector('#vgInput');
@@ -231,6 +308,7 @@
     el.hidden = true;
     const resolve = state.resolveGate;
     state.resolveGate = null;
+    state.gateId = null;
     if (resolve) resolve(Boolean(ok));
   }
 
@@ -243,11 +321,12 @@
 
     const attempt = async () => {
       const value = input.value;
+      const id = state.gateId;
       if (!value) { input.focus(); return; }
       submit.disabled = true;
       msg.classList.remove('is-error');
       msg.textContent = '正在解密…';
-      const res = await unlock(value);
+      const res = await unlock(id, value);
       submit.disabled = false;
       if (res.ok) {
         input.value = '';
@@ -275,12 +354,15 @@
 
   function emit() {
     state.listeners.forEach((cb) => {
-      try { cb(state.key); } catch (err) { /* 订阅方自己的错，不影响别人 */ }
+      try { cb(state.keys); } catch (err) { /* 订阅方自己的错，不影响别人 */ }
     });
   }
 
   global.TZVault = {
-    load, hasVault, isLocked, isUnlocked, tag, ensure, unlock, lock,
-    decryptJson, decryptBlob, onChange, bindGate, openGate, closeGate
+    load, hasVault, tag,
+    isLocked, isUnlocked, unlockedCount, hasWebCrypto,
+    ensure, unlock, lock,
+    decryptJson, decryptMeta, decryptBlob,
+    onChange, bindGate, openGate, closeGate
   };
 })(window);

@@ -572,7 +572,8 @@ window.__TAOBAI_VAULT__ = true;
 
     $('#galleryEmpty').hidden = list.length > 0;
     box.innerHTML = list.map((g, index) => {
-      const locked = isLocked(g);
+      /* 和文章卡片一样：解开并渲染出图之后就不要再挂锁标/遮罩了 */
+      const locked = isLocked(g) && !state.decUrls[g.id];
       const src = gallerySrc(g);
       const tagName = Vault() ? Vault().tag() : '加密';
       return '<figure class="pic reveal-item' + (locked ? ' is-locked' : '') + '" data-index="' + index + '">' +
@@ -605,7 +606,7 @@ window.__TAOBAI_VAULT__ = true;
     /* 加密图：先要口令、解密，再开灯箱；用户取消就什么都不做 */
     const item = list[state.lbIndex];
     if (item && isLocked(item) && !gallerySrc(item)) {
-      if (!await ensureUnlocked('这张作品已加密，请输入口令')) return;
+      if (!await ensureUnlocked(item.id, '这张作品单独加了密，输入它的口令才能查看')) return;
       try {
         await decryptGalleryItem(item);
       } catch (err) {
@@ -672,13 +673,13 @@ window.__TAOBAI_VAULT__ = true;
     return state.decUrls[item.id] || item.url || '';
   }
 
-  async function ensureUnlocked(reason) {
+  async function ensureUnlocked(id, reason) {
     const V = Vault();
     if (!V || !V.hasVault()) {
-      toast('这篇内容已加密，但站点缺少解锁数据（请重新发布）');
+      toast('这条内容已加密，但站点缺少解锁数据（请重新发布）');
       return false;
     }
-    return V.ensure(reason);
+    return V.ensure(id, reason);
   }
 
   function decryptGalleryItem(item) {
@@ -687,7 +688,7 @@ window.__TAOBAI_VAULT__ = true;
     return V.decryptBlob(item.id).then((blob) => {
       if (!blob) throw new Error('缺少密文');
       state.decUrls[item.id] = URL.createObjectURL(blob);
-      return V.decryptJson(item.id + ':meta');
+      return V.decryptMeta(item.id);
     }).then((meta) => {
       if (meta) {
         item.title = meta.title || item.title;
@@ -696,11 +697,12 @@ window.__TAOBAI_VAULT__ = true;
     });
   }
 
-  /* 输入口令后把整区加密作品一次性解出来（张数通常不多，解完缓存着） */
-  async function decryptLockedGallery() {
+  /* 把「已经拿到密钥的那几条」解出来。
+     逐条加密之后不再有「一开全开」，所以这里只认 isUnlocked 的条目。 */
+  async function decryptUnlockedGallery() {
     const V = Vault();
-    if (!V || !V.isUnlocked()) return;
-    const targets = state.gallery.filter((g) => isLocked(g) && !state.decUrls[g.id]);
+    if (!V || !V.unlockedCount()) return;
+    const targets = state.gallery.filter((g) => isLocked(g) && V.isUnlocked(g.id) && !state.decUrls[g.id]);
     for (let i = 0; i < targets.length; i += 1) {
       try {
         await decryptGalleryItem(targets[i]);
@@ -717,17 +719,21 @@ window.__TAOBAI_VAULT__ = true;
     const locked = state.gallery.filter(isLocked).length;
     if (!locked) { bar.hidden = true; return; }
 
-    const open = V.isUnlocked();
+    const opened = state.gallery.filter((g) => isLocked(g) && V.isUnlocked(g.id)).length;
     bar.hidden = false;
-    bar.classList.toggle('is-open', open);
-    const left = state.gallery.filter((g) => isLocked(g) && !gallerySrc(g)).length;
-    $('#vaultBarTitle').textContent = open ? '加密内容已解锁' : '加密栏板';
-    $('#vaultBarDesc').textContent = open
-      ? (left
-        ? '本区 ' + locked + ' 张加密作品，正在逐张解密…'
-        : '本区 ' + locked + ' 张加密作品已可查看。关闭标签页后会自动重新上锁。')
-      : '本区有 ' + locked + ' 张作品以「' + V.tag() + '」上锁，输入口令后方可查看。';
-    $('#vaultBarBtn').textContent = open ? '重新上锁' : '输入口令解锁';
+    bar.classList.toggle('is-open', opened > 0);
+
+    $('#vaultBarTitle').textContent = opened
+      ? '已解锁 ' + opened + ' / ' + locked + ' 张'
+      : '加密栏板';
+    $('#vaultBarDesc').textContent = opened
+      ? '本区 ' + locked + ' 张作品各自加密，已解开 ' + opened + ' 张。关闭标签页后会自动重新上锁。'
+      : '本区有 ' + locked + ' 张作品以「' + V.tag() + '」分别上锁 —— 点开哪一张，就输入哪一张的口令。';
+
+    /* 一条都没解锁时按钮没有意义（要逐条点开），藏起来省得误导 */
+    const btn = $('#vaultBarBtn');
+    btn.hidden = opened === 0;
+    if (opened) btn.textContent = '全部上锁';
   }
 
   function revokeDecrypted() {
@@ -744,15 +750,11 @@ window.__TAOBAI_VAULT__ = true;
     V.bindGate();
 
     const barBtn = $('#vaultBarBtn');
-    if (barBtn) barBtn.addEventListener('click', async () => {
-      if (V.isUnlocked()) { V.lock(); return; }
-      const ok = await ensureUnlocked('输入口令后即可查看观照集里的加密作品');
-      if (ok) toast('已解锁');
-    });
+    if (barBtn) barBtn.addEventListener('click', () => V.lock());
 
-    V.onChange((key) => {
-      if (key) {
-        decryptLockedGallery().then(renderAll).catch(() => renderAll());
+    V.onChange((keys) => {
+      if (keys && Object.keys(keys).length) {
+        decryptUnlockedGallery().then(renderAll).catch(() => renderAll());
       } else {
         revokeDecrypted();
         renderAll();
@@ -769,7 +771,7 @@ window.__TAOBAI_VAULT__ = true;
 
     /* 加密文章：正文与摘要都不在产物里，先解锁再取明文 */
     if (isLocked(article) && !article.dec) {
-      if (!await ensureUnlocked('这篇文章已加密，输入口令后即可阅读')) {
+      if (!await ensureUnlocked(id, '《' + (article.title || '这篇文章') + '》单独加了密，输入它的口令才能阅读')) {
         if (location.hash.indexOf('#/note/') === 0) {
           history.replaceState(null, '', location.pathname + location.search);
         }
@@ -1026,9 +1028,9 @@ window.__TAOBAI_VAULT__ = true;
       renderAll();
       renderHeroStats();
       Petals.init(siteRes.site.accent);
-      /* 会话里已经解过锁（比如同一标签页刷新），直接把这批图也解出来 */
-      if (vault && vault.isUnlocked()) {
-        decryptLockedGallery().then(renderAll).catch(() => {});
+      /* 会话里已经解过锁（比如同一标签页刷新），把已解锁的那几条也解出来 */
+      if (vault && vault.unlockedCount()) {
+        decryptUnlockedGallery().then(renderAll).catch(() => {});
       }
       handleHash();
     } catch (err) {

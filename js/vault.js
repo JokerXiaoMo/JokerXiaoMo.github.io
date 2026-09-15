@@ -7,7 +7,8 @@
  *   - PBKDF2 迭代次数写在 locked.json 的 kdf 里，前端照用，不写死
  *   - 每条先解一段固定明文（check）验口令，口令不对时不必去解一张 5 MB 的图
  *   - 图片密文是独立的 .bin，按需 fetch，不塞进 JSON 再 base64（那会多 33% 体积）
- *   - 解锁态存 sessionStorage，只存派生出来的密钥字节，关标签页即失效
+ *   - 解锁态只留在内存里，刻意不写 sessionStorage：
+ *     刷新页面即全部重新上锁，「上锁」不是个按钮，而是刷新本身
  *   - 非安全上下文（http://域名、http://局域网IP）下 crypto.subtle 根本不存在，
  *     这时按需加载 js/vault-pure.js 走纯 JS 实现，两套后端接口完全一致
  *   - 文件名是 locked.json 而不是 vault.json：后者在本地存的是口令本身，
@@ -18,7 +19,6 @@
 
   const DATA_URL = '/data/locked.json';
   const PURE_URL = '/js/vault-pure.js';
-  const STORAGE_KEY = 'tz-vault-keys';
   const CHECK_PLAIN = 'TAOBAI-VAULT-CHECK-V1';
 
   const state = {
@@ -40,23 +40,10 @@
     return out;
   }
 
-  function bytesToB64(buf) {
-    const bytes = new Uint8Array(buf);
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += 8192) {
-      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-    }
-    return btoa(bin);
-  }
-
-  /* 任何一条的 salt / KDF 参数变了（重新导出、改了某条口令），
-     所有已解锁状态一律作废 —— 不能留下用旧密钥解新密文的缝 */
-  const fingerprint = (cfg) => [
-    cfg.kdf && cfg.kdf.name,
-    cfg.kdf && cfg.kdf.hash,
-    cfg.kdf && cfg.kdf.iterations,
-    Object.keys(cfg.items || {}).sort().map((id) => id + ':' + cfg.items[id].salt).join(',')
-  ].join('|');
+  /* 说明：这里原本还有一份「解锁态持久化」——把派生出的密钥按 id 存进
+     sessionStorage，并用 kdf/salt 指纹做版本校验，好让同一标签页刷新后免重输。
+     用户明确要求「刷新页面立马全部上锁、重新输入口令」，于是持久化与指纹一并移除，
+     解锁态只在内存里，重新加载页面就没了。 */
 
   /* ---------- 解密后端：WebCrypto 优先，纯 JS 兜底 ---------- */
 
@@ -128,10 +115,11 @@
     state.loading = fetch(DATA_URL, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
-      .then(async (cfg) => {
+      .then((cfg) => {
+        /* 这里刻意不做任何「恢复上一次解锁状态」的动作：
+           每次打开/刷新页面都应该从全锁开始 */
         state.config = (cfg && cfg.items && Object.keys(cfg.items).length) ? cfg : null;
         state.loaded = true;
-        if (state.config) await restore();
         return state.config;
       });
     return state.loading;
@@ -189,49 +177,17 @@
     }
 
     state.keys[id] = key;
-    persist();
     emit();
     return { ok: true };
   }
 
-  /* 上锁：传 id 只锁那一条，不传则全部锁上 */
+  /* 上锁：传 id 只锁那一条，不传则全部锁上。
+     前台已经没有入口了 —— 上锁交给「刷新页面」本身；
+     这个函数留给内部与调试用。 */
   function lock(id) {
     if (id === undefined) state.keys = {};
     else delete state.keys[id];
-    persist();
     emit();
-  }
-
-  function persist() {
-    try {
-      const keys = {};
-      Object.keys(state.keys).forEach((kid) => { keys[kid] = bytesToB64(state.keys[kid]); });
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-        fp: fingerprint(state.config), keys
-      }));
-    } catch (err) { /* 存不了就算了，只是刷新后要重输 */ }
-  }
-
-  async function restore() {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
-      if (!saved || saved.fp !== fingerprint(state.config)) return;
-      const ids = Object.keys(saved.keys || {});
-      if (!ids.length) return;
-
-      const bd = await backend();
-      const next = {};
-      for (const id of ids) {
-        const entry = entryOf(id);
-        if (!entry) continue;
-        const key = b64ToBytes(saved.keys[id]);
-        try {
-          const plain = await bd.decrypt(key, b64ToBytes(entry.check.iv), b64ToBytes(entry.check.ct));
-          if (new TextDecoder().decode(plain) === CHECK_PLAIN) next[id] = key;
-        } catch (err) { /* 这一条失效了（多半是重新导出过），丢掉即可 */ }
-      }
-      state.keys = next;
-    } catch (err) { /* 忽略 */ }
   }
 
   /* ---------- 取内容 ---------- */

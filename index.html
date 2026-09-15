@@ -11,16 +11,47 @@
 <meta name="robots" content="index, follow">
 <title>桃白簪花自然科技工作室</title>
 <meta name="description" content="桃白簪花自然科技工作室 —— 取法自然，簪花入器。文字、工具与光影的收藏处。">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23C75B7A'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23FCF8F7'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=8d2f847c">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png?v=325040d3">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png?v=86ce8d48">
+
+<link rel="canonical" href="https://fanxiaofei.ccwu.cc/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="桃白簪花自然科技工作室">
+<meta property="og:title" content="桃白簪花自然科技工作室">
+<meta property="og:description" content="取法自然，簪花入器。文字、工具与光影的收藏处。">
+<meta property="og:url" content="https://fanxiaofei.ccwu.cc/">
+<meta property="og:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="桃白簪花的印章标志：红底金框，一株桃花枝与一颗寿桃">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="桃白簪花自然科技工作室">
+<meta name="twitter:description" content="取法自然，簪花入器。文字、工具与光影的收藏处。">
+<meta name="twitter:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png">
+
+<!-- 主题在首帧就定好。这段必须同步执行、且排在样式表之前：
+     否则选过深色模式的访客，每次打开都会先闪一下浅色底。
+     键名与 main.js 的 initTheme() 必须保持一致（tz-theme）。 -->
+<script>
+(function () { try { var t = localStorage.getItem('tz-theme'); if (t !== 'dark' && t !== 'light') { t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) { /* 隐私模式下读不了 localStorage，用默认浅色 */ } })();
+</script>
+
+<link rel="stylesheet" href="/css/style.css?v=00b78cab">
 </head>
 <body>
+
+<noscript>
+  <div style="margin:0;padding:14px 18px;background:#FBEAF0;color:#4B1528;font:14px/1.7 system-ui,-apple-system,sans-serif;text-align:center;border-bottom:1px solid #ED93B1">
+    这个站点的内容由 JavaScript 渲染 —— 请在浏览器设置里开启 JavaScript 后刷新页面。
+  </div>
+</noscript>
 
 <div class="scroll-progress" id="scrollProgress"></div>
 
 <header class="nav" id="siteNav">
-  <a class="nav-brand" href="#top">
-    <span class="brand-mark">桃</span>
+  <a class="nav-brand" href="#top" aria-label="桃白簪花自然科技工作室">
+    <img class="brand-mark" src="/assets/logo.png?v=2567afcd" alt="" width="32" height="32" decoding="async">
     <span class="brand-text" id="brandText">桃白簪花</span>
   </a>
   <nav class="nav-links" id="navLinks"></nav>
@@ -41,7 +72,7 @@
     <div class="nav-drawer-foot" id="navDrawerFoot"></div>
   </div>
   <div class="nav-search-bar" id="searchBar">
-    <input type="search" id="searchInput" placeholder="搜索文章、工具、图片…" autocomplete="off">
+    <input type="search" id="searchInput" placeholder="搜索文章、工具、图片…" aria-label="搜索文章、工具与图片" autocomplete="off">
     <span class="search-hint">回车确认 · ESC 关闭</span>
   </div>
 </header>
@@ -117,7 +148,6 @@
         <strong id="vaultBarTitle">加密栏板</strong>
         <span id="vaultBarDesc"></span>
       </div>
-      <button class="vault-bar-btn" id="vaultBarBtn" type="button">输入口令解锁</button>
     </div>
     <div class="masonry" id="galleryGrid"></div>
     <div class="empty" id="galleryEmpty" hidden>图集还是空的。</div>
@@ -213,7 +243,7 @@
   </form>
 </div>
 
-<div class="lightbox" id="lightbox" hidden>
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="图片查看">
   <div class="lightbox-backdrop" data-lb-close></div>
   <button class="lb-btn lb-prev" data-lb-prev type="button" aria-label="上一张">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 5l-7 7 7 7"/></svg>
@@ -234,10 +264,10 @@
   </figure>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="/js/markdown.js"></script>
-<script src="/js/vault.js"></script>
-<script src="/js/main.js"></script>
+<script src="/js/markdown.js?v=b9707259"></script>
+<script src="/js/vault.js?v=59ea4c0d"></script>
+<script src="/js/main.js?v=49afc402"></script>
 </body>
 </html>

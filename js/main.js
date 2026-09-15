@@ -25,8 +25,11 @@ window.__TAOBAI_VAULT__ = true;
     lbList: [],
     lbIndex: 0,
     sdId: '',
-    /* 加密：解锁后的图片 Blob URL（按 id 缓存），上锁或重新锁定时会 revoke 掉 */
+    /* 加密：解锁后的图片 Blob URL（按 id 缓存），刷新页面时随内存一起失效 */
     decUrls: {},
+    /* 正在解密中的条目 id —— 纯 JS 解一张 5 MB 的图要一秒多，
+       卡片上必须有可见状态，否则访客以为「点了没反应」 */
+    decrypting: {},
     /* 静态部署模式：没有后端，数据读 /data/*.json，写操作自动跳过。
        静态导出时（tools/export-static.js）会在产物里预置 window.__TAOBAI_STATIC__ = true，
        于是这里一开始就为 true，不会再去探测 /api/*（避免控制台出现一堆 404）。
@@ -174,14 +177,19 @@ window.__TAOBAI_VAULT__ = true;
   /* ---------------- 主题 ---------------- */
 
   function initTheme() {
+    const root = document.documentElement;
     const saved = localStorage.getItem('tz-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme = saved || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
+    root.setAttribute('data-theme', theme);
     $('#themeToggle').addEventListener('click', () => {
-      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('tz-theme', next);
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      /* 只在切换这 360ms 内开放颜色过渡，平时不留着 ——
+         常驻的话，所有 hover 与按下反馈都会被它拖慢。 */
+      root.classList.add('is-theme-switching');
+      window.setTimeout(() => root.classList.remove('is-theme-switching'), 360);
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('tz-theme', next); } catch (err) { /* 隐私模式读不了就算了 */ }
       Petals.recolor();
     });
   }
@@ -195,9 +203,15 @@ window.__TAOBAI_VAULT__ = true;
 
     function onScroll() {
       const y = window.scrollY;
+      const vh = window.innerHeight || 1;
       nav.classList.toggle('is-scrolled', y > 40);
-      const height = document.documentElement.scrollHeight - window.innerHeight;
+      const height = document.documentElement.scrollHeight - vh;
       progress.style.width = (height > 0 ? (y / height) * 100 : 0) + '%';
+
+      /* hero 随滚动轻微上移并淡出。幅度刻意压得很小 ——
+         再大一点就从「呼吸」变成「表演」了。 */
+      const hero = $('#hero');
+      if (hero) hero.style.setProperty('--scroll', String(Math.min(1, Math.max(0, y / vh))));
 
       let current = '';
       $$('main section[id]').forEach((section) => {
@@ -574,15 +588,21 @@ window.__TAOBAI_VAULT__ = true;
     box.innerHTML = list.map((g, index) => {
       /* 和文章卡片一样：解开并渲染出图之后就不要再挂锁标/遮罩了 */
       const locked = isLocked(g) && !state.decUrls[g.id];
+      const busy = Boolean(state.decrypting[g.id]);
       const src = gallerySrc(g);
       const tagName = Vault() ? Vault().tag() : '加密';
-      return '<figure class="pic reveal-item' + (locked ? ' is-locked' : '') + '" data-index="' + index + '">' +
+      /* 图块内没有别的可交互元素，所以整块做 role="button" 是安全的；
+         键盘可达性不能只靠鼠标点击。 */
+      const label = (g.title || (locked ? '加密作品' : '图片')) + (locked ? '，需要口令才能查看' : '，查看大图');
+      return '<figure class="pic reveal-item' + (locked ? ' is-locked' : '') + (busy ? ' is-decrypting' : '') + '"' +
+        ' data-index="' + index + '" tabindex="0" role="button" aria-label="' + esc(label) + '">' +
         (locked ? '<span class="lock-badge">' + LOCK_ICON + esc(tagName) + '</span>' : '') +
         (src
           ? '<img src="' + esc(src) + '" alt="' + esc(g.title || '') + '" loading="lazy">'
-          : '<div class="pic-lock">' + LOCK_ICON + '<span>加密作品 · 点击解锁</span></div>') +
+          : '<div class="pic-lock">' + LOCK_ICON + '<span>' + (busy ? '正在解密…' : '加密作品 · 点击解锁') + '</span></div>') +
         '<figcaption class="pic-overlay">' +
-          '<h3>' + esc(g.title || (locked ? '加密作品' : '')) + '</h3>' +
+          /* 锁态下不再重复写标题：锁位里已经写了「加密作品」（未解锁时 title 本来就是空的） */
+          (locked ? '' : '<h3>' + esc(g.title || '') + '</h3>') +
           (g.desc ? '<p>' + esc(g.desc) + '</p>' : '') +
           '<div class="pic-tags">' + (g.tags || []).slice(0, 3).map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
         '</figcaption>' +
@@ -590,8 +610,23 @@ window.__TAOBAI_VAULT__ = true;
     }).join('');
 
     $$('.pic', box).forEach((pic) => {
-      pic.addEventListener('click', () => { openLightbox(Number(pic.dataset.index)).catch(() => {}); });
+      const open = () => { openLightbox(Number(pic.dataset.index)).catch(() => {}); };
+      pic.addEventListener('click', open);
+      pic.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
     });
+
+    /* 图片淡入的兜底：缓存命中时图片在绑定事件之前就已经加载完，
+       不会再派发 load，所以必须先查 img.complete，否则它会一直停在全透明。
+       error 也一并标记 —— 破图占位总比一片空白好。 */
+    $$('.pic img', box).forEach((img) => {
+      if (img.complete && img.naturalWidth > 0) { img.classList.add('is-loaded'); return; }
+      const done = () => img.classList.add('is-loaded');
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    });
+
     observeReveal(box);
   }
 
@@ -682,19 +717,44 @@ window.__TAOBAI_VAULT__ = true;
     return V.ensure(id, reason);
   }
 
-  function decryptGalleryItem(item) {
+  /* 解密期间把对应卡片切成「正在解密…」
+     纯粹是体验：一张 5 MB 的图在纯 JS 下要一秒多，
+     没有任何可见状态时，访客只会觉得「点了没反应」。 */
+  function paintDecrypting() {
+    const box = $('#galleryGrid');
+    if (!box) return;
+    $$('.pic', box).forEach((pic) => {
+      const g = state.view.gallery[Number(pic.dataset.index)];
+      const busy = Boolean(g && state.decrypting[g.id]);
+      pic.classList.toggle('is-decrypting', busy);
+      const label = pic.querySelector('.pic-lock span');
+      if (label) label.textContent = busy ? '正在解密…' : '加密作品 · 点击解锁';
+    });
+  }
+
+  async function decryptGalleryItem(item) {
     const V = Vault();
-    if (!item || !isLocked(item) || state.decUrls[item.id]) return Promise.resolve();
-    return V.decryptBlob(item.id).then((blob) => {
+    if (!item || !isLocked(item) || state.decUrls[item.id]) return;
+    state.decrypting[item.id] = true;
+    paintDecrypting();
+    try {
+      /* 原图与标题说明是两段独立的密文，并行解可以省掉一半等待 */
+      const pair = await Promise.all([
+        V.decryptBlob(item.id),
+        V.decryptMeta(item.id).catch(() => null)
+      ]);
+      const blob = pair[0];
+      const meta = pair[1];
       if (!blob) throw new Error('缺少密文');
       state.decUrls[item.id] = URL.createObjectURL(blob);
-      return V.decryptMeta(item.id);
-    }).then((meta) => {
       if (meta) {
         item.title = meta.title || item.title;
         item.desc = meta.desc || item.desc;
       }
-    });
+    } finally {
+      delete state.decrypting[item.id];
+      paintDecrypting();
+    }
   }
 
   /* 把「已经拿到密钥的那几条」解出来。
@@ -726,14 +786,10 @@ window.__TAOBAI_VAULT__ = true;
     $('#vaultBarTitle').textContent = opened
       ? '已解锁 ' + opened + ' / ' + locked + ' 张'
       : '加密栏板';
+    /* 上锁不做成按钮 —— 刷新页面就全部重新上锁，机制只有这一个，才不会被问「上锁有什么意义」 */
     $('#vaultBarDesc').textContent = opened
-      ? '本区 ' + locked + ' 张作品各自加密，已解开 ' + opened + ' 张。关闭标签页后会自动重新上锁。'
+      ? '已解开 ' + opened + ' / ' + locked + ' 张，其余仍锁着。刷新页面即全部重新上锁。'
       : '本区有 ' + locked + ' 张作品以「' + V.tag() + '」分别上锁 —— 点开哪一张，就输入哪一张的口令。';
-
-    /* 一条都没解锁时按钮没有意义（要逐条点开），藏起来省得误导 */
-    const btn = $('#vaultBarBtn');
-    btn.hidden = opened === 0;
-    if (opened) btn.textContent = '全部上锁';
   }
 
   function revokeDecrypted() {
@@ -741,6 +797,7 @@ window.__TAOBAI_VAULT__ = true;
       try { URL.revokeObjectURL(state.decUrls[id]); } catch (err) { /* 忽略 */ }
     });
     state.decUrls = {};
+    state.decrypting = {};
     state.articles.forEach((a) => { delete a.dec; });
   }
 
@@ -749,8 +806,7 @@ window.__TAOBAI_VAULT__ = true;
     if (!V) return null;
     V.bindGate();
 
-    const barBtn = $('#vaultBarBtn');
-    if (barBtn) barBtn.addEventListener('click', () => V.lock());
+    /* 栏板上没有「上锁」按钮：解锁态只活在内存里，刷新页面自然全部上锁 */
 
     V.onChange((keys) => {
       if (keys && Object.keys(keys).length) {
@@ -1007,6 +1063,31 @@ window.__TAOBAI_VAULT__ = true;
     $('[data-lb-prev]').addEventListener('click', () => stepLightbox(-1));
     $('[data-lb-next]').addEventListener('click', () => stepLightbox(1));
 
+    /* 手机上的左右滑动切图：箭头按钮在窄屏上既小又容易点错 */
+    (function initLightboxSwipe() {
+      const el = $('#lightbox');
+      let sx = 0;
+      let sy = 0;
+      let tracking = false;
+      el.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) { tracking = false; return; }
+        tracking = true;
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+      }, { passive: true });
+      el.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        /* 横向位移要够大、且明显大于纵向，免得把「下滑关闭」误判成翻页 */
+        if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+          stepLightbox(dx < 0 ? 1 : -1);
+        }
+      }, { passive: true });
+    })();
+
     window.addEventListener('hashchange', handleHash);
 
     /* 加密板块：先挂事件、再读产物里的 vault.json。
@@ -1028,10 +1109,7 @@ window.__TAOBAI_VAULT__ = true;
       renderAll();
       renderHeroStats();
       Petals.init(siteRes.site.accent);
-      /* 会话里已经解过锁（比如同一标签页刷新），把已解锁的那几条也解出来 */
-      if (vault && vault.unlockedCount()) {
-        decryptUnlockedGallery().then(renderAll).catch(() => {});
-      }
+      /* 解锁态不跨刷新保留 —— 每次打开页面都从「全部上锁」开始 */
       handleHash();
     } catch (err) {
       toast('数据加载失败：' + err.message);

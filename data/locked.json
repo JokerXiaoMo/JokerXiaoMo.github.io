@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "enabled": true,
+  "tag": "加密",
+  "alg": "AES-256-GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000,
+    "salt": "6AvvbvTCt2nxtRdLB4Vp+w=="
+  },
+  "check": {
+    "iv": "v4R0jXaY505boV/k",
+    "ct": "foH3asvXHmzmu+9J7qfsaIhTgIEWeQxazwsEePKSObh3s3w/Xg=="
+  },
+  "counts": {
+    "articles": 1,
+    "gallery": 4
+  },
+  "items": {
+    "art_mu2ez4wf7a72b0": {
+      "t": "json",
+      "iv": "578/WU2m4sABR9jF",
+      "ct": "o5Bw8WutIrQChVGEqa1rzZXW2mahrO/ITtfZVJymOLtNvmAYF2+SpPgteM/8MA=="
+    },
+    "pic_mu0zxcmd10c180:meta": {
+      "t": "json",
+      "iv": "SAKDv+v4/rcPOjzq",
+      "ct": "lj9qFRox5P+xnT0GVTqkmUcoFFJ1yh+rbf/KTHGjBQLKK+rY23qB45ygCiEhHuvWh5HJj1Zup16KVHuI"
+    },
+    "pic_mu0zxcmd10c180:file": {
+      "t": "bin",
+      "mime": "image/png",
+      "ext": "png",
+      "iv": "d5E9nyPsZvRX4A0G",
+      "url": "/uploads/vault/pic_mu0zxcmd10c180.bin"
+    },
+    "pic_mu0zxeup5c0c61:meta": {
+      "t": "json",
+      "iv": "2mpFq7idQMOVf71C",
+      "ct": "wCdOJzfCqLP9h/aJld49o+u1alxFbG4CB+vF/G42yTBWZlZM4jg7jhPUZ6f+ibkoyu0WIxw6ne04pI1n"
+    },
+    "pic_mu0zxeup5c0c61:file": {
+      "t": "bin",
+      "mime": "image/png",
+      "ext": "png",
+      "iv": "m5IiDY1iQknHCYsW",
+      "url": "/uploads/vault/pic_mu0zxeup5c0c61.bin"
+    },
+    "pic_mu0zxhl09845c8:meta": {
+      "t": "json",
+      "iv": "RmcRw776Tou056u7",
+      "ct": "hbIVZqrztTuGPSVXrclUvsQ4sM4xnz1sktttdt/j1WwBVGaFiTz5qvjr789XKF3uCIRjyPiacPwwEV73gpkz"
+    },
+    "pic_mu0zxhl09845c8:file": {
+      "t": "bin",
+      "mime": "image/png",
+      "ext": "png",
+      "iv": "SeeFqnRZSnxW9pHq",
+      "url": "/uploads/vault/pic_mu0zxhl09845c8.bin"
+    },
+    "pic_mu0zxklr6a3c6a:meta": {
+      "t": "json",
+      "iv": "p7euCUr1cHrUyV0v",
+      "ct": "/Z67X4NQCGgKbRLWPz4Cz2d5S1mHEDTHuUK9h3oFYge7ZNIfhF4JGx2PNwAkI6X5pW3AZR2rpMuuAQoh"
+    },
+    "pic_mu0zxklr6a3c6a:file": {
+      "t": "bin",
+      "mime": "image/png",
+      "ext": "png",
+      "iv": "nLXt5GiAuDHaeHEM",
+      "url": "/uploads/vault/pic_mu0zxklr6a3c6a.bin"
+    }
+  }
+}

@@ -2,6 +2,9 @@
 /* 静态部署构建产物（由 tools/export-static.js 生成）：
    数据直接读 /data/*.json，不请求 /api/*（静态托管没有后端）。 */
 window.__TAOBAI_STATIC__ = true;
+/* 本站有加密内容：前端据此才去取 /data/locked.json。
+   没有加密内容时不注入这个标记，前端连请求都不发，省得控制台出现 404。 */
+window.__TAOBAI_VAULT__ = true;
 /* 桃白簪花自然科技工作室 · 主站交互 */
 (function () {
   'use strict';
@@ -22,6 +25,8 @@ window.__TAOBAI_STATIC__ = true;
     lbList: [],
     lbIndex: 0,
     sdId: '',
+    /* 加密：解锁后的图片 Blob URL（按 id 缓存），上锁或重新锁定时会 revoke 掉 */
+    decUrls: {},
     /* 静态部署模式：没有后端，数据读 /data/*.json，写操作自动跳过。
        静态导出时（tools/export-static.js）会在产物里预置 window.__TAOBAI_STATIC__ = true，
        于是这里一开始就为 true，不会再去探测 /api/*（避免控制台出现一堆 404）。
@@ -456,17 +461,22 @@ window.__TAOBAI_STATIC__ = true;
 
     $('#articlesEmpty').hidden = list.length > 0;
     box.innerHTML = list.map((a) => {
+      const locked = isLocked(a) && !a.dec;
       const thumb = a.cover
         ? '<img src="' + esc(a.cover) + '" alt="' + esc(a.title) + '" loading="lazy">'
         : '';
-      return '<article class="article-card reveal-item" data-id="' + esc(a.id) + '">' +
+      const excerpt = locked
+        ? '这篇以「加密」上锁，点开后输入口令才能阅读。'
+        : (a.summary || window.TZMarkdown.plain(a.content, 110));
+      return '<article class="article-card reveal-item' + (locked ? ' is-locked' : '') + '" data-id="' + esc(a.id) + '">' +
         (a.pinned ? '<span class="pin-badge">置顶</span>' : '') +
         (a.status === 'draft' ? '<span class="draft-badge">草稿</span>' : '') +
+        (locked ? '<span class="lock-badge">' + LOCK_ICON + (Vault() ? esc(Vault().tag()) : '加密') + '</span>' : '') +
         '<div class="article-thumb' + (thumb ? '' : ' is-empty') + '">' + thumb + '</div>' +
         '<div class="article-body">' +
           '<div class="article-tags">' + (a.tags || []).slice(0, 3).map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
           '<h3>' + esc(a.title) + '</h3>' +
-          '<p class="excerpt">' + esc(a.summary || window.TZMarkdown.plain(a.content, 110)) + '</p>' +
+          '<p class="excerpt">' + esc(excerpt) + '</p>' +
           '<div class="article-foot">' +
             '<span>' + esc(a.author || '桃白') + '</span>' +
             '<span>' + formatDate(a.publishedAt) + '</span>' +
@@ -561,30 +571,53 @@ window.__TAOBAI_STATIC__ = true;
     state.view.gallery = list;
 
     $('#galleryEmpty').hidden = list.length > 0;
-    box.innerHTML = list.map((g, index) =>
-      '<figure class="pic reveal-item" data-index="' + index + '">' +
-        '<img src="' + esc(g.url) + '" alt="' + esc(g.title) + '" loading="lazy">' +
+    box.innerHTML = list.map((g, index) => {
+      const locked = isLocked(g);
+      const src = gallerySrc(g);
+      const tagName = Vault() ? Vault().tag() : '加密';
+      return '<figure class="pic reveal-item' + (locked ? ' is-locked' : '') + '" data-index="' + index + '">' +
+        (locked ? '<span class="lock-badge">' + LOCK_ICON + esc(tagName) + '</span>' : '') +
+        (src
+          ? '<img src="' + esc(src) + '" alt="' + esc(g.title || '') + '" loading="lazy">'
+          : '<div class="pic-lock">' + LOCK_ICON + '<span>加密作品 · 点击解锁</span></div>') +
         '<figcaption class="pic-overlay">' +
-          '<h3>' + esc(g.title) + '</h3>' +
+          '<h3>' + esc(g.title || (locked ? '加密作品' : '')) + '</h3>' +
           (g.desc ? '<p>' + esc(g.desc) + '</p>' : '') +
           '<div class="pic-tags">' + (g.tags || []).slice(0, 3).map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
         '</figcaption>' +
-      '</figure>'
-    ).join('');
+      '</figure>';
+    }).join('');
 
     $$('.pic', box).forEach((pic) => {
-      pic.addEventListener('click', () => openLightbox(Number(pic.dataset.index)));
+      pic.addEventListener('click', () => { openLightbox(Number(pic.dataset.index)).catch(() => {}); });
     });
     observeReveal(box);
   }
 
   /* ---------------- 灯箱 ---------------- */
 
-  function openLightbox(index) {
+  async function openLightbox(index) {
     const list = state.view.gallery;
     if (!list.length) return;
     state.lbList = list;
     state.lbIndex = Math.max(0, Math.min(index, list.length - 1));
+
+    /* 加密图：先要口令、解密，再开灯箱；用户取消就什么都不做 */
+    const item = list[state.lbIndex];
+    if (item && isLocked(item) && !gallerySrc(item)) {
+      if (!await ensureUnlocked('这张作品已加密，请输入口令')) return;
+      try {
+        await decryptGalleryItem(item);
+      } catch (err) {
+        toast('解密失败：' + (err.message || '未知错误'));
+        return;
+      }
+      renderGallery();
+      state.lbList = state.view.gallery;
+      const back = state.view.gallery.findIndex((g) => g.id === item.id);
+      state.lbIndex = back < 0 ? 0 : back;
+    }
+
     const el = $('#lightbox');
     el.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -594,9 +627,17 @@ window.__TAOBAI_STATIC__ = true;
   function updateLightbox() {
     const item = state.lbList[state.lbIndex];
     if (!item) return;
-    $('#lbImage').src = item.url;
-    $('#lbImage').alt = item.title || '';
-    $('#lbTitle').textContent = item.title || '';
+    const src = gallerySrc(item);
+    const img = $('#lbImage');
+    if (src) {
+      img.hidden = false;
+      img.src = src;
+    } else {
+      img.hidden = true;
+      img.removeAttribute('src');
+    }
+    img.alt = item.title || '';
+    $('#lbTitle').textContent = item.title || (isLocked(item) ? '加密作品' : '');
     $('#lbDesc').textContent = item.desc || '';
     $('#lbCount').textContent = (state.lbIndex + 1) + ' / ' + state.lbList.length;
   }
@@ -613,11 +654,137 @@ window.__TAOBAI_STATIC__ = true;
     updateLightbox();
   }
 
+  /* ---------------- 加密（观照集栏板 / 文章正文） ----------------
+     静态产物里，打了「加密」标签的内容只留密文，字段会被导出脚本摘掉：
+       · 文章：summary / content 没了，只留标题和密码学指纹
+       · 图片：url / title / desc 没了，原图也从产物里清掉了
+     所以未解锁时页面上根本没有可看的东西，解锁后才向 TZVault 要明文。 */
+
+  const Vault = () => window.TZVault;
+
+  const LOCK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">' +
+    '<rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg>';
+
+  const isLocked = (item) => Boolean(item && item.locked);
+
+  /* 图库里某张图当前可用的地址：解锁过就用解出来的 Blob URL */
+  function gallerySrc(item) {
+    return state.decUrls[item.id] || item.url || '';
+  }
+
+  async function ensureUnlocked(reason) {
+    const V = Vault();
+    if (!V || !V.hasVault()) {
+      toast('这篇内容已加密，但站点缺少解锁数据（请重新发布）');
+      return false;
+    }
+    return V.ensure(reason);
+  }
+
+  function decryptGalleryItem(item) {
+    const V = Vault();
+    if (!item || !isLocked(item) || state.decUrls[item.id]) return Promise.resolve();
+    return V.decryptBlob(item.id).then((blob) => {
+      if (!blob) throw new Error('缺少密文');
+      state.decUrls[item.id] = URL.createObjectURL(blob);
+      return V.decryptJson(item.id + ':meta');
+    }).then((meta) => {
+      if (meta) {
+        item.title = meta.title || item.title;
+        item.desc = meta.desc || item.desc;
+      }
+    });
+  }
+
+  /* 输入口令后把整区加密作品一次性解出来（张数通常不多，解完缓存着） */
+  async function decryptLockedGallery() {
+    const V = Vault();
+    if (!V || !V.isUnlocked()) return;
+    const targets = state.gallery.filter((g) => isLocked(g) && !state.decUrls[g.id]);
+    for (let i = 0; i < targets.length; i += 1) {
+      try {
+        await decryptGalleryItem(targets[i]);
+      } catch (err) { /* 单张失败不拦其余 */ }
+    }
+  }
+
+  function renderVaultBar() {
+    const bar = $('#vaultBar');
+    if (!bar) return;
+    const V = Vault();
+    if (!V || !V.hasVault()) { bar.hidden = true; return; }
+
+    const locked = state.gallery.filter(isLocked).length;
+    if (!locked) { bar.hidden = true; return; }
+
+    const open = V.isUnlocked();
+    bar.hidden = false;
+    bar.classList.toggle('is-open', open);
+    const left = state.gallery.filter((g) => isLocked(g) && !gallerySrc(g)).length;
+    $('#vaultBarTitle').textContent = open ? '加密内容已解锁' : '加密栏板';
+    $('#vaultBarDesc').textContent = open
+      ? (left
+        ? '本区 ' + locked + ' 张加密作品，正在逐张解密…'
+        : '本区 ' + locked + ' 张加密作品已可查看。关闭标签页后会自动重新上锁。')
+      : '本区有 ' + locked + ' 张作品以「' + V.tag() + '」上锁，输入口令后方可查看。';
+    $('#vaultBarBtn').textContent = open ? '重新上锁' : '输入口令解锁';
+  }
+
+  function revokeDecrypted() {
+    Object.keys(state.decUrls).forEach((id) => {
+      try { URL.revokeObjectURL(state.decUrls[id]); } catch (err) { /* 忽略 */ }
+    });
+    state.decUrls = {};
+    state.articles.forEach((a) => { delete a.dec; });
+  }
+
+  function initVault() {
+    const V = Vault();
+    if (!V) return null;
+    V.bindGate();
+
+    const barBtn = $('#vaultBarBtn');
+    if (barBtn) barBtn.addEventListener('click', async () => {
+      if (V.isUnlocked()) { V.lock(); return; }
+      const ok = await ensureUnlocked('输入口令后即可查看观照集里的加密作品');
+      if (ok) toast('已解锁');
+    });
+
+    V.onChange((key) => {
+      if (key) {
+        decryptLockedGallery().then(renderAll).catch(() => renderAll());
+      } else {
+        revokeDecrypted();
+        renderAll();
+      }
+    });
+    return V;
+  }
+
   /* ---------------- 阅读浮层 ---------------- */
 
-  function openReader(id) {
+  async function openReader(id) {
     const article = state.articles.find((a) => a.id === id);
     if (!article) { toast('找不到这篇文章'); return; }
+
+    /* 加密文章：正文与摘要都不在产物里，先解锁再取明文 */
+    if (isLocked(article) && !article.dec) {
+      if (!await ensureUnlocked('这篇文章已加密，输入口令后即可阅读')) {
+        if (location.hash.indexOf('#/note/') === 0) {
+          history.replaceState(null, '', location.pathname + location.search);
+        }
+        return;
+      }
+      try {
+        article.dec = await Vault().decryptJson(id);
+      } catch (err) {
+        toast('解密失败：' + (err.message || '未知错误'));
+        return;
+      }
+      renderArticles();
+    }
+    const plain = article.dec || article;
+
     const reader = $('#reader');
     $('#readerTitle').textContent = article.title;
     $('#readerTags').innerHTML = (article.tags || []).map((t) => '<span class="tag">' + esc(t) + '</span>').join('');
@@ -625,7 +792,7 @@ window.__TAOBAI_STATIC__ = true;
       '<span>' + esc(article.author || '桃白') + '</span>' +
       '<span>' + formatDate(article.publishedAt) + '</span>' +
       '<span>' + (article.views || 0) + ' 次阅读</span>';
-    $('#readerBody').innerHTML = window.TZMarkdown.render(article.content) ||
+    $('#readerBody').innerHTML = window.TZMarkdown.render(plain.content || '') ||
       '<p>（这篇文章还没有正文）</p>';
     $('#readerFoot').innerHTML =
       '<p>感谢读到此处。若有想法，欢迎在<a href="#about">关于</a>页留言。</p>';
@@ -801,6 +968,7 @@ window.__TAOBAI_STATIC__ = true;
     renderShares();
     renderGalleryTags();
     renderGallery();
+    renderVaultBar();
     Petals.recolor();
   }
 
@@ -839,12 +1007,17 @@ window.__TAOBAI_STATIC__ = true;
 
     window.addEventListener('hashchange', handleHash);
 
+    /* 加密板块：先挂事件、再读产物里的 vault.json。
+       没有加密内容时 hasVault() 为 false，整条链路静默不打扰访客。 */
+    const vault = initVault();
+
     try {
       const [siteRes, articleRes, shareRes, galleryRes] = await Promise.all([
         loadData('/api/site', '/data/site.json', (d) => d && d.site && d.site.name),
         loadData('/api/articles', '/data/articles.json', (d) => d && Array.isArray(d.items)),
         loadData('/api/shares', '/data/shares.json', (d) => d && Array.isArray(d.items)),
-        loadData('/api/gallery', '/data/gallery.json', (d) => d && Array.isArray(d.items))
+        loadData('/api/gallery', '/data/gallery.json', (d) => d && Array.isArray(d.items)),
+        vault ? vault.load() : null
       ]);
       applySite(siteRes.site);
       state.articles = articleRes.items || [];
@@ -853,6 +1026,10 @@ window.__TAOBAI_STATIC__ = true;
       renderAll();
       renderHeroStats();
       Petals.init(siteRes.site.accent);
+      /* 会话里已经解过锁（比如同一标签页刷新），直接把这批图也解出来 */
+      if (vault && vault.isUnlocked()) {
+        decryptLockedGallery().then(renderAll).catch(() => {});
+      }
       handleHash();
     } catch (err) {
       toast('数据加载失败：' + err.message);

@@ -765,29 +765,36 @@ html[data-theme="dark"] .ico-moon { display: none; }
 .pic-stack:hover { transform: none; box-shadow: none; }
 .pic-stack:hover img { transform: none; }   /* 撤回 .pic:hover img 的整卡缩放 */
 
+/* 纸边、封面、角标的容器：纸边只活在这个容器背后（= 封面背后），
+   展开后面板那一截再也看不到纸边探出来 */
+.stack-cover-wrap { position: relative; }
+
+/* 纸边只在封面上沿探出细细两层，像一叠照片顶上露出的纸沿。
+   不旋转：一旋转四个角都会探出卡片 —— 收起态底角露两截黑影、
+   展开态横扫整卡，就是「丑」的来源。
+   纵向也完全不缩（只 scaleX 收两侧）：纵向一缩会把上沿探出量吃掉，
+   探出多少就完全由 translateY 说了算，好算也好调。 */
 .stack-deck {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  /* 这层自己必须有 opacity 过渡 —— 不然 .is-open 一挂上 opacity 就瞬间归零，
-     纸边那 420ms 的飞散全程在透明状态下播，等于没有。
-     淡出再延 0.14s：先让「散开」露出来，再淡走，收起时（不带延时）直接回来。 */
-  transition: opacity 0.3s var(--ease);
+  transition: opacity 0.22s var(--ease);
 }
-.pic-stack.is-open .stack-deck { transition: opacity 0.3s var(--ease) 0.14s; }
-/* 纸边用 --surface（白）而不是 --surface-2：页面底色本来就接近白，
-   同色系的浅灰在浅色模式下等于看不见，「这叠了几张」就传达不出去。 */
 .stack-deck i {
   position: absolute; inset: 0;
   border-radius: var(--r-md); background: var(--surface);
   border: 1px solid var(--line-2);
-  /* 纸边是 #FFF 压在 #FBF9F7 上，只靠一条淡描边等于看不见 —— 这点阴影是它唯一的存在感 */
-  box-shadow: 0 2px 7px -3px rgba(43, 41, 38, 0.28);
-  transition: transform var(--dur-3) var(--ease-ios), opacity 0.3s var(--ease);
+  /* 白压白，靠这条极淡的顶部分界和 1px 描边让人看出「下面还有纸」 */
+  box-shadow: 0 -1px 3px rgba(43, 41, 38, 0.07);
+  transition: transform var(--dur-3) var(--ease-ios), opacity 0.22s var(--ease);
 }
-.stack-deck i:nth-child(1) { transform: translateY(-9px) rotate(-1.2deg) scale(0.96); }
-.stack-deck i:nth-child(2) { transform: translateY(-17px) rotate(1.6deg) scale(0.915); }
+/* 只横向收窄（scaleX）：纵向一缩，缩掉的量会从上沿探出量里吃掉，
+   探出多少就完全由 translateY 说了算 */
+.stack-deck i:nth-child(1) { transform: translateY(-4px) scaleX(0.984); }
+.stack-deck i:nth-child(2) { transform: translateY(-8px) scaleX(0.962); }
+/* 展开：纸边贴着封面背后再往上缩一点、快速淡出。
+   不横扫、不飞散 —— 摊开的主角是面板，纸边悄悄退场就好。 */
 .pic-stack.is-open .stack-deck { opacity: 0; }
-.pic-stack.is-open .stack-deck i:nth-child(1) { transform: translate(16px, -34px) rotate(-5deg) scale(0.94); }
-.pic-stack.is-open .stack-deck i:nth-child(2) { transform: translate(-18px, -44px) rotate(5.5deg) scale(0.9); }
+.pic-stack.is-open .stack-deck i:nth-child(1) { transform: translateY(-10px) scaleX(0.975); }
+.pic-stack.is-open .stack-deck i:nth-child(2) { transform: translateY(-15px) scaleX(0.95); }
 
 .stack-cover {
   position: relative; z-index: 1; display: block; width: 100%;
@@ -803,8 +810,8 @@ html[data-theme="dark"] .ico-moon { display: none; }
 /* 深色模式下纸边那点暖色阴影压在 #151419 上几乎没有了，
    得换成纯黑阴影 + 更亮的描边，不然「这叠了几张」在深色模式里就丢了 */
 html[data-theme="dark"] .stack-deck i {
-  border-color: rgba(241, 238, 235, 0.28);
-  box-shadow: 0 2px 10px -3px rgba(0, 0, 0, 0.55);
+  border-color: rgba(241, 238, 235, 0.22);
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* 只是好看，交互全在封面那个 <button> 上，所以整层不吃指针事件 */
@@ -839,7 +846,18 @@ html[data-theme="dark"] .stack-deck i {
 .stack-panel-inner {
   padding: 16px 16px 14px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md);
+  /* 面板高度先动、内容稍缓浮现 —— 硬切出来的内容像「弹出来的一截」，
+     淡入 + 轻微上浮才像「摊开」。收起反向走快速隐去（0.16s），
+     不然内容比高度缩得慢，会看到它悬在半空。 */
+  opacity: 0; transform: translateY(-6px);
+  transition: opacity 0.16s var(--ease), transform 0.16s var(--ease);
 }
+.pic-stack.is-open .stack-panel-inner {
+  opacity: 1; transform: none;
+  transition: opacity 0.34s var(--ease-out) 0.08s, transform 0.4s var(--ease-out) 0.08s;
+}
+/* 静默恢复（解密重渲染）/ 减弱动效：内容直接是最终态，不再淡入 */
+.pic-stack.stack-no-anim .stack-panel-inner { transition: none; }
 .stack-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 13px; }
 /* 组名最长 60 字且可能不含空格（一长串 emoji 或 URL 式命名），
    不写这两行它会直接把面板撑破 */

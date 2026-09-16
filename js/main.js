@@ -596,6 +596,9 @@ window.__TAOBAI_VAULT__ = true;
     return '<figure class="pic pic-stack reveal-item' + (state.revealed.has(cover.id) ? ' is-in' : '') +
       (coverLocked ? ' stack-locked' : '') + '"' +
       ' data-stack="' + esc(block.key) + '" data-id="' + esc(cover.id) + '">' +
+      /* 纸边、封面、角标都收在 cover-wrap 里：纸边只活在封面背后，
+         展开面板时它不会再绕着面板探出来 */
+      '<div class="stack-cover-wrap">' +
       '<span class="stack-deck" aria-hidden="true"><i></i><i></i></span>' +
       '<button class="stack-cover" type="button" data-act="toggle" aria-expanded="false"' +
         ' aria-controls="' + esc(panelId) + '" data-label="' + esc(label) + '"' +
@@ -611,6 +614,7 @@ window.__TAOBAI_VAULT__ = true;
          不标 aria-hidden 的话读屏会把「N 张」「加密」重复念一遍 */
       '<span class="stack-count" aria-hidden="true">' + count + ' 张</span>' +
       (coverLocked ? '<span class="lock-badge" aria-hidden="true">' + LOCK_ICON + esc(tagName) + '</span>' : '') +
+      '</div>' +
       '<div class="stack-panel" id="' + esc(panelId) + '">' +
         '<div class="stack-panel-inner">' +
           '<div class="stack-head">' +
@@ -687,6 +691,9 @@ window.__TAOBAI_VAULT__ = true;
       cover.setAttribute('aria-label', cover.dataset.label + (on ? '，点击收起' : '，点击展开'));
     }
     card.classList.toggle('is-open', on);
+    /* 静默恢复（解密重渲染）与减弱动效时，面板内容的淡入也要一并关掉 ——
+       否则每解密一张，摊开着的面板就会整体闪一遍 */
+    card.classList.toggle('stack-no-anim', Boolean(silent) || REDUCED_MOTION());
     setFanning(card, on && !silent && !REDUCED_MOTION());
 
     if (silent || REDUCED_MOTION()) {

@@ -60,7 +60,7 @@
       "title": "shen-zhaoling-v2",
       "desc": "",
       "url": "/uploads/2026-09/shen-zhaoling-v2-mu42gruid2cd.webp",
-      "stack": "古风原创立绘",
+      "stack": "古风",
       "tags": [],
       "width": 1067,
       "height": 1600,
@@ -68,13 +68,13 @@
       "featured": false,
       "id": "pic_mu42grutd9b18e",
       "createdAt": "2026-09-16T12:18:06.725Z",
-      "updatedAt": "2026-09-16T12:18:30.641Z"
+      "updatedAt": "2026-09-16T12:23:02.907Z"
     },
     {
       "title": "su-feitang-v2",
       "desc": "",
       "url": "/uploads/2026-09/su-feitang-v2-mu42grulb10d.webp",
-      "stack": "古风原创立绘",
+      "stack": "古风",
       "tags": [],
       "width": 1067,
       "height": 1600,
@@ -82,27 +82,27 @@
       "featured": false,
       "id": "pic_mu42gruwc01840",
       "createdAt": "2026-09-16T12:18:06.728Z",
-      "updatedAt": "2026-09-16T12:18:30.652Z"
+      "updatedAt": "2026-09-16T12:23:02.911Z"
     },
     {
-      "title": "yun-qiwu-v2",
+      "title": "gu-yanqiu-v6",
       "desc": "",
-      "url": "/uploads/2026-09/yun-qiwu-v2-mu42gruncec8.webp",
-      "stack": "古风原创立绘",
+      "url": "/uploads/2026-09/gu-yanqiu-v6-mu42msjyae22.webp",
+      "stack": "古风",
       "tags": [],
       "width": 1067,
       "height": 1600,
-      "order": 7,
+      "order": 8,
       "featured": false,
-      "id": "pic_mu42grv059b140",
-      "createdAt": "2026-09-16T12:18:06.732Z",
-      "updatedAt": "2026-09-16T12:18:30.657Z"
+      "id": "pic_mu42msk2ab8fdc",
+      "createdAt": "2026-09-16T12:22:47.570Z",
+      "updatedAt": "2026-09-16T12:23:02.914Z"
     },
     {
       "title": "yun-qiwu-v6",
       "desc": "",
       "url": "/uploads/2026-09/yun-qiwu-v6-mu42gruo2fd2.webp",
-      "stack": "古风原创立绘",
+      "stack": "古风",
       "tags": [],
       "width": 1067,
       "height": 1600,
@@ -110,7 +110,7 @@
       "featured": false,
       "id": "pic_mu42grv3cc1931",
       "createdAt": "2026-09-16T12:18:06.735Z",
-      "updatedAt": "2026-09-16T12:18:30.660Z"
+      "updatedAt": "2026-09-16T12:23:02.917Z"
     }
   ],
   "total": 8

@@ -814,8 +814,18 @@ html[data-theme="dark"] .stack-deck i {
   box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* 只是好看，交互全在封面那个 <button> 上，所以整层不吃指针事件 */
-.pic-stack .pic-overlay { opacity: 0; pointer-events: none; }
+/* 只是好看，交互全在封面那个 <button> 上，所以整层不吃指针事件。
+   ⚠️ 下面这两条是被「底角黑三角」逼出来的，别再删掉：
+   ① z-index 必须压过封面（封面 z-index:1 是为了盖纸边）——
+      否则浮层垫在封面底下，封面圆角把内容裁掉后，四个圆角处露出的就是
+      浮层的颜色：顶部两个圆角处渐变是透明的看不出，底部两个圆角处正好是
+      渐变最深的 72% 黑 —— hover 时、移动端（浮层常显）底角就各出一块黑三角；
+   ② 浮层自身要带圆角 —— 卡片 overflow:visible（纸边要探出去），
+      没有圆角的浮层会把方角顶出卡片的圆角轮廓。 */
+.pic-stack .pic-overlay {
+  opacity: 0; pointer-events: none;
+  z-index: 2; border-radius: var(--r-md);
+}
 .pic-stack:hover .pic-overlay { opacity: 1; }
 .pic-stack.is-open .pic-overlay { opacity: 0; }
 .pic-stack .pic-overlay .ov-t { color: #fff; font-size: 14px; font-weight: 500; }

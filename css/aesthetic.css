@@ -10,35 +10,57 @@
 
 /* ---------- 0. 增强层变量 ---------- */
 :root {
-  --paper-line: rgba(43, 41, 38, 0.055);
-  --paper-line-2: rgba(199, 91, 122, 0.045);
+  /* 桃花背景：整屏淡粉底 + 四层粉色光斑（替代旧版网格 / 纸张纤维细纹） */
+  --petal-1: rgba(246, 196, 214, 0.62);
+  --petal-2: rgba(250, 216, 226, 0.70);
+  --petal-3: rgba(243, 188, 206, 0.50);
+  --petal-4: rgba(252, 226, 232, 0.62);
+  --petal-base-1: rgba(251, 228, 235, 0.62);
+  --petal-base-2: rgba(250, 219, 229, 0.42);
   --warm-glow: rgba(240, 188, 138, 0.20);
   --rose-glow: rgba(199, 91, 122, 0.15);
   --hairline: rgba(43, 41, 38, 0.09);
+  /* 章节装饰线（发丝线 / 居中短横线）与印章编号墨色：统一到桃花粉色系 */
+  --rule-line: rgba(199, 91, 122, 0.20);
+  --rule-line-soft: rgba(199, 91, 122, 0.34);
+  --folio-ink: #A03F63;
   --shadow-card: 0 1px 1px rgba(43, 41, 38, 0.03), 0 10px 26px -20px rgba(43, 41, 38, 0.34);
   --shadow-lift: 0 2px 5px rgba(43, 41, 38, 0.04), 0 26px 48px -26px rgba(199, 91, 122, 0.42);
 }
 
 html[data-theme="dark"] {
-  --paper-line: rgba(255, 255, 255, 0.032);
-  --paper-line-2: rgba(199, 91, 122, 0.05);
+  --petal-1: rgba(199, 91, 122, 0.15);
+  --petal-2: rgba(229, 139, 168, 0.10);
+  --petal-3: rgba(168, 68, 106, 0.18);
+  --petal-4: rgba(199, 91, 122, 0.11);
+  --petal-base-1: rgba(199, 91, 122, 0.075);
+  --petal-base-2: rgba(168, 68, 106, 0.05);
   --warm-glow: rgba(240, 188, 138, 0.09);
   --rose-glow: rgba(199, 91, 122, 0.22);
   --hairline: rgba(255, 255, 255, 0.08);
+  /* 暗色下同一组装饰线 / 印章编号，换成低亮度粉，避免发灰 */
+  --rule-line: rgba(229, 139, 168, 0.22);
+  --rule-line-soft: rgba(229, 139, 168, 0.34);
+  --folio-ink: #E58BA8;
   --shadow-card: 0 1px 1px rgba(0, 0, 0, 0.30), 0 14px 30px -22px rgba(0, 0, 0, 0.72);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.34), 0 30px 54px -28px rgba(199, 91, 122, 0.55);
 }
 
-/* ---------- 1. 纸张底纹与「窗光」 ----------
-   两层极淡的斜向细纹 + 两道暖色径向光，叠在底色上。
-   屏幕上看不出纹理本身，只会觉得底色「不空」。 */
+/* ---------- 1. 桃花渐变底与「窗光」 ----------
+   整屏一层极淡的粉色斜向底 + 四层粉色径向光斑叠出「桃花」氛围，
+   再压两道暖色窗光；全部为柔和渐变，不含任何重复纹理线
+   （旧版网格 / 纤维细纹已移除）。
+   暗色模式下同一组变量换成低亮度粉，避免发灰、保住文字对比度。 */
 body {
   background-image:
+    radial-gradient(58% 46% at 4% 2%, var(--petal-1), transparent 70%),
+    radial-gradient(64% 54% at 100% 20%, var(--petal-2), transparent 72%),
+    radial-gradient(72% 52% at 14% 100%, var(--petal-3), transparent 74%),
+    radial-gradient(120% 62% at 50% 116%, var(--petal-4), transparent 70%),
     radial-gradient(140% 70% at 50% -12%, var(--warm-glow), transparent 62%),
     radial-gradient(60% 42% at 106% 6%, var(--rose-glow), transparent 72%),
-    repeating-linear-gradient(112deg, var(--paper-line) 0 1px, transparent 1px 8px),
-    repeating-linear-gradient(22deg, var(--paper-line-2) 0 1px, transparent 1px 13px);
-  background-repeat: no-repeat, no-repeat, repeat, repeat;
+    linear-gradient(165deg, var(--petal-base-1), var(--petal-base-2));
+  background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
@@ -167,6 +189,7 @@ html {
   position: relative;
 }
 
+/* 章节之间的居中短横线：原来的灰发丝线在粉底上发灰，改为粉色渐变 */
 .section + .section::before {
   content: '';
   position: absolute;
@@ -175,7 +198,7 @@ html {
   transform: translateX(-50%);
   width: min(320px, 58%);
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--hairline), transparent);
+  background: linear-gradient(90deg, transparent, var(--rule-line-soft), transparent);
   pointer-events: none;
 }
 
@@ -192,10 +215,41 @@ html[data-theme="dark"] .section-title h2 {
   letter-spacing: 0.22em;
 }
 
-/* 章节编号（01/02/03）压成印章色 */
+/* 板块头部的发丝线与 .section-alt 的上下边界线：由灰转粉，与背景同色系 */
+.section-head,
+.about-wrap[data-no] {
+  border-top-color: var(--rule-line);
+}
+
+.section-alt {
+  border-top-color: var(--rule-line);
+  border-bottom-color: var(--rule-line);
+}
+
+/* 章节编号（01/02/03）压成印章色。
+   style.css 里编号是靠 background: var(--bg) 的米白方块遮住发丝线；
+   背景换成桃花渐变后，那块米白就在粉底上「跳」了出来。
+   这里改成「var(--bg) 底 + 与第 1 节 body 完全同源的渐变」，
+   并配 background-attachment: fixed —— fixed 背景以视口为定位区，
+   伪元素与 body 渲染的就是同一张渐变图，叠在同一层底色上，
+   于是遮罩和页面背景像素级一致（无痕），同时保持不透明（能盖住发丝线）。
+   ⚠ 下方渐变必须与第 1 节 body 的 background-image 保持一致。
+   （.section-alt 里的编号仍由 style.css 的 background: var(--bg-alt) 接管，
+     与所在区块的米灰底同色，同样无痕。） */
 .section-head[data-no]::before,
 .about-wrap[data-no]::before {
-  color: var(--accent);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(58% 46% at 4% 2%, var(--petal-1), transparent 70%),
+    radial-gradient(64% 54% at 100% 20%, var(--petal-2), transparent 72%),
+    radial-gradient(72% 52% at 14% 100%, var(--petal-3), transparent 74%),
+    radial-gradient(120% 62% at 50% 116%, var(--petal-4), transparent 70%),
+    radial-gradient(140% 70% at 50% -12%, var(--warm-glow), transparent 62%),
+    radial-gradient(60% 42% at 106% 6%, var(--rose-glow), transparent 72%),
+    linear-gradient(165deg, var(--petal-base-1), var(--petal-base-2));
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--folio-ink);
 }
 
 /* ---------- 6. 卡片与网格 ---------- */
@@ -349,5 +403,13 @@ html[data-theme="dark"] .pic {
 
   body {
     background: #fff;
+  }
+
+  /* 打印时 body 背景被置白，渐变遮罩拿不到背景图，编号会与发丝线重叠；
+     这里回落为纯白遮罩，保证纸质稿上依然干净。 */
+  .section-head[data-no]::before,
+  .about-wrap[data-no]::before {
+    background-image: none;
+    background-color: #fff;
   }
 }

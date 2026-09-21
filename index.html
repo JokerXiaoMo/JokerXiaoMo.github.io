@@ -37,7 +37,10 @@
 (function () { try { var t = localStorage.getItem('tz-theme'); if (t !== 'dark' && t !== 'light') { t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) { /* 隐私模式下读不了 localStorage，用默认浅色 */ } })();
 </script>
 
-<link rel="stylesheet" href="/css/style.css?v=0e07c18f">
+<link rel="preload" as="image" href="/assets/logo.webp" type="image/webp">
+<link rel="stylesheet" href="/css/style.css?v=b57214d1">
+<!-- 视觉升级层：只做增强与覆盖，不动 style.css 里的既有规则 -->
+<link rel="stylesheet" href="/css/aesthetic.css?v=2be052b9">
 </head>
 <body>
 
@@ -187,21 +190,10 @@
       </div>
       <div class="about-body" id="aboutBody"></div>
       <div class="about-meta" id="aboutMeta"></div>
-      <div class="about-contact">
-        <h3>留一句话</h3>
-        <p class="muted">不用注册，写下想说的就行。</p>
-        <form class="contact-form" id="contactForm">
-          <input type="text" name="name" placeholder="称呼" maxlength="60" required>
-          <input type="text" name="contact" placeholder="联系方式（可不填）" maxlength="120">
-          <textarea name="content" rows="4" placeholder="想说的话…" maxlength="1000" required></textarea>
-          <div class="form-foot">
-            <button class="btn btn-primary" type="submit">寄出</button>
-            <span class="form-msg" id="contactMsg"></span>
-          </div>
-        </form>
-        <!-- 纯静态托管没有后端时，表单提交了也没人收。与其放一个假按钮，
-             不如直接把邮箱摆出来（main.js 会按 messageEndpoint 是否配置来二选一显示）。 -->
-        <p class="contact-mail" id="contactMail" hidden></p>
+      <!-- 留言模块已下线：这里只留一个邮箱入口，不再摆表单 -->
+      <div class="about-contact" id="aboutContact">
+        <h3>联系</h3>
+        <p class="contact-mail" id="contactMail"></p>
       </div>
     </div>
   </section>
@@ -301,9 +293,10 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="/js/markdown.js?v=b9707259"></script>
-<script src="/js/vault.js?v=e14c59ea"></script>
-<script src="/js/tree.js?v=45c0fa9a"></script>
-<script src="/js/main.js?v=e13ae027"></script>
+<!-- defer：解析完 HTML 再按顺序执行，首屏不再被脚本阻塞 -->
+<script src="/js/markdown.js?v=b9707259" defer></script>
+<script src="/js/vault.js?v=e14c59ea" defer></script>
+<script src="/js/tree.js?v=45c0fa9a" defer></script>
+<script src="/js/main.js?v=2864b989" defer></script>
 </body>
 </html>

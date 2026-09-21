@@ -1,0 +1,353 @@
+/* ============================================================
+   桃白簪花 · 视觉增强层（aesthetic.css）
+   ------------------------------------------------------------
+   定位：在 style.css 之上「再加一层」，负责纸张质感、光影、
+   层次与动效细节。三条纪律：
+   ① 不重写布局（不动 padding / margin / 栅格），只加视觉表现；
+   ② 全部覆盖集中在本文档，style.css 保持原样，随时可以整层摘掉；
+   ③ 动效统一复用 style.css 里的 --ease / --dur-* token，不另起一套。
+   ============================================================ */
+
+/* ---------- 0. 增强层变量 ---------- */
+:root {
+  --paper-line: rgba(43, 41, 38, 0.055);
+  --paper-line-2: rgba(199, 91, 122, 0.045);
+  --warm-glow: rgba(240, 188, 138, 0.20);
+  --rose-glow: rgba(199, 91, 122, 0.15);
+  --hairline: rgba(43, 41, 38, 0.09);
+  --shadow-card: 0 1px 1px rgba(43, 41, 38, 0.03), 0 10px 26px -20px rgba(43, 41, 38, 0.34);
+  --shadow-lift: 0 2px 5px rgba(43, 41, 38, 0.04), 0 26px 48px -26px rgba(199, 91, 122, 0.42);
+}
+
+html[data-theme="dark"] {
+  --paper-line: rgba(255, 255, 255, 0.032);
+  --paper-line-2: rgba(199, 91, 122, 0.05);
+  --warm-glow: rgba(240, 188, 138, 0.09);
+  --rose-glow: rgba(199, 91, 122, 0.22);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --shadow-card: 0 1px 1px rgba(0, 0, 0, 0.30), 0 14px 30px -22px rgba(0, 0, 0, 0.72);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.34), 0 30px 54px -28px rgba(199, 91, 122, 0.55);
+}
+
+/* ---------- 1. 纸张底纹与「窗光」 ----------
+   两层极淡的斜向细纹 + 两道暖色径向光，叠在底色上。
+   屏幕上看不出纹理本身，只会觉得底色「不空」。 */
+body {
+  background-image:
+    radial-gradient(140% 70% at 50% -12%, var(--warm-glow), transparent 62%),
+    radial-gradient(60% 42% at 106% 6%, var(--rose-glow), transparent 72%),
+    repeating-linear-gradient(112deg, var(--paper-line) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(22deg, var(--paper-line-2) 0 1px, transparent 1px 13px);
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+  background-attachment: fixed;
+}
+
+/* ---------- 2. 选区与滚动条 ---------- */
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(199, 91, 122, 0.45) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(199, 91, 122, 0.55), rgba(168, 68, 106, 0.42));
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(199, 91, 122, 0.82), rgba(168, 68, 106, 0.66));
+  background-clip: content-box;
+}
+
+/* 顶部阅读进度：一条桃花色的光带 */
+.scroll-progress {
+  background: linear-gradient(90deg, var(--accent), #E58BA6 55%, var(--accent-2));
+  box-shadow: 0 0 14px rgba(199, 91, 122, 0.5);
+}
+
+/* ---------- 3. 顶栏 ---------- */
+.nav {
+  backdrop-filter: saturate(1.5) blur(16px);
+  -webkit-backdrop-filter: saturate(1.5) blur(16px);
+}
+
+.nav.is-scrolled {
+  box-shadow: 0 1px 0 var(--hairline), 0 20px 42px -36px rgba(43, 41, 38, 0.6);
+}
+
+.nav-links a {
+  letter-spacing: 0.04em;
+}
+
+.nav-brand .brand-mark {
+  transition: transform var(--dur-2) var(--ease-spring), box-shadow var(--dur-2) var(--ease);
+}
+
+.nav-brand:hover .brand-mark {
+  transform: rotate(-3deg) scale(1.04);
+  box-shadow: 0 12px 24px -14px rgba(199, 91, 122, 0.9);
+}
+
+/* ---------- 4. 首屏 ---------- */
+.hero {
+  background-image: radial-gradient(72% 56% at 20% 16%, var(--rose-glow), transparent 68%);
+}
+
+.hero-glow {
+  background:
+    radial-gradient(38% 46% at 30% 34%, rgba(244, 191, 208, 0.55), transparent 70%),
+    radial-gradient(42% 42% at 72% 26%, rgba(199, 91, 122, 0.26), transparent 72%),
+    radial-gradient(62% 52% at 50% 100%, rgba(240, 188, 138, 0.22), transparent 70%);
+  filter: blur(18px) saturate(1.12);
+  animation: tz-breathe 15s var(--ease) infinite;
+}
+
+@keyframes tz-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.88; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+
+.hero-eyebrow {
+  color: var(--accent);
+  letter-spacing: 0.46em;
+}
+
+/* 标题做一层极浅的竖向渐变：上半取墨色、下半转向桃花色 */
+.hero-title {
+  background-image: linear-gradient(158deg, var(--text) 22%, var(--accent) 76%, #A8446A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--accent-2);
+  filter: drop-shadow(0 18px 34px rgba(199, 91, 122, 0.18));
+}
+
+.hero-title span {
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-sub {
+  letter-spacing: 0.06em;
+}
+
+.hero-intro {
+  text-wrap: pretty;
+}
+
+.hero-actions .btn-primary {
+  box-shadow: 0 18px 38px -20px rgba(199, 91, 122, 0.95);
+}
+
+.hero-index-item {
+  transition: transform var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease);
+}
+
+.hero-index-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+/* ---------- 5. 章节标题与章节之间的细线 ---------- */
+.section {
+  position: relative;
+}
+
+.section + .section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, 58%);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hairline), transparent);
+  pointer-events: none;
+}
+
+.section-title h2 {
+  letter-spacing: 0.1em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+html[data-theme="dark"] .section-title h2 {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.42);
+}
+
+.section-en {
+  letter-spacing: 0.22em;
+}
+
+/* 章节编号（01/02/03）压成印章色 */
+.section-head[data-no]::before,
+.about-wrap[data-no]::before {
+  color: var(--accent);
+}
+
+/* ---------- 6. 卡片与网格 ---------- */
+.article-card,
+.share-card,
+.pic,
+.about-meta div {
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out),
+              border-color var(--dur-2) var(--ease);
+}
+
+.article-card:hover,
+.share-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+}
+
+.pic:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+
+.article-thumb img,
+.pic img {
+  transition: transform var(--dur-4) var(--ease-out), filter var(--dur-3) var(--ease);
+}
+
+.article-card:hover .article-thumb img,
+.pic:hover img {
+  transform: scale(1.045);
+  filter: saturate(1.06);
+}
+
+/* ---------- 7. 按钮 / 筛选片 / 标签 ---------- */
+.btn {
+  letter-spacing: 0.06em;
+}
+
+.btn-primary {
+  background-image: linear-gradient(150deg, var(--accent) 0%, #A8446A 100%);
+  box-shadow: 0 12px 26px -16px rgba(199, 91, 122, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 18px 34px -18px rgba(199, 91, 122, 1), inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chip,
+.seg-btn {
+  letter-spacing: 0.04em;
+}
+
+.chip.is-active,
+.seg-btn.is-active {
+  box-shadow: 0 8px 18px -12px rgba(199, 91, 122, 0.9);
+}
+
+.tag {
+  letter-spacing: 0.03em;
+}
+
+/* ---------- 8. 关于区与页脚 ---------- */
+.about-body p {
+  letter-spacing: 0.01em;
+  text-wrap: pretty;
+}
+
+.footer {
+  position: relative;
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 76%);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hairline) 18%,
+              rgba(199, 91, 122, 0.26) 50%, var(--hairline) 82%, transparent);
+  pointer-events: none;
+}
+
+.footer-social a {
+  transition: color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease-out);
+}
+
+.footer-social a:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------- 9. 浮层（阅读器 / 灯箱 / 详情） ---------- */
+#reader,
+#lightbox,
+#shareDetail {
+  backdrop-filter: saturate(1.2) blur(10px);
+  -webkit-backdrop-filter: saturate(1.2) blur(10px);
+}
+
+/* ---------- 10. 空状态与提示 ---------- */
+.empty {
+  letter-spacing: 0.06em;
+}
+
+.toast {
+  box-shadow: 0 20px 44px -22px rgba(43, 41, 38, 0.6);
+}
+
+/* ---------- 11. 暗色微调 ---------- */
+html[data-theme="dark"] .article-card,
+html[data-theme="dark"] .share-card,
+html[data-theme="dark"] .pic {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+/* ---------- 12. 尊重「减少动态效果」 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow { animation: none; }
+
+  .article-card:hover,
+  .share-card:hover,
+  .pic:hover,
+  .hero-index-item:hover,
+  .footer-social a:hover {
+    transform: none;
+  }
+
+  .article-card:hover .article-thumb img,
+  .pic:hover img {
+    transform: none;
+  }
+}
+
+/* ---------- 13. 打印 ---------- */
+@media print {
+  .nav,
+  .hero-glow,
+  .hero-scroll,
+  .scroll-progress,
+  .footer-social,
+  .toast {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+}

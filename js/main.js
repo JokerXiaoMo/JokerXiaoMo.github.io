@@ -1291,69 +1291,17 @@ window.__TAOBAI_VAULT__ = true;
     $$('[data-sd-close]').forEach((el) => el.addEventListener('click', closeShareDetail));
   }
 
-  /* ---------------- 留言 ----------------
-     纯静态托管没有后端。配置了 site.messageEndpoint 就把表单提交过去；
-     没配就**不摆表单**，直接把邮箱亮出来 —— 一个点了没人收的假表单，
-     比干脆没有表单更劝退，访客会以为网站坏了。 */
+  /* ---------------- 联系 ----------------
+     留言模块已整体下线（前台表单、后台面板、/api/messages 一并移除）。
+     这里只负责把邮箱摆出来，访客想说话直接写邮件。 */
   function renderContact() {
-    const form = $('#contactForm');
     const mailBox = $('#contactMail');
-    if (!form || !mailBox) return;
-    const endpoint = (state.site && state.site.messageEndpoint) || '';
+    if (!mailBox) return;
     const mail = (state.site && state.site.email) || '';
-    const usable = !state.staticMode || Boolean(endpoint);
-    form.hidden = !usable;
-    mailBox.hidden = usable || !mail;
-    if (!usable && mail) {
-      mailBox.innerHTML = '本站是纯静态托管，没接后端，表单寄不出去。有事直接发邮件：' +
-        '<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>';
+    mailBox.hidden = !mail;
+    if (mail) {
+      mailBox.innerHTML = '有事直接发邮件：<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>';
     }
-  }
-
-  function initContact() {
-    const form = $('#contactForm');
-    if (!form) return;
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = $('#contactMsg');
-      const data = Object.fromEntries(new FormData(form).entries());
-      if (!data.content || !String(data.content).trim()) return;
-
-      if (state.staticMode) {
-        const endpoint = (state.site && state.site.messageEndpoint) || '';
-        /* 没有收件端点时表单本来就不显示，这里只是兜底，别再给一句没用的提示 */
-        if (!endpoint) return;
-        try {
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify(data)
-          });
-          if (!res.ok) throw new Error('发送失败，请稍后再试');
-          form.reset();
-          msg.textContent = '已经收到了，谢谢。';
-          toast('留言已寄出');
-          setTimeout(() => { msg.textContent = ''; }, 5000);
-        } catch (err) {
-          msg.textContent = err.message;
-        }
-        return;
-      }
-
-      try {
-        await api('/api/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        form.reset();
-        msg.textContent = '已经收到了，谢谢。';
-        toast('留言已寄出');
-        setTimeout(() => { msg.textContent = ''; }, 5000);
-      } catch (err) {
-        msg.textContent = err.message;
-      }
-    });
   }
 
   /* ---------------- 路由 ---------------- */
@@ -1407,7 +1355,6 @@ window.__TAOBAI_VAULT__ = true;
     initReveal();
     initReader();
     initShareDetail();
-    initContact();
 
     $('#shareFilter').addEventListener('click', (e) => {
       const btn = e.target.closest('.seg-btn');

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, follow">
+<title>这一页不在树上 · 桃白簪花自然科技工作室</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=8d2f847c">
+<script>
+(function () { try { var t = localStorage.getItem('tz-theme'); if (t !== 'dark' && t !== 'light') { t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) {} })();
+</script>
+<style>
+  :root {
+    --bg: #FBF9F7; --surface: #FFFFFF; --text: #2B2926; --text-2: #6E665F;
+    --text-3: #A29A92; --line: rgba(43, 41, 38, 0.10); --accent: #C75B7A;
+    --accent-soft: rgba(199, 91, 122, 0.09);
+  }
+  html[data-theme="dark"] {
+    --bg: #151419; --surface: #1F1E25; --text: #F1EEEB; --text-2: #A9A3A0;
+    --text-3: #6F6A72; --line: rgba(255, 255, 255, 0.10); --accent: #E58BA6;
+    --accent-soft: rgba(229, 139, 166, 0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(240, 190, 140, 0.18), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { text-align: center; padding: 48px 24px; max-width: 520px; }
+  .mark {
+    width: 56px; height: 56px; margin: 0 auto 28px; border-radius: 16px;
+    display: grid; place-items: center; font-size: 26px;
+    background: var(--surface); border: 1px solid var(--line);
+    box-shadow: 0 18px 40px -24px rgba(43, 41, 38, 0.5);
+    color: var(--accent);
+  }
+  .code { font-size: 13px; letter-spacing: 0.42em; color: var(--text-3); margin: 0 0 14px; }
+  h1 { font-size: clamp(24px, 20px + 1.4vw, 34px); margin: 0 0 16px; font-weight: 500; letter-spacing: 0.06em; }
+  p { color: var(--text-2); line-height: 1.9; margin: 0 0 32px; font-size: 15px; }
+  .acts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  a.btn {
+    display: inline-block; padding: 12px 26px; border-radius: 10px; font-size: 14px;
+    text-decoration: none; transition: transform .26s cubic-bezier(.22,.7,.24,1), box-shadow .26s cubic-bezier(.22,.7,.24,1);
+  }
+  a.primary {
+    background: linear-gradient(150deg, var(--accent), #A8446A); color: #fff;
+    box-shadow: 0 14px 30px -16px rgba(199, 91, 122, 0.9);
+  }
+  a.ghost { border: 1px solid var(--line); color: var(--text); background: var(--surface); }
+  a.btn:hover { transform: translateY(-2px); }
+  a.primary:hover { box-shadow: 0 20px 36px -18px rgba(199, 91, 122, 1); }
+  .foot { margin-top: 40px; font-size: 12.5px; color: var(--text-3); letter-spacing: 0.08em; }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="mark" aria-hidden="true">花</div>
+    <p class="code">404</p>
+    <h1>这一页不在树上</h1>
+    <p>你要找的地址可能已经改了名，或者从没在这儿开过花。回首页看看别的吧。</p>
+    <div class="acts">
+      <a class="btn primary" href="/">回首页</a>
+      <a class="btn ghost" href="/#articles">读文章</a>
+    </div>
+    <p class="foot">桃白簪花自然科技工作室</p>
+  </main>
+</body>
+</html>

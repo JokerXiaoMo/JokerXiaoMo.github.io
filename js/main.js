@@ -392,9 +392,14 @@ window.__TAOBAI_VAULT__ = true;
     const box = $('#articlesList');
     let list = state.articles.filter(matchKeyword);
     if (state.articleTag !== 'all') list = list.filter((a) => (a.tags || []).indexOf(state.articleTag) !== -1);
+    /* 顺序：置顶优先，其次是后台拖出来的顺序（order）；
+       没排过序的历史数据 order 为 0，回落到按发布日期倒序 —— 和后台同一套规则，
+       否则「后台拖好了，前台又变了」。 */
+    const rank = (item) => (Number(item.order) > 0 ? Number(item.order) : Number.MAX_SAFE_INTEGER);
     list = list.slice().sort((a, b) => {
       if (Boolean(b.pinned) !== Boolean(a.pinned)) return b.pinned ? 1 : -1;
-      return String(b.publishedAt || '').localeCompare(String(a.publishedAt || ''));
+      return rank(a) - rank(b) ||
+        String(b.publishedAt || '').localeCompare(String(a.publishedAt || ''));
     });
     state.view.articles = list;
 
@@ -776,7 +781,10 @@ window.__TAOBAI_VAULT__ = true;
 
   function renderGallery() {
     const box = $('#galleryGrid');
-    const sorted = state.gallery.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+    /* 与后台同一套规则：order 1 起连续编号，0 / 缺失（没排过的历史数据）排在最后 */
+    const gRank = (item) => (Number(item.order) > 0 ? Number(item.order) : Number.MAX_SAFE_INTEGER);
+    const sorted = state.gallery.slice().sort((a, b) =>
+      gRank(a) - gRank(b) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
     /* 关键词与标签都在「块」这一级过筛：组里任何一张命中，整组就留下 */
     const shown = buildBlocks(sorted).filter((b) => {
       if (state.keyword && !b.members.some(matchKeyword)) return false;

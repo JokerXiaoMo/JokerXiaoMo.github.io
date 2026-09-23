@@ -15,23 +15,7 @@
       "createdAt": "2026-09-15T17:16:47.770Z",
       "updatedAt": "2026-09-16T12:11:04.115Z",
       "locked": true
-    },
-    {
-      "title": "绅士方可进入",
-      "tags": [
-        "加密"
-      ],
-      "cover": "",
-      "author": "桃白",
-      "status": "published",
-      "pinned": false,
-      "views": 2,
-      "publishedAt": "2026-09-16",
-      "id": "art_mu426ypke343e0",
-      "createdAt": "2026-09-16T12:10:29.048Z",
-      "updatedAt": "2026-09-16T12:10:29.048Z",
-      "locked": true
     }
   ],
-  "total": 2
+  "total": 1
 }

@@ -1,0 +1,5 @@
+# Node 版跑起来会在这里落数据，别提交上去
+counts.json
+counts.json.tmp
+counts.json.broken-*
+node_modules/

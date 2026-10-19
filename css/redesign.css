@@ -625,6 +625,12 @@ html[data-theme="dark"] .hero-glow {
   gap: 16px;
 }
 
+/* 计数还没到数的时候先不占位。「0 次阅读」「已被打开 0 次」是自曝，
+   真要显示也得等真有人读过；数量回来之后 js/stats.js 会把这个类摘掉。 */
+.is-count-hidden {
+  display: none !important;
+}
+
 /* 大卡里不再挂第二枚「加密」胶囊：标签和摘要已经把这件事说清楚了，
    同一张卡上写三遍「加密」是噪音。 */
 .article-card .lock-badge {

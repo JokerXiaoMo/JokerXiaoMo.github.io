@@ -50,7 +50,10 @@ window.__TAOBAI_VAULT__ = true;
        静态导出时（tools/export-static.js）会在产物里预置 window.__TAOBAI_STATIC__ = true，
        于是这里一开始就为 true，不会再去探测 /api/*（避免控制台出现一堆 404）。
        不带标记时（本地 Node 服务）保持 false，走正常接口。 */
-    staticMode: window.__TAOBAI_STATIC__ === true
+    staticMode: window.__TAOBAI_STATIC__ === true,
+    /* 有没有可用的计数服务（见 js/stats.js）。没有就不渲染「N 次阅读」——
+       静态产物里那几个数是导出那一刻冻住的，挂出来比不挂更糟：看着像真的。 */
+    statsOn: false
   };
 
   /* ---------------- 工具 ---------------- */
@@ -158,10 +161,38 @@ window.__TAOBAI_VAULT__ = true;
     return data;
   }
 
-  /* 计数类写操作：静态模式下没有后端，直接跳过（不报错、不打扰用户） */
+  /* 计数类写操作。
+     - 有后端：直接打接口。
+     - 纯静态托管：后端不存在，改由独立的计数服务接（js/stats.js）。
+       计数服务也没配时它自己会静默 —— 这里不必再判断一次。 */
   function track(path, options) {
-    if (state.staticMode) return;
+    if (state.staticMode) {
+      const hit = countTarget(path);
+      if (hit && window.TZStats) window.TZStats.track(hit.k, hit.id);
+      return;
+    }
     api(path, options).catch(() => {});
+  }
+
+  /* 把 /api/articles/art_x/view 翻成计数服务认的 { k:'a', id:'art_x' }
+     访问量（/api/visit）没有条目 id，计数服务不管，这里返回 null。 */
+  function countTarget(path) {
+    const m = /^\/api\/(articles|shares)\/([^/]+)\/(?:view|click)$/.exec(path || '');
+    if (!m) return null;
+    return { k: m[1] === 'articles' ? 'a' : 's', id: decodeURIComponent(m[2]) };
+  }
+
+  /* 渲染计数文字：有服务就带上 data-count，好让回填认得出来。
+     cls / style 用来适配三处不同位置（列表右下、阅读页元信息、工具详情）。
+     0 次先藏起来 —— 「已被打开 0 次」不比不写好看。 */
+  function countSpan(k, id, cls, style) {
+    if (!state.statsOn || !window.TZStats) return '';
+    const n = window.TZStats.get(k, id);
+    const classes = (cls ? cls + ' ' : '') + (n > 0 ? '' : 'is-count-hidden');
+    return '<span class="' + classes.trim() + '"' +
+      ' data-count="' + esc(k + ':' + id) + '"' +
+      (style ? ' style="' + style + '"' : '') + '>' +
+      esc(window.TZStats.text(k, n)) + '</span>';
   }
 
   /* ---------------- 站点配置 ---------------- */
@@ -526,7 +557,7 @@ window.__TAOBAI_VAULT__ = true;
           '<div class="article-foot">' +
             '<span>' + esc(a.author || '桃白') + '</span>' +
             '<span>' + formatDate(a.publishedAt) + '</span>' +
-            '<span style="margin-left:auto">' + (a.views || 0) + ' 次阅读</span>' +
+            countSpan('a', a.id, '', 'margin-left:auto') +
           '</div>' +
         '</div>' +
       '</article>';
@@ -1328,7 +1359,7 @@ window.__TAOBAI_VAULT__ = true;
     $('#readerMeta').innerHTML =
       '<span>' + esc(article.author || '桃白') + '</span>' +
       '<span>' + formatDate(article.publishedAt) + '</span>' +
-      '<span>' + (article.views || 0) + ' 次阅读</span>';
+      countSpan('a', article.id);
     $('#readerBody').innerHTML = window.TZMarkdown.render(plain.content || '') ||
       '<p>（这篇文章还没有正文）</p>';
     $('#readerFoot').innerHTML =
@@ -1376,7 +1407,7 @@ window.__TAOBAI_VAULT__ = true;
       .map((p) => '<span class="platform">' + esc(p) + '</span>').join('');
     $('#sdActions').innerHTML =
       '<a class="btn btn-primary sd-go" href="' + esc(item.url) + '" target="_blank" rel="noopener" data-id="' + esc(item.id) + '">前往官网 <span>→</span></a>' +
-      (Number(item.clicks || 0) > 0 ? '<span class="sd-clicks">已被打开 ' + Number(item.clicks) + ' 次</span>' : '');
+      countSpan('s', item.id, 'sd-clicks');
     $$('.sd-go', $('#sdActions')).forEach((a) => {
       a.addEventListener('click', () => { track('/api/shares/' + a.dataset.id + '/click', { method: 'POST' }); });
     });
@@ -1536,15 +1567,22 @@ window.__TAOBAI_VAULT__ = true;
         loadData('/api/articles', '/data/articles.json', (d) => d && Array.isArray(d.items)),
         loadData('/api/shares', '/data/shares.json', (d) => d && Array.isArray(d.items)),
         loadData('/api/gallery', '/data/gallery.json', (d) => d && Array.isArray(d.items)),
-        vault ? vault.load() : null
+        vault ? vault.load() : null,
+        window.TZStats ? window.TZStats.ready : null
       ]);
       applySite(siteRes.site);
       state.articles = articleRes.items || [];
       state.shares = shareRes.items || [];
       state.gallery = galleryRes.items || [];
+      /* 计数服务配了才渲染阅读数。没配就整块不出现 —— 静态产物里那几个数
+         是导出那一刻冻住的，挂出来比留白更糟。 */
+      state.statsOn = !!(window.TZStats && window.TZStats.enabled);
       renderAll();
       renderHeroIndex();
       renderContact();
+      /* 先按已知值渲染，再异步拉一次真值覆盖。顺序不能反：
+         拉失败就永远停在旧的数上，还不如先把手里的画出来。 */
+      if (state.statsOn) window.TZStats.refresh();
       /* 满树桃花 + 十年之约（tree.js）。万一这个脚本没加载上，
          首屏只是少一棵树，其余部分照常工作。 */
       if (window.TZTree) window.TZTree.init(siteRes.site);

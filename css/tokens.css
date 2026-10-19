@@ -1,0 +1,197 @@
+/* ============================================================
+   桃白簪花 · 设计令牌（tokens.css）
+   ------------------------------------------------------------
+   只放「值」，不放「版式」。改一处，全站跟着走。
+
+   加载顺序：style.css → aesthetic.css → tokens.css → redesign.css
+   之所以排在 aesthetic.css 之后：这里的 :root 要能盖住旧的粉系变量。
+
+   三条纪律：
+   ① 颜色只有三层纸（纸 / 凹 / 抬）+ 一层墨，桃粉只做光，占比 < 8%；
+   ② 圆角只有五级：6 / 10 / 16 / 24 / pill，不许自创；
+   ③ 间距只走 --s-1…--s-9 九档，不要再往组件里写魔法数。
+   ============================================================ */
+
+:root {
+  /* ---------- 三层纸 ----------
+     纸 L0 是页面底；凹 L1 用来「沉下去」（栏板、承诺卡、交替区块）；
+     抬 L2 只给真正浮在上面的卡片。层次靠这三层的明度差，不靠阴影。 */
+  --paper: #FCFAF7;
+  --paper-2: #F6F1ED;
+  --card: #FFFFFF;
+  --plum: #1E1920;   /* 墨层：只给页脚，让页面有「地面」 */
+  --plum-2: #2A2430;
+
+  /* ---------- 墨阶（正文三级）----------
+     对比度按纸 #FCFAF7 实测：ink 15.6 / ink-2 7.4 / ink-3 5.5。
+     旧版 --text-3 #A29A92 在粉底上只有 2.39，等于把辅助文字做成了装饰。 */
+  --ink: #241F23;
+  --ink-2: #5A514E;
+  --ink-3: #6F6460;
+
+  /* ---------- 桃 ----------
+     只用于：标识、期号、链接、标签、选中态、焦点环、树后光。
+     不用于正文、不用于大面积底色。 */
+  --peach: #C2476E;
+  --peach-deep: #A63358;
+  --peach-hi: #E8749B;
+  --peach-soft: #FBE3EA;
+  --peach-wash: rgba(194, 71, 110, 0.055);
+
+  /* ---------- 划线三级 ---------- */
+  --line-1: rgba(36, 31, 35, 0.10);
+  --line-2: rgba(36, 31, 35, 0.18);
+  --line-3: rgba(36, 31, 35, 0.30);
+
+  /* ---------- 墨层上的字 ---------- */
+  --on-plum: #EDE7E2;
+  --on-plum-2: rgba(237, 231, 226, 0.60);
+  --on-plum-line: rgba(237, 231, 226, 0.14);
+
+  /* ---------- 版心 ---------- */
+  --maxw: 1200px;
+  --w-gutter: 36px;
+  --nav-h: 68px;
+
+  /* ---------- 间距阶 ---------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 72px;
+  --s-9: 104px;
+
+  /* ---------- 圆角五级 ---------- */
+  --r-xs: 6px;    /* 标签、筛选片 */
+  --r-sm: 10px;   /* 按钮、图标块、小图 */
+  --r-md: 16px;   /* 卡片、图块、栏板、输入件 */
+  --r-lg: 24px;   /* 横向大卡、浮层面板 */
+  --r-pill: 999px;/* 只给状态胶囊 */
+
+  /* ---------- 字阶（fluid）---------- */
+  --fs-xs: 11.5px;
+  --fs-sm: 13px;
+  --fs-base: clamp(15px, 14.5px + 0.18vw, 16.5px);
+  --fs-lead: clamp(14.5px, 14px + 0.2vw, 16px);
+  --fs-h3: clamp(17px, 15.6px + 0.5vw, 19.5px);
+  --fs-h2: clamp(23px, 19.5px + 1vw, 30px);
+  --fs-prose: clamp(15.5px, 14.8px + 0.45vw, 17.5px);
+  --t-display: clamp(2.9rem, 6.4vw, 4.8rem);   /* 首屏四个字 */
+  --t-feature: clamp(1.45rem, 1.1rem + 0.9vw, 2.05rem); /* 大卡标题 */
+
+  /* ---------- 阴影两级 ----------
+     卡片默认只有一级（几乎看不见的那条）；抬升才用二级。
+     靠阴影堆出来的「层次」会发灰，靠面与字号才立得住。 */
+  --shadow-1: 0 1px 2px rgba(36, 31, 35, 0.04);
+  --shadow-2: 0 1px 2px rgba(36, 31, 35, 0.04), 0 16px 36px -26px rgba(36, 31, 35, 0.22);
+  --shadow-3: 0 2px 5px rgba(36, 31, 35, 0.05), 0 30px 60px -38px rgba(36, 31, 35, 0.26);
+
+  /* ============================================================
+     以下为「接管」style.css / aesthetic.css 的同名变量。
+     改的是值，不是名字 —— 组件规则一行都不用动就换掉了皮。
+     ============================================================ */
+
+  --bg: var(--paper);
+  --bg-alt: var(--paper-2);
+  --surface: var(--card);
+  --surface-2: var(--paper-2);
+
+  --text: var(--ink);
+  --text-2: var(--ink-2);
+  --text-3: var(--ink-3);
+
+  --line: var(--line-1);
+  --line-2: var(--line-2);
+
+  --accent: var(--peach);
+  --accent-2: var(--peach-deep);
+  --accent-soft: var(--peach-soft);
+
+  /* 桃树（tree.js 只认这三个） */
+  --tree-branch: #7C5C4C;
+  --blossom: #F2A8C0;
+  --blossom-2: #F8C6D6;
+  --blossom-deep: #C2476E;
+
+  --shadow-sm: var(--shadow-1);
+  --shadow-md: var(--shadow-2);
+  --shadow-lg: var(--shadow-3);
+
+  /* 圆角别名 */
+  --radius-sm: var(--r-sm);
+  --radius: var(--r-md);
+  --radius-lg: var(--r-lg);
+
+  /* ---------- 把 aesthetic.css 的「整屏粉雾」关掉 ----------
+     它那七层径向渐变全部读这组变量；全设成 transparent 之后，
+     body 与 .section-head[data-no]::before 的遮罩会同时变回纯 --bg 纯色，
+     遮罩自动与背景无痕 —— 不必再逐条覆盖那张长渐变。 */
+  --petal-1: transparent;
+  --petal-2: transparent;
+  --petal-3: transparent;
+  --petal-4: transparent;
+  --petal-base-1: transparent;
+  --petal-base-2: transparent;
+  --warm-glow: transparent;
+  --rose-glow: transparent;
+
+  /* 发丝线与期号：由「粉」退回「墨」，只有期号留粉 */
+  --hairline: var(--line-1);
+  --rule-line: var(--line-1);
+  --rule-line-soft: var(--line-2);
+  --folio-ink: var(--peach);
+
+  --shadow-card: var(--shadow-1);
+  --shadow-lift: var(--shadow-2);
+}
+
+/* ============================================================
+   暗色：同一套结构，把「纸」换成深墨、把「墨」换成暖白。
+   粉在暗底上要提亮一档，否则 #C2476E 在 #16131A 上只有 3.2。
+   ============================================================ */
+html[data-theme="dark"] {
+  --paper: #16131A;
+  --paper-2: #1C1821;
+  --card: #221E26;
+  --plum: #0F0D12;
+  --plum-2: #17141B;
+
+  --ink: #F2EDEA;
+  --ink-2: #B5ABA6;
+  /* 提亮过一档：原 #8B7F7A 在卡片 #221E26 上只有 4.29，卡在 AA 线下 */
+  --ink-3: #9A8D88;
+
+  --peach: #F2A0BE;
+  --peach-deep: #F7BBD2;
+  --peach-hi: #F9C6DA;
+  --peach-soft: rgba(242, 160, 190, 0.14);
+  --peach-wash: rgba(242, 160, 190, 0.06);
+
+  --line-1: rgba(242, 237, 234, 0.12);
+  --line-2: rgba(242, 237, 234, 0.20);
+  --line-3: rgba(242, 237, 234, 0.32);
+
+  --on-plum: #EDE7E2;
+  --on-plum-2: rgba(237, 231, 226, 0.58);
+  --on-plum-line: rgba(237, 231, 226, 0.12);
+
+  --tree-branch: #6E5A50;
+  --blossom: #CE93AA;
+  --blossom-2: #DEA6BB;
+  --blossom-deep: #F0A8C0;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.32), 0 16px 36px -26px rgba(0, 0, 0, 0.80);
+  --shadow-3: 0 2px 5px rgba(0, 0, 0, 0.36), 0 30px 60px -38px rgba(0, 0, 0, 0.88);
+}
+
+/* 窄屏收紧版心留白（令牌也跟着缩，组件不用各写一遍） */
+@media (max-width: 900px) {
+  :root {
+    --w-gutter: 20px;
+    --s-9: 72px;
+  }
+}

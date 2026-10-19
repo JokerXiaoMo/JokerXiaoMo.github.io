@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FBF9F7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#151419" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FCFAF7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16131A" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="桃白簪花">
 <meta name="robots" content="index, follow">
 <title>桃白簪花自然科技工作室</title>
 <meta name="description" content="桃白簪花自然科技工作室：写的文章、改的工具、存的图。承诺做满十年。">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=8d2f847c">
-<link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png?v=325040d3">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png?v=86ce8d48">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=b4cedc47">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png?v=98547588">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon-180.png?v=879852c2">
 
 <link rel="canonical" href="https://fanxiaofei.ccwu.cc/">
 <meta property="og:type" content="website">
@@ -21,14 +21,14 @@
 <meta property="og:title" content="桃白簪花自然科技工作室">
 <meta property="og:description" content="写的文章、改的工具、存的图。承诺做满十年。">
 <meta property="og:url" content="https://fanxiaofei.ccwu.cc/">
-<meta property="og:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png">
+<meta property="og:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png?v=0ebcac7b">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
-<meta property="og:image:alt" content="桃白簪花的印章标志：红底金框，一株桃花枝与一颗寿桃">
+<meta property="og:image:alt" content="桃白簪花的标识：桃粉渐变方块里的一朵白桃花，两片花瓣正在落下">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="桃白簪花自然科技工作室">
 <meta name="twitter:description" content="写的文章、改的工具、存的图。承诺做满十年。">
-<meta name="twitter:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png">
+<meta name="twitter:image" content="https://fanxiaofei.ccwu.cc/assets/logo.png?v=0ebcac7b">
 
 <!-- 主题在首帧就定好。这段必须同步执行、且排在样式表之前：
      否则选过深色模式的访客，每次打开都会先闪一下浅色底。
@@ -37,12 +37,46 @@
 (function () { try { var t = localStorage.getItem('tz-theme'); if (t !== 'dark' && t !== 'light') { t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } document.documentElement.setAttribute('data-theme', t); } catch (e) { /* 隐私模式下读不了 localStorage，用默认浅色 */ } })();
 </script>
 
-<link rel="preload" as="image" href="/assets/logo.webp" type="image/webp">
 <link rel="stylesheet" href="/css/style.css?v=b57214d1">
 <!-- 视觉升级层：只做增强与覆盖，不动 style.css 里的既有规则 -->
 <link rel="stylesheet" href="/css/aesthetic.css?v=209eaa48">
+<!-- 改版层：tokens 只换值，redesign 只排版式。两层都可以整层摘掉 -->
+<link rel="stylesheet" href="/css/tokens.css?v=0d7c5e5f">
+<link rel="stylesheet" href="/css/redesign.css?v=0dc003f9">
 </head>
 <body>
+
+<!-- 标识几何：藏在文档里的一份定义，各处用 <use> 引用。
+     一朵白桃花 + 两片正在落下的瓣；底是 135° 桃粉渐变，深在左上、浅在右下 ——
+     花压在深色那一角，白花瓣才立得住，缩到 16px 也还认得出是花。 -->
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="taoGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#CE4C76"/><stop offset=".52" stop-color="#E86E9E"/><stop offset="1" stop-color="#F9AAC4"/>
+    </linearGradient>
+    <path id="taoPetal" d="M0-13C6.2-13 10.4-7.4 10.4-1.6 10.4 5 6.2 11 0 11-6.2 11-10.4 5-10.4-1.6-10.4-7.4-6.2-13 0-13Z"/>
+    <symbol id="taoMark" viewBox="0 0 112 112">
+      <rect width="112" height="112" rx="16" fill="url(#taoGrad)"/>
+      <g transform="translate(44 43) scale(1.28)">
+        <g fill="#FFFFFF">
+          <use href="#taoPetal" transform="rotate(0) translate(0 -9.6) scale(.68 .86)"/>
+          <use href="#taoPetal" transform="rotate(72) translate(0 -9.6) scale(.68 .86)"/>
+          <use href="#taoPetal" transform="rotate(144) translate(0 -9.6) scale(.68 .86)"/>
+          <use href="#taoPetal" transform="rotate(216) translate(0 -9.6) scale(.68 .86)"/>
+          <use href="#taoPetal" transform="rotate(288) translate(0 -9.6) scale(.68 .86)"/>
+        </g>
+        <circle r="6.4" fill="#F9A9C1"/>
+        <g fill="#E8749B">
+          <circle cx="0" cy="-4.22" r="1.54"/><circle cx="4.03" cy="-1.28" r="1.54"/>
+          <circle cx="2.5" cy="3.39" r="1.54"/><circle cx="-2.5" cy="3.39" r="1.54"/>
+          <circle cx="-4.03" cy="-1.28" r="1.54"/>
+        </g>
+      </g>
+      <use href="#taoPetal" transform="translate(80 79) rotate(42) scale(.46 .68)" fill="#FFFFFF" opacity=".95"/>
+      <use href="#taoPetal" transform="translate(51 91) rotate(-18) scale(.38 .56)" fill="#FFFFFF" opacity=".9"/>
+    </symbol>
+  </defs>
+</svg>
 
 <noscript>
   <div style="margin:0;padding:14px 18px;background:#FBEAF0;color:#4B1528;font:14px/1.7 system-ui,-apple-system,sans-serif;text-align:center;border-bottom:1px solid #ED93B1">
@@ -54,7 +88,7 @@
 
 <header class="nav" id="siteNav">
   <a class="nav-brand" href="#top" aria-label="桃白簪花自然科技工作室">
-    <img class="brand-mark" src="/assets/logo.webp" alt="" width="32" height="32" decoding="async">
+    <svg class="brand-mark" viewBox="0 0 112 112" role="img" aria-label="桃白簪花标识" focusable="false"><use href="#taoMark"/></svg>
     <span class="brand-text" id="brandText">桃白簪花</span>
   </a>
   <nav class="nav-links" id="navLinks"></nav>

@@ -1,0 +1,1153 @@
+/* ============================================================
+   桃白簪花 · 版式覆盖层（redesign.css）
+   ------------------------------------------------------------
+   定位：只做「版式与层次」，颜色全部走 tokens.css。
+   加载在 aesthetic.css 之后，靠「后加载 + 同特异性」接管旧规则。
+
+   这一层解决的三件事：
+   ① 整屏粉雾 → 三层纸：纸底 / 凹层 / 抬层，最后落一层墨；
+   ② 四栏同一套卡片网格 → 一栏一个排法：大卡 / 行式 / 图墙 / 书信；
+   ③ 层级靠阴影堆 → 层级靠「面 + 字号 + 留白」。
+
+   拾遗录那一栏用了 display:contents 打散 .share-head / .share-foot，
+   让原有的 DOM 直接参与外层网格 —— 好处是 js/main.js 一行都不用改，
+   摘掉这个文件就能退回旧的卡片网格。
+   ============================================================ */
+
+/* ============================================================
+   0. 纸
+   ============================================================ */
+
+body {
+  background: var(--bg);
+  background-image: none;
+  background-attachment: scroll;
+  color: var(--text);
+  font-size: var(--fs-base);
+  line-height: 1.75;
+}
+
+/* 章节之间不再画第二条居中短横线：期号线已经在这一层交代过了，
+   两条线叠在一起会显得「装饰过头」。 */
+.section + .section::before {
+  content: none;
+}
+
+::selection {
+  background: var(--peach-soft);
+  color: var(--ink);
+}
+
+html {
+  scrollbar-color: var(--line-3) transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-3);
+  background-image: none;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--r-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--peach);
+  background-image: none;
+  background-clip: padding-box;
+}
+
+/* 阅读进度：一根 2px 的实线，不带发光 */
+.scroll-progress {
+  height: 2px;
+  background: var(--accent);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* ============================================================
+   1. 顶栏
+   通栏固定在顶部，但内容左边界与版心对齐 —— 不然大屏上
+   标识会孤零零地飘在内容左边 84px 外。
+   ============================================================ */
+
+.nav {
+  padding: 0 max(var(--w-gutter), calc((100% - var(--maxw)) / 2));
+  gap: 28px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.nav.is-scrolled {
+  height: 60px;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(1.6) blur(14px);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  border-bottom-color: var(--line);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.nav-brand {
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
+  object-fit: contain;
+  transition: transform var(--dur-2) var(--ease);
+}
+
+.nav-brand:hover .brand-mark {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: none;
+}
+
+.brand-text {
+  font-size: 15.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.nav-links {
+  gap: 30px;
+  margin-left: 18px;
+}
+
+.nav-links a {
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+}
+
+.nav-links a::after {
+  height: 1.5px;
+  background: var(--accent);
+}
+
+.nav-search,
+.nav-theme {
+  border-radius: var(--r-sm);
+}
+
+.nav-search-bar {
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+}
+
+/* ============================================================
+   2. 首屏
+   左文右树。标题回到纯墨衬线 —— 渐变字在任何底色上都会「糊」，
+   而且它把最该稳的那四个字变成了装饰。
+   ============================================================ */
+
+.hero {
+  min-height: 100svh;
+  padding: calc(var(--nav-h) + 64px) var(--w-gutter) 88px;
+  background-image: none;
+}
+
+/* 树后那团桃光：唯一允许存在的「大面积粉色」，
+   但它是不透明度 13% 的径向渐变，落在纸底上读起来是「光」不是「色」。 */
+.hero-glow {
+  top: -10%;
+  right: 2%;
+  width: 660px;
+  height: 660px;
+  background: radial-gradient(circle, rgba(232, 116, 155, 0.14), transparent 68%);
+  filter: blur(8px);
+  animation: tz-breathe 18s var(--ease) infinite;
+}
+
+html[data-theme="dark"] .hero-glow {
+  background: radial-gradient(circle, rgba(242, 160, 190, 0.11), transparent 70%);
+}
+
+.hero-inner {
+  gap: 56px;
+}
+
+.hero-eyebrow {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.34em;
+  color: var(--accent);
+  margin-bottom: 26px;
+}
+
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: var(--t-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.06;
+  color: var(--text);
+  background-image: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: currentColor;
+  filter: none;
+}
+
+.hero-title span {
+  -webkit-text-fill-color: currentColor;
+}
+
+.hero-sub {
+  font-family: var(--font-serif);
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  color: var(--ink-2);
+  margin-top: 24px;
+  letter-spacing: 0.16em;
+  line-height: 1.8;
+}
+
+.hero-intro {
+  margin-top: 20px;
+  max-width: 27em;
+  color: var(--ink-3);
+  font-size: var(--fs-lead);
+  line-height: 1.95;
+}
+
+.hero-actions {
+  margin-top: 32px;
+  gap: 12px;
+}
+
+.hero-actions .btn-primary {
+  box-shadow: var(--shadow-1);
+}
+
+/* 首屏目录 = 站在门口的索引，不是统计数据 */
+.hero-index {
+  margin-top: 46px;
+  max-width: 480px;
+  border-top: 1px solid var(--line-2);
+}
+
+.hero-index-item {
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 13px 2px;
+  border-bottom-color: var(--line);
+  transition: padding-left var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+
+.hero-index-item:hover {
+  transform: none;
+  border-color: var(--line);
+  padding-left: 14px;
+  color: var(--accent);
+}
+
+.hi-no {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.12em;
+}
+
+.hi-name {
+  font-size: 14.5px;
+  letter-spacing: 0.08em;
+}
+
+.hi-count {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.hero-scroll {
+  bottom: 32px;
+  left: max(var(--w-gutter), calc((100% - var(--maxw)) / 2));
+  letter-spacing: 0.34em;
+}
+
+/* ---------- 十年之约：一块凹下去的卡 ---------- */
+
+.tree-figure {
+  max-width: 560px;
+}
+
+.tree-pledge {
+  margin-top: 18px;
+  padding: 16px 20px 17px;
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  text-align: left;
+  gap: 7px;
+}
+
+.pledge-head {
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.pledge-title {
+  font-size: 12.5px;
+  letter-spacing: 0.2em;
+  color: var(--ink-2);
+}
+
+.pledge-ticker {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.pledge-note {
+  line-height: 1.7;
+}
+
+/* ============================================================
+   3. 章节
+   四个栏目共用同一套「期号线 + 衬线标题 + 英文小字」——
+   这是站点的识别系统，不该四栏四样；
+   差异全部留给内容区的排法（大卡 / 行式 / 图墙 / 书信）。
+   ============================================================ */
+
+.section {
+  padding: var(--s-9) var(--w-gutter);
+  max-width: calc(var(--maxw) + var(--w-gutter) * 2);
+}
+
+/* 交替区块要通栏（那条「凹下去的带子」必须顶到两侧），
+   所以这里必须把 .section 的宽度限制让回去 —— 同特异性，靠后加载赢。 */
+.section.section-alt {
+  max-width: none;
+}
+
+.section-head {
+  padding-top: 30px;
+  margin-bottom: 44px;
+  gap: 28px;
+  align-items: flex-end;
+}
+
+/* 拾遗录原本竖排、观照集原本出血到页面边缘 —— 统一回同一行同一宽度，
+   让「期号线」在四栏里停在同一个位置。 */
+.head--stacked {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 28px;
+}
+
+.head--bleed {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.section-head[data-no]::before,
+.about-wrap[data-no]::before {
+  top: -8px;
+  left: 0;
+  padding-right: 14px;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.24em;
+  line-height: 1.4;
+  color: var(--accent);
+}
+
+.section-title h2 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h2);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-shadow: none;
+}
+
+.section-en {
+  font-size: 12.5px;
+  letter-spacing: 0.2em;
+  color: var(--ink-3);
+  margin-top: 10px;
+}
+
+.section-alt {
+  border-top-color: var(--line);
+  border-bottom-color: var(--line);
+}
+
+/* ============================================================
+   4. 桃花笺 —— 横向大卡
+   只有一篇文章时，网格卡会把「这里很空」放得很大；
+   一张横卡 + 一句摘要，读起来是「一期一篇」，不是「怎么才一篇」。
+   ============================================================ */
+
+.article-grid {
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.article-card {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.article-card:hover {
+  transform: none;
+  border-color: var(--line-2);
+  box-shadow: var(--shadow-2);
+}
+
+.article-card:active {
+  transform: none;
+}
+
+.article-thumb {
+  aspect-ratio: auto;
+  min-height: 280px;
+  background: color-mix(in srgb, var(--peach-soft) 62%, var(--card));
+}
+
+.article-card:hover .article-thumb img {
+  transform: scale(1.02);
+}
+
+/* 没有封面时，不写「桃白簪花」四个小字凑数，直接放一个巨大的「桃」字 ——
+   当图用，不当占位符用。 */
+.article-thumb.is-empty::after {
+  content: "桃";
+  font-family: var(--font-serif);
+  font-size: clamp(110px, 13vw, 172px);
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--peach);
+  opacity: 0.15;
+  transform: translateY(-4px);
+}
+
+.article-body {
+  padding: 40px 44px 34px;
+  justify-content: center;
+}
+
+.article-tags {
+  margin-bottom: 16px;
+}
+
+.article-card h3 {
+  font-family: var(--font-serif);
+  font-size: var(--t-feature);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  margin-bottom: 14px;
+}
+
+.article-card .excerpt {
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--ink-2);
+  -webkit-line-clamp: 3;
+  max-width: 34em;
+}
+
+.article-foot {
+  margin-top: 26px;
+  padding-top: 16px;
+  gap: 16px;
+}
+
+/* 大卡里不再挂第二枚「加密」胶囊：标签和摘要已经把这件事说清楚了，
+   同一张卡上写三遍「加密」是噪音。 */
+.article-card .lock-badge {
+  display: none;
+}
+
+.pin-badge {
+  top: 16px;
+  left: 16px;
+}
+
+/* ============================================================
+   5. 拾遗录 —— 行式清单
+   工具只有一两条时，「卡片网格」是一块孤零零的方块；
+   换成一条一条往下排的清单，少也是「一条」，不是「就一个」。
+   ============================================================ */
+
+.share-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+/* 清单不再自带上边线：标题区的期号线已经在上面了，
+   两条线夹住标题会让这一栏看起来被「框」起来。 */
+
+.share-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "icon title plat acts"
+    "icon desc  .    .";
+  column-gap: 26px;
+  row-gap: 6px;
+  align-items: center;
+  padding: 26px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  transition: background-color var(--dur-2) var(--ease), padding-left var(--dur-2) var(--ease-out);
+}
+
+.share-card:hover {
+  transform: none;
+  background: var(--peach-wash);
+  box-shadow: none;
+  border-color: var(--line);
+  padding-left: 20px;
+}
+
+/* 打散两层包裹，让 title / desc / plat / acts 直接落到外层网格上 */
+.share-head,
+.share-head > div,
+.share-foot {
+  display: contents;
+}
+
+.share-icon {
+  grid-area: icon;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  align-self: center;
+  font-size: 15px;
+}
+
+.share-card:hover .share-icon {
+  transform: none;
+}
+
+.share-title {
+  grid-area: title;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  align-self: end;
+}
+
+/* 「网站 · WEB」与右上角的筛选器说的是同一件事，行里不再重复一遍。
+   横向空间让给标题和平台。 */
+.share-cat {
+  display: none;
+}
+
+.share-desc {
+  grid-area: desc;
+  flex: none;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink-2);
+  -webkit-line-clamp: 1;
+  max-width: 52em;
+}
+
+.platform-row {
+  grid-area: plat;
+  justify-self: end;
+  flex-wrap: nowrap;
+}
+
+.platform {
+  font-size: var(--fs-xs);
+  padding: 2px 9px;
+  border-color: var(--line);
+  color: var(--ink-3);
+}
+
+.share-foot-acts {
+  grid-area: acts;
+  justify-self: end;
+  align-self: center;
+  padding-top: 0;
+  border-top: none;
+  gap: 12px;
+}
+
+.share-more {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.share-link {
+  font-size: 13px;
+}
+
+/* ============================================================
+   6. 观照集 —— 图墙
+   ============================================================ */
+
+.masonry {
+  columns: 3 300px;
+  column-gap: 18px;
+}
+
+.pic {
+  margin-bottom: 18px;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+}
+
+.pic:hover {
+  transform: none;
+  box-shadow: var(--shadow-2);
+}
+
+.pic:hover img {
+  transform: scale(1.02);
+}
+
+/* 栏板：一块淡粉的凹层，交代「这一栏上了锁」 */
+.vault-bar {
+  background: color-mix(in srgb, var(--peach-soft) 55%, var(--bg));
+  border-color: color-mix(in srgb, var(--peach) 16%, transparent);
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.vault-bar-icon {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--peach) 18%, transparent);
+  color: var(--accent);
+}
+
+/* 未解锁的图块：淡粉底 + 一枚圆形的锁，而不是斜纹警示条
+   （斜纹是「这里坏了」的语汇，加密封印不是坏）。
+   高度按 3:4 立起来 —— 跟竖版图一个比例，图墙的底边才齐得起来。 */
+.pic-lock {
+  aspect-ratio: 3 / 4;
+  min-height: 0;
+  gap: 14px;
+  background: color-mix(in srgb, var(--peach-soft) 48%, var(--bg));
+  color: var(--ink-3);
+}
+
+.pic-lock svg {
+  width: 48px;
+  height: 48px;
+  padding: 13px;
+  box-sizing: border-box;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--peach) 18%, transparent);
+  border-radius: 50%;
+}
+
+.pic-lock span {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.1em;
+}
+
+.lock-badge {
+  background: color-mix(in srgb, var(--plum) 72%, transparent);
+  backdrop-filter: blur(6px);
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   7. 关于 —— 书信双栏
+   左边一张竖向的元信息表，右边是正文。左右一比方寸就出来了，
+   不需要头像、不需要引文块 —— 一个工作室的自述就该像一封信。
+   ============================================================ */
+
+.about-wrap {
+  max-width: var(--maxw);
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  column-gap: 76px;
+  row-gap: 0;
+  align-items: start;
+}
+
+.about-wrap > .section-title {
+  grid-column: 1 / -1;
+}
+
+.about-wrap > .about-meta {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.about-meta div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+
+/* 第一行不加上内边距：这样表头与右侧正文的首行落在同一条基线上 */
+.about-meta div:first-child {
+  padding-top: 0;
+}
+
+.about-meta strong {
+  display: inline;
+  margin-top: 0;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--ink);
+  text-align: right;
+  word-break: break-all;
+}
+
+.about-wrap > .about-body {
+  grid-column: 2;
+  grid-row: 2;
+  font-family: var(--font-serif);
+  font-size: clamp(16px, 1.05vw + 13px, 18px);
+  line-height: 2.05;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+  max-width: 36em;
+}
+
+.about-body p + p {
+  margin-top: 22px;
+}
+
+.about-wrap > .about-contact {
+  grid-column: 2;
+  grid-row: 3;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.about-contact h3 {
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+}
+
+.contact-mail {
+  font-family: var(--font-serif);
+  font-size: clamp(17px, 1.2vw + 13px, 21px);
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+
+/* ============================================================
+   8. 页脚 —— 墨层
+   全站唯一一处深色大面。它的作用是给出「地面」：
+   纸色一路铺到底会让人觉得页面还在继续，落一块墨才算走完。
+   ============================================================ */
+
+.footer {
+  background: var(--plum);
+  border-top: none;
+  padding: 72px max(var(--w-gutter), calc((100% - var(--maxw)) / 2)) 48px;
+}
+
+.footer::before {
+  content: none;
+}
+
+.footer-inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  align-items: flex-end;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--on-plum-2);
+}
+
+.footer-social {
+  gap: 24px;
+}
+
+.footer-social a {
+  color: var(--on-plum);
+  transition: color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease-out);
+}
+
+.footer-social a:hover {
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+/* ============================================================
+   9. 按钮 / 筛选片 / 标签
+   实色、无渐变、无内高光。渐变按钮是「模板感」的重灾区。
+   ============================================================ */
+
+.btn {
+  padding: 12px 26px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.btn-primary {
+  background-image: none;
+  background-color: var(--accent);
+  box-shadow: var(--shadow-1);
+}
+
+.btn-primary:hover {
+  background-image: none;
+  background-color: var(--peach-deep);
+  box-shadow: 0 14px 28px -20px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+
+.btn-ghost {
+  border-color: var(--line-2);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--peach-wash);
+}
+
+.chip {
+  border-radius: var(--r-xs);
+  padding: 5px 12px;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+}
+
+.chip.is-active {
+  box-shadow: none;
+}
+
+.seg {
+  border-radius: var(--r-sm);
+}
+
+.seg-btn {
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+}
+
+.seg-btn.is-active {
+  box-shadow: none;
+}
+
+.tag {
+  border-radius: var(--r-xs);
+  padding: 3px 9px;
+  letter-spacing: 0.06em;
+  /* 小字压深一档：浅粉底上 #C2476E 只有 4.2，压到 --peach-deep 才过 AA */
+  color: var(--peach-deep);
+}
+
+/* ============================================================
+   10. 浮层与空状态
+   ============================================================ */
+
+.reader-panel,
+.detail-panel,
+.gate-panel {
+  background: var(--bg);
+}
+
+.reader-panel {
+  border-left: 1px solid var(--line);
+}
+
+.toast {
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-3);
+}
+
+.empty {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  padding: 36px 0;
+}
+
+/* ============================================================
+   11. 暗色微调
+   纸与墨已经在 tokens 里换过了，这里只处理几处「浅色下靠深色出层次」的地方。
+   ============================================================ */
+
+html[data-theme="dark"] .article-card,
+html[data-theme="dark"] .pic {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .article-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+html[data-theme="dark"] .footer {
+  border-top: 1px solid var(--on-plum-line);
+}
+
+/* 暗色下主色是「亮粉」，压白字只有 2.2:1。
+   凡是「粉底 + 文字」的组合，一律换成深墨字 —— 对比度回到 8:1 以上。 */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .chip.is-active,
+html[data-theme="dark"] .seg-btn.is-active,
+html[data-theme="dark"] .pin-badge {
+  color: #1A1218;
+}
+
+/* 承诺卡在暗色下靠 --bg-alt 分不出来（#1C1821 对 #16131A 只差 6 级），
+   改用抬层色，让它重新「浮」在纸底上。 */
+html[data-theme="dark"] .tree-pledge {
+  background: var(--surface);
+  border-color: var(--line-2);
+}
+
+html[data-theme="dark"] .hero-glow {
+  filter: blur(14px);
+}
+
+/* ============================================================
+   12. 断点
+   ============================================================ */
+
+@media (max-width: 1100px) {
+  .about-wrap {
+    grid-template-columns: 220px minmax(0, 1fr);
+    column-gap: 48px;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero {
+    min-height: auto;
+    padding: calc(var(--nav-h) + 44px) var(--w-gutter) 64px;
+  }
+
+  .hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 44px;
+  }
+
+  .hero-title {
+    font-size: clamp(2.6rem, 11vw, 4rem);
+  }
+
+  .hero-index {
+    margin-top: 34px;
+    max-width: none;
+  }
+
+  .tree-figure {
+    max-width: 440px;
+  }
+
+  .section-head {
+    margin-bottom: 34px;
+  }
+
+  /* 横向大卡在窄屏收成上下两段：图在上、文在下 */
+  .article-card {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: var(--r-md);
+  }
+
+  .article-thumb {
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+  }
+
+  .article-body {
+    padding: 28px 26px 26px;
+  }
+
+  .article-card .excerpt {
+    -webkit-line-clamp: 4;
+  }
+
+  /* 行式清单：分类收起，平台与操作并到一行 */
+  .share-card {
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "icon title title"
+      "icon desc  desc"
+      "icon plat  acts";
+    column-gap: 16px;
+    padding: 22px 8px;
+  }
+
+  .share-card:hover {
+    padding-left: 12px;
+  }
+
+  .share-cat {
+    display: none;
+  }
+
+  .share-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .share-desc {
+    -webkit-line-clamp: 2;
+  }
+
+  .platform-row {
+    justify-self: start;
+  }
+
+  /* 关于：单栏，元信息表回到正文上方 */
+  .about-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .about-wrap > .about-body {
+    grid-column: 1;
+    grid-row: 3;
+    max-width: none;
+  }
+
+  /* 关于：单栏，元信息表挪到正文上方，但仍保持「label 左 / 值 右」的竖表 ——
+     窄屏摊成横排会让三个字段挤成一行，值一长就失去对齐。 */
+  .about-wrap > .about-meta {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 0;
+    margin-bottom: 36px;
+  }
+
+  .about-meta div:first-child {
+    padding-top: 12px;
+  }
+
+  .about-meta strong {
+    text-align: right;
+  }
+
+  .about-wrap > .about-contact {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .masonry {
+    columns: 2 220px;
+    column-gap: 14px;
+  }
+
+  .pic {
+    margin-bottom: 14px;
+  }
+
+  .footer {
+    padding-top: 56px;
+  }
+}
+
+@media (max-width: 560px) {
+  /* 窄屏让四个栏目的标题区统一竖排：标题在上、筛选在下。
+     不统一的话，标题长短不同会让某一栏的筛选器换行、另一栏不换 —— 一眼就看出来。 */
+  .section-head,
+  .head--stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .hero-title {
+    font-size: clamp(2.4rem, 13vw, 3.2rem);
+    letter-spacing: 0.01em;
+  }
+
+  .hero-sub {
+    letter-spacing: 0.1em;
+  }
+
+  .article-thumb.is-empty::after {
+    font-size: 120px;
+  }
+
+  .share-card {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "icon title title"
+      "icon desc  desc"
+      "icon plat  acts";
+    padding: 20px 4px;
+  }
+
+  .share-title {
+    font-size: 15px;
+  }
+
+  .share-desc {
+    font-size: 13px;
+  }
+
+  .share-foot-acts {
+    gap: 8px;
+  }
+
+  .masonry {
+    columns: 1;
+  }
+
+  .footer {
+    padding-bottom: 36px;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+/* ============================================================
+   13. 尊重「减少动态效果」与打印
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow {
+    animation: none;
+  }
+
+  .article-card:hover,
+  .pic:hover,
+  .share-card:hover,
+  .hero-index-item:hover,
+  .footer-social a:hover,
+  .nav-brand:hover .brand-mark {
+    transform: none;
+  }
+
+  .article-card:hover .article-thumb img,
+  .pic:hover img {
+    transform: none;
+  }
+}
+
+@media print {
+  .footer {
+    background: none;
+    color: #000;
+  }
+
+  .footer-social a {
+    color: #000;
+  }
+
+  .hero-glow {
+    display: none;
+  }
+}

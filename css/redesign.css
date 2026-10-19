@@ -135,6 +135,178 @@ html {
   box-shadow: var(--shadow-2);
 }
 
+/* ---------- 搜索汇总条 ----------
+   搜索是「就地过滤三栏」，不是弹一个结果列表。问题是命中常常落在
+   页面最下方那一栏，人在首屏只看到列表突然变空，会以为「没搜到」。
+   这条窄带把「哪一栏命中了几条」摊开，并可直接跳过去。
+
+   位置：搜索框是绝对定位在顶栏下沿（nav-h - 8）的，高度约 46px，
+   所以这条从 nav-h + 44 起步 —— 让开搜索框，不与它叠在一起。
+   右对齐跟搜索框同一条竖线，读起来是「搜索框挂出来的结果摘要」。 */
+.search-summary {
+  position: fixed;
+  top: calc(var(--nav-h) + 44px);
+  right: 28px;
+  z-index: 79;
+  max-width: calc(100vw - 56px);
+  padding: 7px 9px 7px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  animation: ssIn 0.22s var(--ease-out);
+}
+
+@keyframes ssIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.ss-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ss-word {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.ss-word b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ss-hits {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ss-hit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--bg-alt);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--dur-2) var(--ease-out),
+              color var(--dur-2) var(--ease-out),
+              background var(--dur-2) var(--ease-out);
+}
+
+.ss-hit b {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.ss-hit:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.ss-hit:hover b { color: var(--accent); }
+
+/* 一条都没有的栏目：留着但退到辅助色。
+   这里刻意不用 opacity —— 半透明的字在纸底上会掉到 2:1 出头，
+   等于「灰到看不见」，反而分不清是「没命中」还是「没渲染」。 */
+.ss-hit.is-zero {
+  border-color: var(--line-2);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: default;
+}
+
+.ss-hit.is-zero b { color: var(--ink-3); font-weight: 500; }
+
+.ss-hit.is-zero:hover {
+  border-color: var(--line-2);
+  background: transparent;
+  color: var(--ink-3);
+}
+
+.ss-hit.is-zero:hover b { color: var(--ink-3); }
+
+@media (max-width: 560px) {
+  .search-summary {
+    top: calc(var(--nav-h) + 42px);
+    left: 18px;
+    right: 18px;
+    max-width: none;
+    padding: 6px 8px 6px 13px;
+    border-radius: var(--r-md);
+  }
+  /* 窄屏上必须挤成一行：一旦换行，条子会从 46 涨到 90 上下，
+     直接压住首屏大标题。单位「篇/条/张」在这里省掉也读得懂。 */
+  .ss-inner { gap: 10px; flex-wrap: nowrap; }
+  .ss-word { font-size: var(--fs-xs); flex: 1 1 auto; min-width: 0;
+             overflow: hidden; text-overflow: ellipsis; }
+  .ss-hits { flex-wrap: nowrap; gap: 5px; flex: 0 0 auto; }
+  .ss-hit { padding: 3px 9px; gap: 4px; }
+  .ss-unit { display: none; }
+}
+
+/* 汇总条出现时，窄屏首屏大标题离它只有几像素，像被削掉一截。
+   这里让 hero 在搜索态多让 14px —— 只在支持 :has 的浏览器生效，
+   不支持就维持原样，不会把版面弄坏。 */
+@media (max-width: 560px) {
+  body:has(.search-summary:not([hidden])) .hero {
+    padding-top: calc(var(--nav-h) + 78px);
+  }
+}
+
+/* 暗色下卡片色 (#221E26) 和底色 (#16131A) 差得太少，一整条会「消失」，
+   所以这里比面板色再提一档，边框也拉到 line-2，让它看得出是浮层。 */
+html[data-theme="dark"] .search-summary {
+  background: #2A2431;
+  border-color: var(--line-2);
+}
+
+html[data-theme="dark"] .ss-hit {
+  background: rgba(242, 237, 234, 0.06);
+  border-color: var(--line-2);
+}
+
+html[data-theme="dark"] .ss-hit:hover {
+  background: rgba(242, 237, 234, 0.10);
+}
+
+html[data-theme="dark"] .ss-hit.is-zero {
+  background: transparent;
+  border-color: var(--line-1);
+}
+
+/* 关键词在标题与摘要里的落点 */
+mark.hl {
+  padding: 0 0.12em;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: inherit;
+  font-weight: 600;
+}
+
+html[data-theme="dark"] mark.hl {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+/* 搜索条常驻时，锚点跳转要给它让出位置，否则栏目标题正好被压在带子底下 */
+section[id] {
+  scroll-margin-top: calc(var(--nav-h) + 74px);
+}
+
 /* ============================================================
    2. 首屏
    左文右树。标题回到纯墨衬线 —— 渐变字在任何底色上都会「糊」，

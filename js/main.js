@@ -23,7 +23,9 @@ window.__TAOBAI_VAULT__ = true;
     articleTag: 'all',
     galleryTag: 'all',
     shareCat: 'all',
+    /* keyword 是小写化后用于比对的；keywordRaw 保留原样，只用于显示（汇总条要显示用户敲的大写） */
     keyword: '',
+    keywordRaw: '',
     lbList: [],
     lbIndex: 0,
     /* 灯箱底部那排「同组缩略图」当前是哪个图组 —— 只用来避免每次翻页都重建一遍 DOM */
@@ -56,6 +58,25 @@ window.__TAOBAI_VAULT__ = true;
   function esc(str) {
     return String(str == null ? '' : str)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* 关键词高亮：先把整段转义，再在转义后的文本里包 <mark>。
+     顺序不能反 —— 直接在原文上替换，用户输入 <img onerror> 就成了注入点，
+     而搜索框恰好是任何人都能输入的地方。含 <>&" 的词转义后匹配不上，
+     只是这一处不高亮，不影响结果本身。 */
+  function hl(text) {
+    const safe = esc(text);
+    const kw = state.keyword;
+    if (!kw) return safe;
+    const re = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    return safe.replace(re, (m) => '<mark class="hl">' + m + '</mark>');
+  }
+
+  /* 空状态文案：搜索无结果和「这一栏本来就没内容」是两件事，
+     以前共用一句话，用户搜完只会以为栏目坏了。 */
+  function emptyText(fallback) {
+    if (!state.keyword) return fallback;
+    return '没有找到「' + (state.keywordRaw || state.keyword) + '」。换个词试试，或者按 ESC 清除。';
   }
 
   function formatDate(value) {
@@ -287,22 +308,97 @@ window.__TAOBAI_VAULT__ = true;
       if (bar.classList.contains('is-open')) input.focus();
     });
 
+    /* 两个词：keyword 是小写化之后用来比对的，keywordRaw 保留原样只用来显示。
+       以前只有小写的那份，导致汇总条上「taobai」会被显示成小写。 */
+    function applyKeyword(raw) {
+      state.keywordRaw = String(raw || '').trim();
+      state.keyword = state.keywordRaw.toLowerCase();
+      renderAll();
+    }
+
+    function clearKeyword(close) {
+      input.value = '';
+      applyKeyword('');
+      if (close) bar.classList.remove('is-open');
+    }
+
     let debounce = null;
     input.addEventListener('input', () => {
       clearTimeout(debounce);
-      debounce = setTimeout(() => {
-        state.keyword = input.value.trim().toLowerCase();
-        renderAll();
-      }, 180);
+      debounce = setTimeout(() => applyKeyword(input.value), 180);
     });
+
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        input.value = '';
-        state.keyword = '';
-        bar.classList.remove('is-open');
-        renderAll();
+        clearKeyword(true);
+        return;
+      }
+      /* 提示写着「回车跳转」，以前回车真的什么都没绑 —— 按下就只是页面抖一下。
+         现在回车 = 去第一个有命中的栏目；一个都没命中就留在原地。 */
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(debounce);
+        applyKeyword(input.value);
+        const first = (state.view.searchHits || []).filter((h) => h.n > 0)[0];
+        if (first) scrollToSection(first.id);
       }
     });
+
+    /* 汇总条上点一栏，直接滚过去 */
+    const hitsBox = $('#ssHits');
+    if (hitsBox) {
+      hitsBox.addEventListener('click', (e) => {
+        const btn = e.target.closest('.ss-hit');
+        if (!btn || btn.disabled) return;
+        scrollToSection(btn.dataset.to);
+        bar.classList.remove('is-open');
+      });
+    }
+  }
+
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    /* 用实测高度而不是写死数字：顶栏滚过之后会从 68 缩到 58，
+       搜索结果条有没有显示也会差 46 —— 写死一个值总会差几像素。 */
+    const nav = document.querySelector('.nav');
+    const nh = nav ? nav.getBoundingClientRect().height : 68;
+    const sum = document.getElementById('searchSummary');
+    const sh = (sum && !sum.hidden) ? sum.getBoundingClientRect().height : 0;
+    const top = el.getBoundingClientRect().top + window.pageYOffset - nh - sh - 16;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+  }
+
+  /* 搜索汇总条：搜索是「就地过滤三栏」，命中常常落在页面最下面那一栏。
+     人在首屏只看到列表突然变空，就会判定「搜索是摆设」。
+     这条窄带把三栏的命中数摊开在顶栏下面，并允许直接跳过去。 */
+  function renderSearchSummary() {
+    const box = $('#searchSummary');
+    if (!box) return;
+    if (!state.keyword) {
+      box.hidden = true;
+      state.view.searchHits = [];
+      return;
+    }
+    const hits = [
+      { id: 'articles', name: '桃花笺', unit: '篇', n: (state.view.articles || []).length },
+      { id: 'shares', name: '拾遗录', unit: '条', n: (state.view.shares || []).length },
+      { id: 'gallery', name: '观照集', unit: '张', n: (state.view.gallery || []).length }
+    ];
+    state.view.searchHits = hits;
+    const total = hits.reduce((sum, h) => sum + h.n, 0);
+    const word = esc(state.keywordRaw || state.keyword);
+    $('#ssWord').innerHTML = total
+      ? '「<b>' + word + '</b>」共 ' + total + ' 处'
+      : '没有找到「<b>' + word + '</b>」';
+    $('#ssHits').innerHTML = hits.map((h) =>
+      '<button class="ss-hit' + (h.n ? '' : ' is-zero') + '" type="button"' +
+      (h.n ? ' data-to="' + h.id + '"' : ' disabled') + '>' +
+      esc(h.name) + ' <b>' + h.n + '</b><i class="ss-unit"> ' + h.unit + '</i>' +
+      '</button>'
+    ).join('');
+    box.hidden = false;
   }
 
   /* ---------------- 滚动进场 ---------------- */
@@ -384,7 +480,12 @@ window.__TAOBAI_VAULT__ = true;
 
   function matchKeyword(item) {
     if (!state.keyword) return true;
-    const haystack = [item.title, item.summary, item.desc, item.content].filter(Boolean).join(' ').toLowerCase();
+    /* 标签、图组名、作者也算「这条内容说了什么」——
+       以前只扫正文，搜「加密」「古风」这类长在标签/组名上的词一条都命中不了。 */
+    const haystack = [
+      item.title, item.summary, item.desc, item.content,
+      (item.tags || []).join(' '), item.stack, item.author
+    ].filter(Boolean).join(' ').toLowerCase();
     return haystack.indexOf(state.keyword) !== -1;
   }
 
@@ -403,6 +504,7 @@ window.__TAOBAI_VAULT__ = true;
     });
     state.view.articles = list;
 
+    $('#articlesEmpty').textContent = emptyText('这一栏还空着。');
     $('#articlesEmpty').hidden = list.length > 0;
     box.innerHTML = list.map((a) => {
       const locked = isLocked(a) && !a.dec;
@@ -419,8 +521,8 @@ window.__TAOBAI_VAULT__ = true;
         '<div class="article-thumb' + (thumb ? '' : ' is-empty') + '">' + thumb + '</div>' +
         '<div class="article-body">' +
           '<div class="article-tags">' + (a.tags || []).slice(0, 3).map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
-          '<h3>' + esc(a.title) + '</h3>' +
-          '<p class="excerpt">' + esc(excerpt) + '</p>' +
+          '<h3>' + hl(a.title) + '</h3>' +
+          '<p class="excerpt">' + hl(excerpt) + '</p>' +
           '<div class="article-foot">' +
             '<span>' + esc(a.author || '桃白') + '</span>' +
             '<span>' + formatDate(a.publishedAt) + '</span>' +
@@ -445,6 +547,7 @@ window.__TAOBAI_VAULT__ = true;
     list = list.slice().sort((a, b) => (Boolean(b.star) ? 1 : 0) - (Boolean(a.star) ? 1 : 0));
     state.view.shares = list;
 
+    $('#sharesEmpty').textContent = emptyText('还没有收录任何条目。');
     $('#sharesEmpty').hidden = list.length > 0;
     box.innerHTML = list.map((s) => {
       const initial = s.icon || (s.title || '?').slice(0, 2);
@@ -453,12 +556,12 @@ window.__TAOBAI_VAULT__ = true;
         '<div class="share-head">' +
           '<div class="share-icon">' + esc(initial) + '</div>' +
           '<div>' +
-            '<div class="share-title">' + esc(s.title) +
+            '<div class="share-title">' + hl(s.title) +
               (s.star ? '<span class="star">★</span>' : '') + '</div>' +
             '<div class="share-cat">' + (s.category === 'website' ? '网站 · WEB' : '软件 · APP') + '</div>' +
           '</div>' +
         '</div>' +
-        '<p class="share-desc">' + esc(leadOf(s.desc)) + '</p>' +
+        '<p class="share-desc">' + hl(leadOf(s.desc)) + '</p>' +
         '<div class="share-foot">' +
           '<div class="platform-row">' + (s.platforms || []).slice(0, 3).map((p) => '<span class="platform">' + esc(p) + '</span>').join('') + '</div>' +
           '<div class="share-foot-acts">' +
@@ -787,7 +890,13 @@ window.__TAOBAI_VAULT__ = true;
       gRank(a) - gRank(b) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
     /* 关键词与标签都在「块」这一级过筛：组里任何一张命中，整组就留下 */
     const shown = buildBlocks(sorted).filter((b) => {
-      if (state.keyword && !b.members.some(matchKeyword)) return false;
+      if (state.keyword) {
+        /* 组名本身也是内容（图组的名字就是这批图在说的事），
+           以前只拿成员去比，搜「古风」这种只写在组名上的词会一张也搜不到。 */
+        const nameHit = b.kind === 'stack' &&
+          String(b.key || '').toLowerCase().indexOf(state.keyword) !== -1;
+        if (!nameHit && !b.members.some(matchKeyword)) return false;
+      }
       if (state.galleryTag !== 'all' &&
         !b.members.some((m) => (m.tags || []).indexOf(state.galleryTag) !== -1)) return false;
       return true;
@@ -803,6 +912,7 @@ window.__TAOBAI_VAULT__ = true;
     state.view.gallery = flat;
     state.view.blocks = view;
 
+    $('#galleryEmpty').textContent = emptyText('图集还是空的。');
     $('#galleryEmpty').hidden = view.length > 0;
     box.innerHTML = view.map((b) => (b.kind === 'stack'
       ? stackHtml(b, b.startIndex)
@@ -1353,6 +1463,8 @@ window.__TAOBAI_VAULT__ = true;
     renderGalleryTags();
     renderGallery();
     renderVaultBar();
+    /* 必须放在最后：汇总条要读三栏刚算出来的命中数 */
+    renderSearchSummary();
   }
 
   /* ---------------- 启动 ---------------- */

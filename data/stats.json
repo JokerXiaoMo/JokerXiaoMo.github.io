@@ -1,5 +1,0 @@
-{
-  "_comment": "计数服务地址。留空时，站上所有「N 次阅读」「已被打开 N 次」一律不显示；填上则改为实时读取。",
-  "_howto": "部署 counts/worker.js 或 counts/server.js，把得到的 https 地址填进 endpoint，末尾不要带斜杠。",
-  "endpoint": ""
-}

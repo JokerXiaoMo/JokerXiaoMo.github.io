@@ -892,6 +892,12 @@ html[data-theme="dark"] .article-card:hover {
   border-color: rgba(255, 255, 255, 0.16);
 }
 
+/* 封面图是纸白底的，放到暗色卡片里会变成一块刺眼的亮斑 —— 它比页面里任何东西都亮。
+   压一档亮度和饱和度，让它退回夜里该有的亮度；不加遮罩，纸的质感还在。 */
+html[data-theme="dark"] .article-thumb img {
+  filter: brightness(0.7) saturate(0.88);
+}
+
 html[data-theme="dark"] .footer {
   border-top: 1px solid var(--on-plum-line);
 }
